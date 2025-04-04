@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import { useImage } from 'expo-image';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import {useEffect, useState} from 'react';
@@ -28,6 +29,13 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
   });
+  /*const [imagesLoaded, imgError] = useImage('@/assets/sprites/field.jpg'), {
+      maxWidth: 800,
+      onError(error, retry) {
+        console.error('Loading failed:', error.message);
+      }
+  });*/
+  const imagesLoaded = true;//useImage('../assets/assets/sprites/field.jpg');
   const [skiaLoaded, setSkiaLoaded] = useState(false)
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -36,10 +44,10 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded && imagesLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, imagesLoaded]);
 
   useEffect(()=>{
     if (Platform.OS === 'web') {
@@ -52,7 +60,7 @@ export default function RootLayout() {
     }
   })
 
-  if (!fontsLoaded || !skiaLoaded) {
+  if (!fontsLoaded ||!imagesLoaded || !skiaLoaded) {
     return null;
   }
 

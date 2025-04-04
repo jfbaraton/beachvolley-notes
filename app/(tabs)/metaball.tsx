@@ -1,88 +1,76 @@
-import { StatusBar, useWindowDimensions } from 'react-native';
-import React, { useMemo } from 'react';
-import {
-    Blur,
-    Circle,
-    ColorMatrix,
-    Group,
-    Paint,
-    SweepGradient,
-    vec,
-} from '@shopify/react-native-skia';
-import { useSharedValue, withSpring } from 'react-native-reanimated';
-import Touchable, { useGestureHandler } from 'react-native-skia-gesture';
-import {View} from '@/components/Themed';
+import { useState } from 'react';
+import { useImage,Image } from 'expo-image';
 
-const RADIUS = 80;
-
+import { useWindowDimensions, StyleSheet, View  } from 'react-native';
+import {Canvas,Text, Circle, Group} from "@shopify/react-native-skia";
+import {Star} from '@/components/Star';
+import { Asset } from 'expo-asset';
+//const IMAGE = Asset.fromModule(require('../../assets/sprites/ball.png'));
 
 export default function TabTwoScreen() {
-    const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+    const { width, height } = useWindowDimensions();
+    const image = useImage('../../assets/assets/sprites/ball.png', {
+        maxWidth: 800,
+        onError(error, retry) {
+          console.error('Loading failed:', error.message);
+        }
+      });
 
-    const cx = useSharedValue(windowWidth / 2);
-    const cy = useSharedValue(windowHeight / 2);
+    console.log("dims ", width, height)
 
-    const context = useSharedValue({
-        x: 0,
-        y: 0,
-    });
-
-    const gestureHandler = useGestureHandler({
-        onStart: () => {
-            'worklet';
-            context.value = {
-                x: cx.value,
-                y: cy.value,
-            };
-        },
-        onActive: ({ translationX, translationY }) => {
-            'worklet';
-            cx.value = translationX + context.value.x;
-            cy.value = translationY + context.value.y;
-        },
-        onEnd: () => {
-            'worklet';
-            cx.value = withSpring(windowWidth / 2);
-            cy.value = withSpring(windowHeight / 2);
-        },
-    });
-
-    const layer = useMemo(() => {
-        return (
-            <Paint>
-                {/* pixelOpacity > blurredOpacity * 60 - 30 */}
-                <Blur blur={30} />
-                <ColorMatrix
-                    matrix={[
-                        // R, G, B, A, Bias (Offset)
-                        // prettier-ignore
-                        1, 0, 0, 0, 0,
-                        // prettier-ignore
-                        0, 1, 0, 0, 0,
-                        // prettier-ignore
-                        0, 0, 1, 0, 0,
-                        // prettier-ignore
-                        0, 0, 0, 60, -30,
-                    ]}
-                />
-            </Paint>
-        );
-    }, []);
+   //const bg = useImage(require('./../../assets/sprites/field.jpg'));
+   //const bg = useImage(require("@/assets/sprites/field.jpg"));
+    //const ball = useImage(require('../../assets/sprites/ball.png'));
+ ///  transform={[{ rotate: -90 }]}
+ // <Image image={bg} width={width} height={height}  fit={'cover'}/>
+    const r = width/2 * 0.33;
+    if (!image) {
+        return <Text>Image is loading...</Text>;
+    }
+    console.log("img ", image.width, image.height, image.localUri, image.uri)
     return (
-        <>
-            <StatusBar barStyle={'light-content'} />
-            <Touchable.Canvas
-                style={{
-                    flex: 1,
-                    backgroundColor: '#111',
-                }}
-            >
-                <Group layer={layer}>
-                    <Touchable.Circle {...gestureHandler} cx={cx} cy={cy} r={RADIUS} />
-                    <Circle cx={windowWidth / 2} cy={windowHeight / 2} r={RADIUS} />
-                    <SweepGradient c={vec(0, 0)} colors={['cyan', 'magenta', 'cyan']} />
-                </Group>
-            </Touchable.Canvas>
-        </>
+        <View style={styles.container}>
+               <Image
+                    source={"http://localhost:8081/assets/assets/sprites/ball.png"}
+
+                    style={styles.image}
+                    contentFit="cover"
+                    transition={1000}
+
+               />
+
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    skia: {
+        width: 300,
+        height: 300
+    },
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    imageContainer: {
+        marginVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    separator: {
+        marginVertical: 30,
+        height: 1,
+        width: '80%',
+    },
+    image: {
+        flex: 1,
+        width: '100%',
+        backgroundColor: '#0553',
+    }
+});
+
