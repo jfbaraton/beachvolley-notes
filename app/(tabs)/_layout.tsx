@@ -27,9 +27,9 @@ export default function TabLayout() {
         headerShown: useClientOnlyValue(false, true),
       }}>
       <Tabs.Screen
-        name="summary"
+        name="index"
         options={{
-          title: 'Summary',
+          title: 'Beach notes',
           tabBarIcon: ({ color }) => <TabBarIcon name="file-text-o" color={color} />,
           headerRight: () => (
             <Link href="/modal" asChild>
@@ -48,9 +48,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="metaball"
+        name="summary"
         options={{
-          title: 'Meta ball',
+          title: 'Summary',
           tabBarIcon: ({ color }) => <TabBarIcon name="file-text-o" color={color} />,
           headerRight: () => (
             <Link href="/modal" asChild>

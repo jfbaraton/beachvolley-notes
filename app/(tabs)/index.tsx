@@ -9,8 +9,8 @@ import FieldFront from '@/assets/sprites/field.jpg';
 
 export default function TabTwoScreen() {
     //const { width, height } = useWindowDimensions();
-    const width = 520;
-    const height = 420;
+    const width = 720;
+    const height = 370;
 
     const ball = useImage(BallFront.uri, {
          maxWidth: 800,
@@ -35,15 +35,15 @@ export default function TabTwoScreen() {
             <Canvas style={{ width, height }}>
                <Image
                     image={field}
-                    width={520}
-                    height={220}
+                    width={width}
+                    height={height}
                     fit={'cover'}
 
                />
                <Image
                     image={ball}
-                    width={120}
-                    height={120}
+                    width={width/10}
+                    height={width/10}
                     fit={'cover'}
 
                />
