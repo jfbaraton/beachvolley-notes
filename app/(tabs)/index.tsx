@@ -108,7 +108,7 @@ export default function TabTwoScreen() {
         let p3Y= anaPatriciaY;
         let p4X= dudaX;
         let p4Y= dudaY;
-        if(servingTeam === 1) {
+        if(servingTeam ===1 !== isSideSwapped) {
             console.log("swap serving team")
             p3X= taruX;
             p3Y= taruY;
@@ -128,15 +128,17 @@ export default function TabTwoScreen() {
             p1Y = p2Y;
             p2Y = tmp;
         }
-        p1X.value = withTiming(validatePlayerX(servingPosX),{ duration : 500});
+        p1X.value = withTiming(validatePlayerX(servingTeam ? width - servingPosX :servingPosX),{ duration : 500});
         p1Y.value = withTiming(validatePlayerY(servingPosY),{ duration : 500});
-        p2X.value = withTiming(validatePlayerX(serverMateX),{ duration : 500});
+        p2X.value = withTiming(validatePlayerX(servingTeam ? width - serverMateX:serverMateX),{ duration : 500});
         p2Y.value = withTiming(validatePlayerY(serverMateY),{ duration : 500});
-        p3X.value = withTiming(validatePlayerX(receiverX),{ duration : 500});
+        p3X.value = withTiming(validatePlayerX(servingTeam ? width - receiverX:receiverX),{ duration : 500});
         p3Y.value = withTiming(validatePlayerY(receiverY),{ duration : 500});
         //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
-        p4X.value = withTiming(validatePlayerX(receiverX),{ duration : 500});
+        p4X.value = withTiming(validatePlayerX(servingTeam ? width - receiverX:receiverX),{ duration : 500});
         p4Y.value = withTiming(validatePlayerY(height - receiverY),{ duration : 500});
+        ballX.value = withTiming(validateBallX(servingTeam ? width - (servingPosX+ballsize):(servingPosX+ballsize)),{ duration : 50});
+        ballY.value = withTiming(validateBallY(servingPosY),{ duration : 50});
     }
     const teamScores = (team) => {
         //console.log("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
@@ -206,8 +208,6 @@ export default function TabTwoScreen() {
                     sideOutContinues = false;
                     sideOutState.value = 'service';
                     lastPlayer.value = 1;
-                    ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 50});
-                    ballY.value = withTiming(validateBallY(servingPosY),{ duration : 50});
                     teamScores(0);
                 } else {
                     console.log("attack -> pass")
