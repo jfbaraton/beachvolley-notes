@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ButtonGroup } from '@rneui/themed'
 
 import { useWindowDimensions, StyleSheet, View  } from 'react-native';
@@ -25,7 +25,7 @@ export default function TabTwoScreen() {
     const servingPosY = height/4;
 
     const sideOutState          = useSharedValue('service'); // pass, set, attack.
-    const lastServingTeam      = useSharedValue(0); // 0 = finland, 1 = brazil
+    const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
     const lastServer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
     const lastPlayer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
     const validateBallX =   (oneBallX) => Math.min(Math.max(0,oneBallX-ballsize/2), width-ballsize)
@@ -70,8 +70,8 @@ export default function TabTwoScreen() {
          }
     });
 
-    const scoreTeam0 = useSharedValue(0)
-    const scoreTeam1 = useSharedValue(0)
+    const [ scoreTeam0, setScoreTeam0 ] = useState(0)
+    const [ scoreTeam1, setScoreTeam1 ] = useState(0)
     const ballX = useSharedValue(validateBallX(width/7))
     const ballY = useSharedValue(validateBallY(height/2))
     const taruX = useSharedValue(validatePlayerX(servingPosX))
@@ -172,13 +172,13 @@ export default function TabTwoScreen() {
     }
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
     const incrementScore = (team) => {
-        console.log("score ", team, lastServingTeam.value)
+        console.log("score ", team, lastServingTeam)
         if (team === 0) {
-            scoreTeam0.value = scoreTeam0.value + 1;
-            lastServingTeam.value = 0;
+            setScoreTeam0(scoreTeam0 + 1);
+            setLastServingTeam(0);
         } else {
-            scoreTeam1.value = scoreTeam1.value + 1;
-            lastServingTeam.value = 1;
+            setScoreTeam1(scoreTeam1 + 1);
+            setLastServingTeam(1);
         }
     }
 
@@ -188,8 +188,8 @@ export default function TabTwoScreen() {
     return (
         <View style={styles.container}>
             <ButtonGroup
-                buttons={[''+scoreTeam0.value, ''+scoreTeam1.value]}
-                selectedIndex={lastServingTeam.value}
+                buttons={[''+scoreTeam0, ''+scoreTeam1]}
+                selectedIndex={lastServingTeam}
                 onPress={incrementScore}
                 containerStyle={{ marginBottom: 20 }}
             />
