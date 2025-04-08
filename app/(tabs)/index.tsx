@@ -19,12 +19,12 @@ export default function TabTwoScreen() {
     const ballsize = width/10;
     const playerSize = width/10;
 
-    const [ sideOutState, setSideOutState ]         = useState('service'); // pass, set, attack.
-    const [ lastServingTeam, setLastServingTeam ]   = useState(1); // 1 = finland, 2 = brazil
-    const [ lastServer, setServer ]                 = useState(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
-    const [ lastPlayer, setLastPlayer ]             = useState(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
-    const validateBallX = (oneBallX) => Math.min(Math.max(0,oneBallX-ballsize/2), width-ballsize)
-    const validateBallY = (oneBallY) => Math.min(Math.max(0,oneBallY-ballsize/2), height-ballsize)
+    const sideOutState          = useSharedValue('service'); // pass, set, attack.
+    const lastServingTeam      = useSharedValue(1); // 1 = finland, 2 = brazil
+    const lastServer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
+    const lastPlayer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
+    const validateBallX =   (oneBallX) => Math.min(Math.max(0,oneBallX-ballsize/2), width-ballsize)
+    const validateBallY =   (oneBallY) => Math.min(Math.max(0,oneBallY-ballsize/2), height-ballsize)
     const validatePlayerX = (onePlayerX) => Math.min(Math.max(0,onePlayerX-playerSize/2), width-playerSize)
     const validatePlayerY = (onePlayerY) => Math.min(Math.max(0,onePlayerY-playerSize/2), height-playerSize)
 
@@ -83,18 +83,18 @@ export default function TabTwoScreen() {
 
 
     const onFieldTouch = (event) => {
-        console.log("touch ", event)
-        let newPhase = false;
-        switch (sideOutState) {
+        console.log("touch ",sideOutState, event)
+        let sideOutContinues = false;
+        switch (sideOutState.value) {
             case 'service':
                 // Check if the ball is opposite the service area
                 if (event.x > width/2) {
                     console.log("service -> pass")
-                    newPhase = true;
-                    setSideOutState('pass');
-                    setLastPlayer(3);
-                    //anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
-                    //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+                    sideOutContinues = true;
+                    sideOutState.value = 'pass';
+                    lastPlayer.value = 3;
+                    anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
+                    anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 } else {
                     console.log("service does not cross")
                 }
@@ -103,16 +103,16 @@ export default function TabTwoScreen() {
                 // Check if the ball stays in the pass area
                 if (event.x > width/2) {
                     console.log("pass -> set")
-                    newPhase = true;
-                    setSideOutState('set');
-                    setLastPlayer(4);
+                    sideOutContinues = true;
+                    sideOutState.value = 'set';
+                    lastPlayer.value = 4;
                     dudaX.value = withTiming(validatePlayerX(event.x),{ duration : 500});
                     dudaY.value = withTiming(validatePlayerY(event.y+ballsize/2),{ duration : 500});
                 } else {
                     console.log("pass -> pass")
-                    newPhase = true;
-                    setSideOutState('pass');
-                    setLastPlayer(1);
+                    sideOutContinues = true;
+                    sideOutState.value = 'pass';
+                    lastPlayer.value = 1;
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
@@ -121,16 +121,16 @@ export default function TabTwoScreen() {
                 // Check if the ball stays in the set area
                 if (event.x > width/2) {
                     console.log("set -> attack")
-                    newPhase = true;
-                    setSideOutState('attack');
-                    setLastPlayer(4);
+                    sideOutContinues = true;
+                    sideOutState.value = 'attack';
+                    lastPlayer.value = 4;
                     anaPatriciaX.value = withTiming(validatePlayerX(event.x),{ duration : 500});
                     anaPatriciaY.value = withTiming(validatePlayerY(event.y-ballsize/2),{ duration : 500});
                 } else {
                     console.log("set -> pass")
-                    newPhase = true;
-                    setSideOutState('pass');
-                    setLastPlayer(1);
+                    sideOutContinues = true;
+                    sideOutState.value = 'pass';
+                    lastPlayer.value = 1;
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
@@ -139,9 +139,9 @@ export default function TabTwoScreen() {
                 // Check if the ball stays in the set area
                 if (event.x > width/2) {
                     console.log("attack failed")
-                    newPhase = false;
-                    setSideOutState('service');
-                    setLastPlayer(1);
+                    sideOutContinues = false;
+                    sideOutState.value = 'service';
+                    lastPlayer.value = 1;
                     const servingPosX = 0;
                     const servingPosY = height/4;
                     ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 1000});
@@ -150,15 +150,15 @@ export default function TabTwoScreen() {
                     taruY.value = withTiming(validatePlayerY(servingPosY),{ duration : 500});
                 } else {
                     console.log("attack -> pass")
-                    newPhase = true;
-                    setSideOutState('pass');
-                    setLastPlayer(1);
+                    sideOutContinues = true;
+                    sideOutState.value = 'pass';
+                    lastPlayer.value = 1;
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
                 break;
         }
-        if(newPhase) {
+        if(sideOutContinues) {
             console.log("move ball ",validateBallX(event.x), validateBallY(event.y))
             ballX.value = withTiming(validateBallX(event.x),{ duration : 1000});
             ballY.value = withTiming(validateBallY(event.y),{ duration : 1000});
