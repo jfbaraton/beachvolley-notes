@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { useWindowDimensions, StyleSheet, View  } from 'react-native';
 import {Canvas,Text, Circle, Group, useImage, Image} from "@shopify/react-native-skia";
@@ -13,11 +13,15 @@ import AnaPatriciaFront from '@/assets/sprites/AnaPatricia.png';
 import DudaFront from '@/assets/sprites/Duda.jpg';
 
 export default function TabTwoScreen() {
-    //const { width, height } = useWindowDimensions();
+    const windowWidth = useWindowDimensions().width;
+    const windowHeight = useWindowDimensions().height;
     const width = 720;
     const height = 370;
     const ballsize = width/10;
     const playerSize = width/10;
+
+    const servingPosX = 0;
+    const servingPosY = height/4;
 
     const sideOutState          = useSharedValue('service'); // pass, set, attack.
     const lastServingTeam      = useSharedValue(1); // 1 = finland, 2 = brazil
@@ -67,8 +71,8 @@ export default function TabTwoScreen() {
 
     const ballX = useSharedValue(validateBallX(width/7))
     const ballY = useSharedValue(validateBallY(height/2))
-    const taruX = useSharedValue(validatePlayerX(width/7))
-    const taruY = useSharedValue(validatePlayerY(height/4))
+    const taruX = useSharedValue(validatePlayerX(servingPosX))
+    const taruY = useSharedValue(validatePlayerY(servingPosY))
     const niinaX = useSharedValue(validatePlayerX(width/7))
     const niinaY = useSharedValue(validatePlayerY(3*height/4))
     const anaPatriciaX = useSharedValue(validatePlayerX(6*width/7))
@@ -124,8 +128,8 @@ export default function TabTwoScreen() {
                     sideOutContinues = true;
                     sideOutState.value = 'attack';
                     lastPlayer.value = 4;
-                    anaPatriciaX.value = withTiming(validatePlayerX(event.x),{ duration : 500});
-                    anaPatriciaY.value = withTiming(validatePlayerY(event.y-ballsize/2),{ duration : 500});
+                    anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
+                    anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 } else {
                     console.log("set -> pass")
                     sideOutContinues = true;
@@ -142,10 +146,8 @@ export default function TabTwoScreen() {
                     sideOutContinues = false;
                     sideOutState.value = 'service';
                     lastPlayer.value = 1;
-                    const servingPosX = 0;
-                    const servingPosY = height/4;
-                    ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 1000});
-                    ballY.value = withTiming(validateBallY(servingPosY),{ duration : 1000});
+                    ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 50});
+                    ballY.value = withTiming(validateBallY(servingPosY),{ duration : 50});
                     taruX.value = withTiming(validatePlayerX(servingPosX),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(servingPosY),{ duration : 500});
                 } else {
