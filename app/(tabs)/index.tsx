@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { ButtonGroup } from '@rneui/themed'
 
 import { useWindowDimensions, StyleSheet, View  } from 'react-native';
 import {Canvas,Text, Circle, Group, useImage, Image} from "@shopify/react-native-skia";
@@ -24,7 +25,7 @@ export default function TabTwoScreen() {
     const servingPosY = height/4;
 
     const sideOutState          = useSharedValue('service'); // pass, set, attack.
-    const lastServingTeam      = useSharedValue(1); // 1 = finland, 2 = brazil
+    const lastServingTeam      = useSharedValue(0); // 0 = finland, 1 = brazil
     const lastServer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
     const lastPlayer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
     const validateBallX =   (oneBallX) => Math.min(Math.max(0,oneBallX-ballsize/2), width-ballsize)
@@ -69,6 +70,8 @@ export default function TabTwoScreen() {
          }
     });
 
+    const scoreTeam0 = useSharedValue(0)
+    const scoreTeam1 = useSharedValue(0)
     const ballX = useSharedValue(validateBallX(width/7))
     const ballY = useSharedValue(validateBallY(height/2))
     const taruX = useSharedValue(validatePlayerX(servingPosX))
@@ -82,7 +85,8 @@ export default function TabTwoScreen() {
     //console.log("BallFront ", JSON.stringify(BallFront))
 
     useEffect(() => {
-        ballX.value = withTiming(validateBallX(width/2),{ duration : 1000});
+        ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 1000});
+        ballY.value = withTiming(validateBallX(servingPosY),{ duration : 1000});
     });
 
 
@@ -167,12 +171,28 @@ export default function TabTwoScreen() {
         }
     }
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
+    const incrementScore = (team) => {
+        console.log("score ", team, lastServingTeam.value)
+        if (team === 0) {
+            scoreTeam0.value = scoreTeam0.value + 1;
+            lastServingTeam.value = 0;
+        } else {
+            scoreTeam1.value = scoreTeam1.value + 1;
+            lastServingTeam.value = 1;
+        }
+    }
 
     if (!ball || !field || !taru || !niina || !anaPatricia || !duda) {
         return <Text>Image is loading...</Text>;
     }
     return (
         <View style={styles.container}>
+            <ButtonGroup
+                buttons={[''+scoreTeam0.value, ''+scoreTeam1.value]}
+                selectedIndex={lastServingTeam.value}
+                onPress={incrementScore}
+                containerStyle={{ marginBottom: 20 }}
+            />
             <GestureDetector gesture={gestureTap}>
                 <Canvas style={{ width, height }} >
                    <Image
