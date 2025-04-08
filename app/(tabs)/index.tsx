@@ -91,15 +91,8 @@ export default function TabTwoScreen() {
     const dudaY = useSharedValue(validatePlayerY(3*height/4))
     //console.log("BallFront ", JSON.stringify(BallFront))
 
-    useEffect(() => {
-        ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 1000});
-        ballY.value = withTiming(validateBallX(servingPosY),{ duration : 1000});
-    });
-
     const initPlayerPositions = (servingTeam : number, servingPlayer : number, isSideSwapped :boolean) => {
 
-        ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 1000});
-        ballY.value = withTiming(validateBallX(servingPosY),{ duration : 1000});
         let p1X= taruX;
         let p1Y= taruY;
         let p2X= niinaX;
@@ -108,8 +101,8 @@ export default function TabTwoScreen() {
         let p3Y= anaPatriciaY;
         let p4X= dudaX;
         let p4Y= dudaY;
-        if(servingTeam ===1 !== isSideSwapped) {
-            console.log("swap serving team")
+        if(servingTeam ===1) {
+            console.log("swap serving team ",servingTeam===1)
             p3X= taruX;
             p3Y= taruY;
             p4X= niinaX;
@@ -128,16 +121,16 @@ export default function TabTwoScreen() {
             p1Y = p2Y;
             p2Y = tmp;
         }
-        p1X.value = withTiming(validatePlayerX(servingTeam ? width - servingPosX :servingPosX),{ duration : 500});
+        p1X.value = withTiming(validatePlayerX(servingTeam===1 !== isSideSwapped? width - servingPosX :servingPosX),{ duration : 500});
         p1Y.value = withTiming(validatePlayerY(servingPosY),{ duration : 500});
-        p2X.value = withTiming(validatePlayerX(servingTeam ? width - serverMateX:serverMateX),{ duration : 500});
+        p2X.value = withTiming(validatePlayerX(servingTeam===1 !== isSideSwapped ? width - serverMateX:serverMateX),{ duration : 500});
         p2Y.value = withTiming(validatePlayerY(serverMateY),{ duration : 500});
-        p3X.value = withTiming(validatePlayerX(servingTeam ? width - receiverX:receiverX),{ duration : 500});
+        p3X.value = withTiming(validatePlayerX(servingTeam===1 !== isSideSwapped ? width - receiverX:receiverX),{ duration : 500});
         p3Y.value = withTiming(validatePlayerY(receiverY),{ duration : 500});
         //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
-        p4X.value = withTiming(validatePlayerX(servingTeam ? width - receiverX:receiverX),{ duration : 500});
+        p4X.value = withTiming(validatePlayerX(servingTeam===1 !== isSideSwapped ? width - receiverX:receiverX),{ duration : 500});
         p4Y.value = withTiming(validatePlayerY(height - receiverY),{ duration : 500});
-        ballX.value = withTiming(validateBallX(servingTeam ? width - (servingPosX+ballsize):(servingPosX+ballsize)),{ duration : 50});
+        ballX.value = withTiming(validateBallX(servingTeam===1 !== isSideSwapped ? width - (servingPosX+ballsize):(servingPosX+ballsize)),{ duration : 50});
         ballY.value = withTiming(validateBallY(servingPosY),{ duration : 50});
     }
     const teamScores = (team) => {
@@ -145,8 +138,8 @@ export default function TabTwoScreen() {
         //console.log("buttons... ", ''+scoreTeam[0], ''+scoreTeam[1])
         scoreTeam[team]++
         setScoreTeam(JSON.parse(JSON.stringify(scoreTeam)));
+        initPlayerPositions(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/7)%2===1);
         setLastServingTeam(team);
-        initPlayerPositions(team);
     }
     const onFieldTouch = (event) => {
         console.log("touch ",sideOutState, event)
