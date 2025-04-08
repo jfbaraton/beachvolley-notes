@@ -23,6 +23,12 @@ export default function TabTwoScreen() {
 
     const servingPosX = 0;
     const servingPosY = height/4;
+    const serverMateX = 3*width/8;
+    const serverMateY = height/2;
+    const serverBlockerMateX = width/7;
+    const serverBlockerMateY = 3*height/4;
+    const receiverX = 6*width/7;
+    const receiverY = height/4;
 
     const sideOutState          = useSharedValue('service'); // pass, set, attack.
     const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
@@ -70,8 +76,9 @@ export default function TabTwoScreen() {
          }
     });
 
-    const [ scoreTeam0, setScoreTeam0 ] = useState(0)
-    const [ scoreTeam1, setScoreTeam1 ] = useState(0)
+    const [ scoreTeam, setScoreTeam ] = useState([0,0])
+    const [ setsTeam0, setSetsTeam0 ] = useState(0)
+    const [ setsTeam1, setSetsTeam1 ] = useState(0)
     const ballX = useSharedValue(validateBallX(width/7))
     const ballY = useSharedValue(validateBallY(height/2))
     const taruX = useSharedValue(validatePlayerX(servingPosX))
@@ -89,7 +96,56 @@ export default function TabTwoScreen() {
         ballY.value = withTiming(validateBallX(servingPosY),{ duration : 1000});
     });
 
+    const initPlayerPositions = (servingTeam : number, servingPlayer : number, isSideSwapped :boolean) => {
 
+        ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 1000});
+        ballY.value = withTiming(validateBallX(servingPosY),{ duration : 1000});
+        let p1X= taruX;
+        let p1Y= taruY;
+        let p2X= niinaX;
+        let p2Y= niinaY;
+        let p3X= anaPatriciaX;
+        let p3Y= anaPatriciaY;
+        let p4X= dudaX;
+        let p4Y= dudaY;
+        if(servingTeam === 1) {
+            console.log("swap serving team")
+            p3X= taruX;
+            p3Y= taruY;
+            p4X= niinaX;
+            p4Y= niinaY;
+            p1X= anaPatriciaX;
+            p1Y= anaPatriciaY;
+            p2X= dudaX;
+            p2Y= dudaY;
+        }
+        if (servingPlayer === 1) {
+            console.log("swap serving player")
+            let tmp = p1X;
+            p1X = p2X;
+            p2X = tmp;
+            tmp = p1Y;
+            p1Y = p2Y;
+            p2Y = tmp;
+        }
+        p1X.value = withTiming(validatePlayerX(servingPosX),{ duration : 500});
+        p1Y.value = withTiming(validatePlayerY(servingPosY),{ duration : 500});
+        p2X.value = withTiming(validatePlayerX(serverMateX),{ duration : 500});
+        p2Y.value = withTiming(validatePlayerY(serverMateY),{ duration : 500});
+        p3X.value = withTiming(validatePlayerX(receiverX),{ duration : 500});
+        p3Y.value = withTiming(validatePlayerY(receiverY),{ duration : 500});
+        //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
+        p4X.value = withTiming(validatePlayerX(receiverX),{ duration : 500});
+        p4Y.value = withTiming(validatePlayerY(height - receiverY),{ duration : 500});
+    }
+    const teamScores = (team) => {
+        //console.log("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
+        //console.log("buttons... ", ''+scoreTeam[0], ''+scoreTeam[1])
+        scoreTeam[team]++
+        setScoreTeam(JSON.parse(JSON.stringify(scoreTeam)));
+        setLastServingTeam(team);
+        initPlayerPositions(team);
+    }
     const onFieldTouch = (event) => {
         console.log("touch ",sideOutState, event)
         let sideOutContinues = false;
@@ -152,8 +208,7 @@ export default function TabTwoScreen() {
                     lastPlayer.value = 1;
                     ballX.value = withTiming(validateBallX(servingPosX+ballsize),{ duration : 50});
                     ballY.value = withTiming(validateBallY(servingPosY),{ duration : 50});
-                    taruX.value = withTiming(validatePlayerX(servingPosX),{ duration : 500});
-                    taruY.value = withTiming(validatePlayerY(servingPosY),{ duration : 500});
+                    teamScores(0);
                 } else {
                     console.log("attack -> pass")
                     sideOutContinues = true;
@@ -171,16 +226,6 @@ export default function TabTwoScreen() {
         }
     }
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
-    const incrementScore = (team) => {
-        console.log("score ", team, lastServingTeam)
-        if (team === 0) {
-            setScoreTeam0(scoreTeam0 + 1);
-            setLastServingTeam(0);
-        } else {
-            setScoreTeam1(scoreTeam1 + 1);
-            setLastServingTeam(1);
-        }
-    }
 
     if (!ball || !field || !taru || !niina || !anaPatricia || !duda) {
         return <Text>Image is loading...</Text>;
@@ -188,9 +233,9 @@ export default function TabTwoScreen() {
     return (
         <View style={styles.container}>
             <ButtonGroup
-                buttons={[''+scoreTeam0, ''+scoreTeam1]}
+                buttons={['  '+scoreTeam[0]+ '  ', '  '+scoreTeam[1]+ '  ']}
                 selectedIndex={lastServingTeam}
-                onPress={incrementScore}
+                onPress={teamScores}
                 containerStyle={{ marginBottom: 20 }}
             />
             <GestureDetector gesture={gestureTap}>
