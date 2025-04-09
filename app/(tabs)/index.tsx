@@ -77,8 +77,7 @@ export default function TabTwoScreen() {
     });
 
     const [ scoreTeam, setScoreTeam ] = useState([0,0])
-    const [ setsTeam0, setSetsTeam0 ] = useState(0)
-    const [ setsTeam1, setSetsTeam1 ] = useState(0)
+    const [ setsTeam, setSetsTeam ] = useState([0,0])
     const ballX = useSharedValue(validateBallX(width/7))
     const ballY = useSharedValue(validateBallY(height/2))
     const taruX = useSharedValue(validatePlayerX(servingPosX))
@@ -136,9 +135,18 @@ export default function TabTwoScreen() {
     const teamScores = (team) => {
         //console.log("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
         //console.log("buttons... ", ''+scoreTeam[0], ''+scoreTeam[1])
-        scoreTeam[team]++
+        scoreTeam[team]++;
+        const isLastSet = setsTeam[0]+setsTeam[1] >=2;
+        const rotationPace = isLastSet ? 5 : 7;
+        const pointsPerSet = isLastSet ? 15 : 21;
+        if(  scoreTeam[team] >= pointsPerSet && scoreTeam[team]-scoreTeam[1-team] >= 2) {
+            setsTeam[team]++;
+            scoreTeam[0]=0;
+            scoreTeam[1]=0;
+            setSetsTeam(JSON.parse(JSON.stringify(setsTeam)));
+        }
         setScoreTeam(JSON.parse(JSON.stringify(scoreTeam)));
-        initPlayerPositions(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/7)%2===1);
+        initPlayerPositions(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
         setLastServingTeam(team);
     }
     const onFieldTouch = (event) => {
@@ -230,6 +238,13 @@ export default function TabTwoScreen() {
                 selectedIndex={lastServingTeam}
                 onPress={teamScores}
                 containerStyle={{ marginBottom: 20 }}
+                textStyle={{ "font-size": "2.8rem" }}
+            />
+            <ButtonGroup
+                buttons={['  '+setsTeam[0]+ '  ', '  '+setsTeam[1]+ '  ']}
+                selectedIndex={2}
+                containerStyle={{ marginBottom: 20 }}
+                textStyle={{ "font-size": "1rem" }}
             />
             <GestureDetector gesture={gestureTap}>
                 <Canvas style={{ width, height }} >
