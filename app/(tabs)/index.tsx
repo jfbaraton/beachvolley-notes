@@ -6,6 +6,8 @@ import {Canvas,Text, Circle, Group, useImage, Image} from "@shopify/react-native
 import {useSharedValue, withTiming} from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 
+import { initGame } from '@/utils/BeachVolleyUtils';
+
 import BallFront from '@/assets/sprites/ball.png';
 import FieldFront from '@/assets/sprites/field.jpg';
 import TaruFront from '@/assets/sprites/Taru.png';
@@ -30,6 +32,7 @@ export default function TabTwoScreen() {
     const receiverX = 6*width/7;
     const receiverY = height/4;
 
+    const [ gameState, seGameState ] = useState(initGame());
     const sideOutState          = useSharedValue('service'); // pass, set, attack.
     const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
     const lastServer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
