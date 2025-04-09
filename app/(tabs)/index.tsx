@@ -6,7 +6,7 @@ import {Canvas,Text, Circle, Group, useImage, Image} from "@shopify/react-native
 import {useSharedValue, withTiming} from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 
-import { initGame } from '@/utils/BeachVolleyUtils';
+import { initGame, Player, Team, Touch, Game } from '@/utils/BeachVolleyUtils';
 
 import BallFront from '@/assets/sprites/ball.png';
 import FieldFront from '@/assets/sprites/field.jpg';
@@ -35,8 +35,7 @@ export default function TabTwoScreen() {
     const [ gameState, seGameState ] = useState(initGame());
     const sideOutState          = useSharedValue('service'); // pass, set, attack.
     const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
-    const lastServer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
-    const lastPlayer           = useSharedValue(1); // 1 = taru, 2 = niina, 3 = anaPatricia, 4 = duda
+
     const validateBallX =   (oneBallX) => Math.min(Math.max(0,oneBallX-ballsize/2), width-ballsize)
     const validateBallY =   (oneBallY) => Math.min(Math.max(0,oneBallY-ballsize/2), height-ballsize)
     const validatePlayerX = (onePlayerX) => Math.min(Math.max(0,onePlayerX-playerSize/2), width-playerSize)
@@ -79,8 +78,6 @@ export default function TabTwoScreen() {
          }
     });
 
-    const [ scoreTeam, setScoreTeam ] = useState([0,0])
-    const [ setsTeam, setSetsTeam ] = useState([0,0])
     const ballX = useSharedValue(validateBallX(width/7))
     const ballY = useSharedValue(validateBallY(height/2))
     const taruX = useSharedValue(validatePlayerX(servingPosX))
@@ -93,6 +90,8 @@ export default function TabTwoScreen() {
     const dudaY = useSharedValue(validatePlayerY(3*height/4))
     //console.log("BallFront ", JSON.stringify(BallFront))
 
+    const [ scoreTeam, setScoreTeam ] = useState([0,0])
+    const [ setsTeam, setSetsTeam ] = useState([0,0])
     const initPlayerPositions = (servingTeam : number, servingPlayer : number, isSideSwapped :boolean) => {
 
         let p1X= taruX;
@@ -162,7 +161,6 @@ export default function TabTwoScreen() {
                     console.log("service -> pass")
                     sideOutContinues = true;
                     sideOutState.value = 'pass';
-                    lastPlayer.value = 3;
                     anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
                     anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 } else {
@@ -175,14 +173,12 @@ export default function TabTwoScreen() {
                     console.log("pass -> set")
                     sideOutContinues = true;
                     sideOutState.value = 'set';
-                    lastPlayer.value = 4;
                     dudaX.value = withTiming(validatePlayerX(event.x),{ duration : 500});
                     dudaY.value = withTiming(validatePlayerY(event.y+ballsize/2),{ duration : 500});
                 } else {
                     console.log("pass -> pass")
                     sideOutContinues = true;
                     sideOutState.value = 'pass';
-                    lastPlayer.value = 1;
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
@@ -193,14 +189,12 @@ export default function TabTwoScreen() {
                     console.log("set -> attack")
                     sideOutContinues = true;
                     sideOutState.value = 'attack';
-                    lastPlayer.value = 4;
                     anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
                     anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 } else {
                     console.log("set -> pass")
                     sideOutContinues = true;
                     sideOutState.value = 'pass';
-                    lastPlayer.value = 1;
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
@@ -211,13 +205,11 @@ export default function TabTwoScreen() {
                     console.log("attack failed")
                     sideOutContinues = false;
                     sideOutState.value = 'service';
-                    lastPlayer.value = 1;
                     teamScores(0);
                 } else {
                     console.log("attack -> pass")
                     sideOutContinues = true;
                     sideOutState.value = 'pass';
-                    lastPlayer.value = 1;
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
