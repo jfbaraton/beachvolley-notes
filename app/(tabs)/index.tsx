@@ -6,7 +6,7 @@ import {Canvas,Text, Circle, Group, useImage, Image} from "@shopify/react-native
 import {useSharedValue, withTiming} from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 
-import { initGame, Player, Team, Touch, Game } from '@/utils/BeachVolleyUtils';
+import { initGame, initTeams, initPlayerPositions, Player, Team, Touch, Game, FieldGraphicConstants } from '@/utils/BeachVolleyUtils';
 
 import BallFront from '@/assets/sprites/ball.png';
 import FieldFront from '@/assets/sprites/field.jpg';
@@ -32,7 +32,6 @@ export default function TabTwoScreen() {
     const receiverX = 6*width/7;
     const receiverY = height/4;
 
-    const [ gameState, seGameState ] = useState(initGame());
     const sideOutState          = useSharedValue('service'); // pass, set, attack.
     const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
 
@@ -40,6 +39,24 @@ export default function TabTwoScreen() {
     const validateBallY =   (oneBallY) => Math.min(Math.max(0,oneBallY-ballsize/2), height-ballsize)
     const validatePlayerX = (onePlayerX) => Math.min(Math.max(0,onePlayerX-playerSize/2), width-playerSize)
     const validatePlayerY = (onePlayerY) => Math.min(Math.max(0,onePlayerY-playerSize/2), height-playerSize)
+
+    const fieldGraphicConstants = {
+        width: width,
+        height: height,
+        ballsize: ballsize,
+        servingPosX: servingPosX,
+        servingPosY: servingPosY,
+        serverMateX: serverMateX,
+        serverMateY: serverMateY,
+        serverBlockerMateX: serverBlockerMateX,
+        serverBlockerMateY: serverBlockerMateY,
+        receiverX: receiverX,
+        receiverY: receiverY,
+        validateBallX: validateBallX,
+        validateBallY: validateBallY,
+        validatePlayerX: validatePlayerX,
+        validatePlayerY: validatePlayerY
+    } as FieldGraphicConstants;
 
     const ball = useImage(BallFront.uri, {
          maxWidth: 800,
@@ -88,11 +105,24 @@ export default function TabTwoScreen() {
     const anaPatriciaY = useSharedValue(validatePlayerY(height/4))
     const dudaX = useSharedValue(validatePlayerX(6*width/7))
     const dudaY = useSharedValue(validatePlayerY(3*height/4))
+
+    const teams = initTeams(
+        {id:"Niina", playerX:niinaX, playerY:niinaY} as Player,
+        {id:"Taru", playerX:taruX, playerY:taruY} as Player,
+        {id:"AnaPatricia", playerX:anaPatriciaX, playerY:anaPatriciaY} as Player,
+        {id:"Duda", playerX:dudaX, playerY:dudaY} as Player
+    );
+
+    const [ gameState, seGameState ] = useState(initGame(
+        ballX,
+        ballY,
+        teams
+    ));
     //console.log("BallFront ", JSON.stringify(BallFront))
 
     const [ scoreTeam, setScoreTeam ] = useState([0,0])
     const [ setsTeam, setSetsTeam ] = useState([0,0])
-    const initPlayerPositions = (servingTeam : number, servingPlayer : number, isSideSwapped :boolean) => {
+   /*const initPlayerPositions = (servingTeam : number, servingPlayer : number, isSideSwapped :boolean) => {
 
         let p1X= taruX;
         let p1Y= taruY;
@@ -133,10 +163,10 @@ export default function TabTwoScreen() {
         p4Y.value = withTiming(validatePlayerY(height - receiverY),{ duration : 500});
         ballX.value = withTiming(validateBallX(servingTeam===1 !== isSideSwapped ? width - (servingPosX+ballsize):(servingPosX+ballsize)),{ duration : 50});
         ballY.value = withTiming(validateBallY(servingPosY),{ duration : 50});
-    }
+    }*/
     const teamScores = (team) => {
         //console.log("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
-        //console.log("buttons... ", ''+scoreTeam[0], ''+scoreTeam[1])
+        //console.log("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
         scoreTeam[team]++;
         const isLastSet = setsTeam[0]+setsTeam[1] >=2;
         const rotationPace = isLastSet ? 5 : 7;
@@ -148,7 +178,15 @@ export default function TabTwoScreen() {
             setSetsTeam(JSON.parse(JSON.stringify(setsTeam)));
         }
         setScoreTeam(JSON.parse(JSON.stringify(scoreTeam)));
-        initPlayerPositions(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
+        //initPlayerPositions(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
+        console.log("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
+        console.log("rotation swap... ", (scoreTeam[0]+scoreTeam[1])/rotationPace)
+        console.log("rotation swap2... ", Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2)
+        initPlayerPositions(
+            teams[0].startingSide === 0 ? teams[team] : teams[1-team],
+            Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1,
+            gameState,
+            fieldGraphicConstants);
         setLastServingTeam(team);
     }
     const onFieldTouch = (event) => {
