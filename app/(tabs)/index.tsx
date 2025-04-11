@@ -110,60 +110,21 @@ export default function TabTwoScreen() {
         {id:"Niina", playerX:niinaX, playerY:niinaY} as Player,
         {id:"Taru", playerX:taruX, playerY:taruY} as Player,
         {id:"AnaPatricia", playerX:anaPatriciaX, playerY:anaPatriciaY} as Player,
-        {id:"Duda", playerX:dudaX, playerY:dudaY} as Player
+        {id:"Duda", playerX:dudaX, playerY:dudaY} as Player,
+        "Finland1",
+        "Brazil1"
     );
 
-    const [ gameState, seGameState ] = useState(initGame(
+    const [ game, setGame ] = useState(initGame(
         ballX,
         ballY,
         teams
     ));
     //console.log("BallFront ", JSON.stringify(BallFront))
-
+    initPlayerPositions(teams[0], false, game, fieldGraphicConstants);
     const [ scoreTeam, setScoreTeam ] = useState([0,0])
     const [ setsTeam, setSetsTeam ] = useState([0,0])
-   /*const initPlayerPositions = (servingTeam : number, servingPlayer : number, isSideSwapped :boolean) => {
 
-        let p1X= taruX;
-        let p1Y= taruY;
-        let p2X= niinaX;
-        let p2Y= niinaY;
-        let p3X= anaPatriciaX;
-        let p3Y= anaPatriciaY;
-        let p4X= dudaX;
-        let p4Y= dudaY;
-        if(servingTeam ===1) {
-            console.log("swap serving team ",servingTeam===1)
-            p3X= taruX;
-            p3Y= taruY;
-            p4X= niinaX;
-            p4Y= niinaY;
-            p1X= anaPatriciaX;
-            p1Y= anaPatriciaY;
-            p2X= dudaX;
-            p2Y= dudaY;
-        }
-        if (servingPlayer === 1) {
-            console.log("swap serving player")
-            let tmp = p1X;
-            p1X = p2X;
-            p2X = tmp;
-            tmp = p1Y;
-            p1Y = p2Y;
-            p2Y = tmp;
-        }
-        p1X.value = withTiming(validatePlayerX(servingTeam===1 !== isSideSwapped? width - servingPosX :servingPosX),{ duration : 500});
-        p1Y.value = withTiming(validatePlayerY(servingPosY),{ duration : 500});
-        p2X.value = withTiming(validatePlayerX(servingTeam===1 !== isSideSwapped ? width - serverMateX:serverMateX),{ duration : 500});
-        p2Y.value = withTiming(validatePlayerY(serverMateY),{ duration : 500});
-        p3X.value = withTiming(validatePlayerX(servingTeam===1 !== isSideSwapped ? width - receiverX:receiverX),{ duration : 500});
-        p3Y.value = withTiming(validatePlayerY(receiverY),{ duration : 500});
-        //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
-        p4X.value = withTiming(validatePlayerX(servingTeam===1 !== isSideSwapped ? width - receiverX:receiverX),{ duration : 500});
-        p4Y.value = withTiming(validatePlayerY(height - receiverY),{ duration : 500});
-        ballX.value = withTiming(validateBallX(servingTeam===1 !== isSideSwapped ? width - (servingPosX+ballsize):(servingPosX+ballsize)),{ duration : 50});
-        ballY.value = withTiming(validateBallY(servingPosY),{ duration : 50});
-    }*/
     const teamScores = (team) => {
         //console.log("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
         //console.log("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
@@ -182,10 +143,13 @@ export default function TabTwoScreen() {
         console.log("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
         console.log("rotation swap... ", (scoreTeam[0]+scoreTeam[1])/rotationPace)
         console.log("rotation swap2... ", Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2)
+        game.points.push({
+            teamTouches: []
+        });
         initPlayerPositions(
             teams[0].startingSide === 0 ? teams[team] : teams[1-team],
             Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1,
-            gameState,
+            game,
             fieldGraphicConstants);
         setLastServingTeam(team);
     }
