@@ -6,7 +6,16 @@ import {Canvas,Text, Circle, Group, useImage, Image} from "@shopify/react-native
 import {useSharedValue, withTiming} from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 
-import { initGame, initTeams, initPlayerPositions, Player, Team, Touch, Game, FieldGraphicConstants } from '@/utils/BeachVolleyUtils';
+import {
+initGame,
+initTeams,
+renderServingPosition,
+renderReceivingPosition,
+Player,
+Team,
+Touch,
+Game,
+FieldGraphicConstants } from '@/utils/BeachVolleyUtils';
 
 import BallFront from '@/assets/sprites/ball.png';
 import FieldFront from '@/assets/sprites/field.jpg';
@@ -26,14 +35,22 @@ export default function TabTwoScreen() {
     const servingPosX = 0;
     const servingPosY = height/4;
     const serverMateX = 3*width/8;
+    const blockingX = serverMateX;
     const serverMateY = height/2;
     const serverBlockerMateX = width/7;
     const serverBlockerMateY = 3*height/4;
     const receiverX = 6*width/7;
     const receiverY = height/4;
 
-    const sideOutState          = useSharedValue('service'); // pass, set, attack.
+    //const sideOutState          = useSharedValue('service'); // pass, set, attack.
     const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
+    const [ debugText, setDebugText ] = useState(["debug...","?","?"]); // 0 = finland, 1 = brazil
+
+    const logToUI = (textToLog) => {
+        console.log(textToLog)
+        debugText.push(textToLog)
+        setDebugText(JSON.parse(JSON.stringify(debugText)))
+    };
 
     const validateBallX =   (oneBallX) => Math.min(Math.max(0,oneBallX-ballsize/2), width-ballsize)
     const validateBallY =   (oneBallY) => Math.min(Math.max(0,oneBallY-ballsize/2), height-ballsize)
@@ -46,6 +63,7 @@ export default function TabTwoScreen() {
         ballsize: ballsize,
         servingPosX: servingPosX,
         servingPosY: servingPosY,
+        blockingX: blockingX,
         serverMateX: serverMateX,
         serverMateY: serverMateY,
         serverBlockerMateX: serverBlockerMateX,
@@ -125,7 +143,7 @@ export default function TabTwoScreen() {
     const [ setsTeam, setSetsTeam ] = useState([0,0])
     if(scoreTeam[0]+scoreTeam[1]+setsTeam[0]+setsTeam[1] === 0) {
         console.log("FIRST INIT PLAYER POS ---------------------------------");
-        initPlayerPositions(teams[0], false, game,setsTeam[0]+setsTeam[1], fieldGraphicConstants);
+        renderServingPosition(teams[0], false, game,setsTeam[0]+setsTeam[1], fieldGraphicConstants);
     }
 
     const teamScores = (team) => {
@@ -142,7 +160,7 @@ export default function TabTwoScreen() {
             setSetsTeam(JSON.parse(JSON.stringify(setsTeam)));
         }
         setScoreTeam(JSON.parse(JSON.stringify(scoreTeam)));
-        //initPlayerPositions(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
+        //renderServingPosition(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
         console.log("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
         console.log("rotation swap... ", (scoreTeam[0]+scoreTeam[1])/rotationPace)
         console.log("rotation swap2... ", Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2)
@@ -150,7 +168,7 @@ export default function TabTwoScreen() {
             set: setsTeam[0]+setsTeam[1],
             teamTouches: []
         });
-        initPlayerPositions(
+        renderServingPosition(
             teams[0].startingSide === 0 ? teams[team] : teams[1-team],
             Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1,
             game,
@@ -159,17 +177,27 @@ export default function TabTwoScreen() {
         setLastServingTeam(team);
     }
     const onFieldTouch = (event) => {
-        console.log("touch ",sideOutState, event)
         let sideOutContinues = false;
+        const currentPoint = game.points[game.points.length-1];
+        const currentTeamTouches = currentPoint.teamTouches[currentPoint.teamTouches.length-1];
+        const currentTouch = currentTeamTouches.touch[currentTeamTouches.touch.length-1];
+        const sideOutState = currentTouch.stateName;
+        console.log("touch ",sideOutState, event)
         switch (sideOutState.value) {
             case 'service':
                 // Check if the ball is opposite the service area
-                if (event.x > width/2) {
-                    console.log("service -> pass")
+                if (event.x > width/2 !== ballX > width/2) {
+                    logToUI("service -> pass")
                     sideOutContinues = true;
-                    sideOutState.value = 'pass';
-                    anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
-                    anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+                    //sideOutState.value = 'pass';
+                    currentPoint.teamTouches.push({
+                        team: game.teams.findFirst(oneTeam => oneTeam.id !== currentTeamTouches.team.id),
+                        touch: []
+                    });
+
+                    //anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
+                    //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+
                 } else {
                     console.log("service does not cross")
                 }
@@ -299,6 +327,9 @@ export default function TabTwoScreen() {
                    />
                 </Canvas>
             </GestureDetector>
+            <Text>{debugText[debugText.length-3]}</Text>
+            <Text>{debugText[debugText.length-2]}</Text>
+            <Text>{debugText[debugText.length-1]}</Text>
         </View>
     );
 }
