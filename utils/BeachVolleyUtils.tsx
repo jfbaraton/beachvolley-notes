@@ -174,7 +174,7 @@ export const initPlayerPositions = (currentServingTeam:Team, isSideSwapped :bool
         });
     }
     let currentTouch = currentTeamTouch[currentTouches.length-1];
-    const firstServingTeam = currentPoint.teamTouches[0].team;
+    const firstServingTeam = game.points[0].teamTouches[0].team;
     //const currentServingTeam = currentTouches[0].team;
     const servingTeam : boolean = firstServingTeam.players[0].id !== currentServingTeam.players[0].id; // true if the current serving team is not the first serving team
 

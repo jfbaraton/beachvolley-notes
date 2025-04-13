@@ -121,9 +121,12 @@ export default function TabTwoScreen() {
         teams
     ));
     //console.log("BallFront ", JSON.stringify(BallFront))
-    initPlayerPositions(teams[0], false, game, fieldGraphicConstants);
     const [ scoreTeam, setScoreTeam ] = useState([0,0])
     const [ setsTeam, setSetsTeam ] = useState([0,0])
+    if(scoreTeam[0]+scoreTeam[1]+setsTeam[0]+setsTeam[1] === 0) {
+        console.log("FIRST INIT PLAYER POS ---------------------------------");
+        initPlayerPositions(teams[0], false, game, fieldGraphicConstants);
+    }
 
     const teamScores = (team) => {
         //console.log("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
