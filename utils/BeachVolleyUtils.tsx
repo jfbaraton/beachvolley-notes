@@ -81,6 +81,7 @@ export interface TeamTouches {
 
 interface Point {
     teamTouches: TeamTouches[];
+    set:number;
 }
 export interface Game {
     ballX: SharedValue<number>; // reference to the shared value ballX.value
@@ -93,7 +94,7 @@ export interface Game {
 }
 
 
-export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[]) : Game => {
+export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[] ) : Game => {
     "worklet";
     let result :Game = {
         ballX: ballX, // reference to the shared value ballX.value
@@ -108,7 +109,7 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
     return result;
 }
 
-export const initPlayerPositions = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, fieldConstants:FieldGraphicConstants) => {
+export const initPlayerPositions = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
     console.log("initPlayerPositions ("+game.points.length+")", currentServingTeam.id, isSideSwapped, "--------------------------------------")
     /*const isFirstTouch =
         !game.points ||
@@ -121,6 +122,7 @@ export const initPlayerPositions = (currentServingTeam:Team, isSideSwapped :bool
         game.points.length === 0) {
         console.log("init game.points ");
         game.points = [{
+            set:currentSet,
             teamTouches: []
         }];
     }
@@ -174,7 +176,7 @@ export const initPlayerPositions = (currentServingTeam:Team, isSideSwapped :bool
         });
     }
     let currentTouch = currentTeamTouch[currentTouches.length-1];
-    const firstServingTeam = game.points[0].teamTouches[0].team;
+    const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
     //const currentServingTeam = currentTouches[0].team;
     const servingTeam : boolean = firstServingTeam.players[0].id !== currentServingTeam.players[0].id; // true if the current serving team is not the first serving team
 

@@ -125,7 +125,7 @@ export default function TabTwoScreen() {
     const [ setsTeam, setSetsTeam ] = useState([0,0])
     if(scoreTeam[0]+scoreTeam[1]+setsTeam[0]+setsTeam[1] === 0) {
         console.log("FIRST INIT PLAYER POS ---------------------------------");
-        initPlayerPositions(teams[0], false, game, fieldGraphicConstants);
+        initPlayerPositions(teams[0], false, game,setsTeam[0]+setsTeam[1], fieldGraphicConstants);
     }
 
     const teamScores = (team) => {
@@ -147,12 +147,14 @@ export default function TabTwoScreen() {
         console.log("rotation swap... ", (scoreTeam[0]+scoreTeam[1])/rotationPace)
         console.log("rotation swap2... ", Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2)
         game.points.push({
+            set: setsTeam[0]+setsTeam[1],
             teamTouches: []
         });
         initPlayerPositions(
             teams[0].startingSide === 0 ? teams[team] : teams[1-team],
             Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1,
             game,
+            setsTeam[0]+setsTeam[1],
             fieldGraphicConstants);
         setLastServingTeam(team);
     }
