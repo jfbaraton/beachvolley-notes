@@ -14,6 +14,7 @@ export interface FieldGraphicConstants {
     serverBlockerMateY: number;
     receiverX: number;
     receiverY: number;
+    approachX: number;
     validateBallX: Function;
     validateBallY: Function;
     validatePlayerX: Function;
@@ -257,19 +258,19 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
     console.log("renderReceivingPosition ("+game.points.length+")", "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
-    console.log("currentPoint ",currentPoint);
+    //console.log("currentPoint ",currentPoint);
 
     const currentTeamTouches = currentPoint.teamTouches;
-    console.log("currentTeamTouches ",currentTeamTouches);
+    //console.log("currentTeamTouches ",currentTeamTouches);
 
     let currentTouchArr = currentTeamTouches[currentTeamTouches.length-1].touch;
-    console.log("currentTouchArr ",currentTouchArr);
+    //console.log("currentTouchArr ",currentTouchArr);
 
     const receivingTeam = game.teams[game.teams[0].players[0].playerX.value <= fieldConstants.width/2 === ballX <= fieldConstants.width/2 ? 0:1] ;
-    console.log("receivingTeam ",JSON.stringify(receivingTeam));
+    console.log("receivingTeam ",receivingTeam.id);
     const receivingPlayer = getClosestPlayer(receivingTeam, ballX, ballY);
     const receiverMatePlayer = getOtherPlayer(receivingTeam, receivingPlayer.id);
-    console.log("receivingPlayer ",receivingPlayer)
+    console.log("receivingPlayer ",receivingPlayer.id)
     let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
     attackTouch.isFail = false;
     const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
@@ -327,6 +328,164 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
     // receiverMatePlayer goes to the center, 2 m from the receiver, closer to the net
     receiverMatePlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ? fieldConstants.width - fieldConstants.blockingX:fieldConstants.blockingX),{ duration : 500});
     receiverMatePlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(isBallInUpperField ? ballY+fieldConstants.height/5:ballY-fieldConstants.height/5),{ duration : 500});
+
+    //ball
+    game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
+    game.ballY.value = withTiming(fieldConstants.validateBallY(ballY),{ duration : 50});
+}
+
+export const renderSettingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
+    console.log("renderSettingPosition ("+game.points.length+")", "--------------------------------------")
+
+    const currentPoint = game.points[game.points.length - 1];
+    console.log("currentPoint ",currentPoint);
+
+    const currentTeamTouches = currentPoint.teamTouches;
+    console.log("currentTeamTouches ",currentTeamTouches);
+
+    let currentTouchArr = currentTeamTouches[currentTeamTouches.length-1].touch;
+    console.log("currentTouchArr ",currentTouchArr);
+
+    const passingTeam = currentTeamTouches[currentTeamTouches.length-1].team ;
+    console.log("passingTeam ",passingTeam.id);
+    const passingPlayer = currentTouchArr[currentTouchArr.length-1].player;
+    const settingPlayer = getOtherPlayer(passingTeam, passingPlayer.id);
+    console.log("settingPlayer ",settingPlayer.id)
+    let passTouch = currentTouchArr[currentTouchArr.length-1];
+    passTouch.isFail = false;
+    const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
+    passTouch.endingSide = isBallOnRightSide ? 0:1;
+    currentTouchArr.push({
+        player: settingPlayer,
+        ballX: ballX,
+        ballY: ballY,
+
+        stateName: 'set', // 'service', 'pass', 'set', 'attack'
+        //subStateName: string, // 'block', 'retouch afterblock', 'joust', spike, cut, pokie, rainbow, handset, bumpset, etc
+        startingSide: passTouch.endingSide, // 0 left, 1 right
+        //endingSide: number, // 0 left, 1 right
+        //fromAcross: boolean, // 0 no, 1 if ball comes from a diagonal angle
+        //toAcross: boolean, // 0 no, 1 if ball comes from a diagonal angle
+        //isScoring: boolean, // 0 no, 1 yes
+        //isFail: boolean, // 0 no, 1 yes
+        //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
+        //setCall: string, // 'up', 'middle', 'antenna', 'back'
+    });
+    let currentTouch = currentTouchArr[currentTouchArr.length-1];
+    const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
+    const currentServingTeam = currentPoint.teamTouches[0].team;
+    const currentServingPlayer = currentPoint.teamTouches[0].touch[0].player;
+    const lastAttackingTeam = currentTeamTouches[currentTeamTouches.length-2].team;
+    let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
+    const lastAttackingPlayer = attackTouch.player;
+    const lastNotAttackingPlayer = getOtherPlayer(lastAttackingTeam, lastAttackingPlayer.id);
+    const servingTeam : boolean = firstServingTeam.players[0].id !== currentServingPlayer.id; // true if the current serving team is not the first serving team
+
+    // if team has a preferred blocker
+    // or not the server (service)
+    // or the attacker (attack)
+    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
+                           attackTouch.stateName === 'service' ? lastNotAttackingPlayer: lastAttackingPlayer;
+
+    //const defenderPlayer =  getOtherPlayer(lastAttackingTeam, blockerPlayer.id);
+
+    const isBallInUpperField = ballY < fieldConstants.height/2;// from UI perspective, upper screen side
+    // isBallOnRightSide
+    // defending team
+    // blockerPlayer goes face the settet in case of option
+    blockerPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX),{ duration : 1000});
+    blockerPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY((90*ballY+10*fieldConstants.height/2)/100),{ duration : 500});
+    // defenderPlayer does not move?
+    //defenderPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
+    //defenderPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height- (70*ballY+30*fieldConstants.height/2)/100),{ duration : 500});
+
+    // team now holding the ball
+    // passingPlayer approaches
+    passingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ?fieldConstants.width - fieldConstants.approachX:fieldConstants.approachX),{ duration : 500});
+    passingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(passingPlayer.playerY.value > fieldConstants.height/2 && passingPlayer.playerY.value > ballY ? ballY+fieldConstants.height/6 : ballY-fieldConstants.height/6),{ duration : 500});
+    //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
+    // settingPlayer behind the ball
+    settingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(ballX),{ duration : 500});
+    settingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(isBallInUpperField ? ballY+fieldConstants.ballsize/2:ballY-fieldConstants.ballsize/2),{ duration : 500});
+
+    //ball
+    game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
+    game.ballY.value = withTiming(fieldConstants.validateBallY(ballY),{ duration : 50});
+}
+
+export const renderAttackPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
+    console.log("renderSettingPosition ("+game.points.length+")", "--------------------------------------")
+
+    const currentPoint = game.points[game.points.length - 1];
+    console.log("currentPoint ",currentPoint);
+
+    const currentTeamTouches = currentPoint.teamTouches;
+    console.log("currentTeamTouches ",currentTeamTouches);
+
+    let currentTouchArr = currentTeamTouches[currentTeamTouches.length-1].touch;
+    console.log("currentTouchArr ",currentTouchArr);
+
+    const passingTeam = currentTeamTouches[currentTeamTouches.length-1].team ;
+    console.log("passingTeam ",passingTeam.id);
+    const passingPlayer = currentTouchArr[currentTouchArr.length-1].player;
+    const settingPlayer = getOtherPlayer(passingTeam, passingPlayer.id);
+    console.log("settingPlayer ",settingPlayer.id)
+    let passTouch = currentTouchArr[currentTouchArr.length-1];
+    passTouch.isFail = false;
+    const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
+    passTouch.endingSide = isBallOnRightSide ? 0:1;
+    currentTouchArr.push({
+        player: settingPlayer,
+        ballX: ballX,
+        ballY: ballY,
+
+        stateName: 'set', // 'service', 'pass', 'set', 'attack'
+        //subStateName: string, // 'block', 'retouch afterblock', 'joust', spike, cut, pokie, rainbow, handset, bumpset, etc
+        startingSide: passTouch.endingSide, // 0 left, 1 right
+        //endingSide: number, // 0 left, 1 right
+        //fromAcross: boolean, // 0 no, 1 if ball comes from a diagonal angle
+        //toAcross: boolean, // 0 no, 1 if ball comes from a diagonal angle
+        //isScoring: boolean, // 0 no, 1 yes
+        //isFail: boolean, // 0 no, 1 yes
+        //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
+        //setCall: string, // 'up', 'middle', 'antenna', 'back'
+    });
+    let currentTouch = currentTouchArr[currentTouchArr.length-1];
+    const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
+    const currentServingTeam = currentPoint.teamTouches[0].team;
+    const currentServingPlayer = currentPoint.teamTouches[0].touch[0].player;
+    const lastAttackingTeam = currentTeamTouches[currentTeamTouches.length-2].team;
+    let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
+    const lastAttackingPlayer = attackTouch.player;
+    const lastNotAttackingPlayer = getOtherPlayer(lastAttackingTeam, lastAttackingPlayer.id);
+    const servingTeam : boolean = firstServingTeam.players[0].id !== currentServingPlayer.id; // true if the current serving team is not the first serving team
+
+    // if team has a preferred blocker
+    // or not the server (service)
+    // or the attacker (attack)
+    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
+                           attackTouch.stateName === 'service' ? lastNotAttackingPlayer: lastAttackingPlayer;
+
+    //const defenderPlayer =  getOtherPlayer(lastAttackingTeam, blockerPlayer.id);
+
+    const isBallInUpperField = ballY < fieldConstants.height/2;// from UI perspective, upper screen side
+    // isBallOnRightSide
+    // defending team
+    // blockerPlayer goes face the settet in case of option
+    blockerPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX),{ duration : 1000});
+    blockerPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY((90*ballY+10*fieldConstants.height/2)/100),{ duration : 500});
+    // defenderPlayer does not move?
+    //defenderPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
+    //defenderPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height- (70*ballY+30*fieldConstants.height/2)/100),{ duration : 500});
+
+    // team now holding the ball
+    // passingPlayer approaches
+    passingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ?fieldConstants.width - fieldConstants.approachX:fieldConstants.approachX),{ duration : 500});
+    passingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(passingPlayer.playerY.value > fieldConstants.height/2 && passingPlayer.playerY.value > ballY ? ballY+fieldConstants.height/6 : ballY-fieldConstants.height/6),{ duration : 500});
+    //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
+    // settingPlayer behind the ball
+    settingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(ballX),{ duration : 500});
+    settingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(isBallInUpperField ? ballY+fieldConstants.ballsize/2:ballY-fieldConstants.ballsize/2),{ duration : 500});
 
     //ball
     game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});

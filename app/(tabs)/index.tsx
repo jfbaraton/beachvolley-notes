@@ -12,14 +12,16 @@ import {
 } from "react-native-gesture-handler";
 
 import {
-initGame,
-initTeams,
-renderServingPosition,
-renderReceivingPosition,
-Player,
-Team,
-Touch,
-Game, getOtherTeam,
+    initGame,
+    initTeams,
+    renderServingPosition,
+    renderReceivingPosition,
+    renderSettingPosition,
+    renderAttackPosition,
+    Player,
+    Team,
+    Touch,
+    Game, getOtherTeam,
 FieldGraphicConstants } from '@/utils/BeachVolleyUtils';
 
 // @ts-ignore
@@ -52,6 +54,7 @@ export default function TabTwoScreen() {
     const serverBlockerMateY = 3*height/4;
     const receiverX = 6*width/7;
     const receiverY = height/4;
+    const approachX = width/3;
 
     //const sideOutState          = useSharedValue('service'); // pass, set, attack.
     const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
@@ -81,6 +84,7 @@ export default function TabTwoScreen() {
         serverBlockerMateY: serverBlockerMateY,
         receiverX: receiverX,
         receiverY: receiverY,
+        approachX: approachX,
         validateBallX: validateBallX,
         validateBallY: validateBallY,
         validatePlayerX: validatePlayerX,
@@ -209,23 +213,35 @@ export default function TabTwoScreen() {
                     //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
 
                 } else {
-                    console.log("service does not cross")
+                    logToUI("service does not cross? click on the score or serve again");
                 }
                 break;
             case 'pass':
                 // Check if the ball stays in the pass area
-                if (event.x > width/2) {
-                    console.log("pass -> set")
-                    sideOutContinues = true;
-                    //sideOutState = 'set';
-                    dudaX.value = withTiming(validatePlayerX(event.x),{ duration : 500});
-                    dudaY.value = withTiming(validatePlayerY(event.y+ballsize/2),{ duration : 500});
-                } else {
-                    console.log("pass -> pass")
-                    sideOutContinues = true;
+                if (event.x > width/2 === game.ballX.value > width/2) {
+                    logToUI("service -> pass")
+                    //sideOutContinues = true;
                     //sideOutState.value = 'pass';
-                    taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
-                    taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+                    renderSettingPosition(
+                        event.x,event.y,
+                        game,
+                        currentPoint.set,
+                        fieldGraphicConstants
+                    );
+                } else {
+                    logToUI("pass -> pass")
+                    //sideOutContinues = true;
+                    //sideOutState.value = 'pass';
+                    currentPoint.teamTouches.push({
+                        team: getOtherTeam(game.teams, currentTeamTouches.team),
+                        touch: []
+                    });
+                    renderReceivingPosition(
+                        event.x,event.y,
+                        game,
+                        currentPoint.set,
+                        fieldGraphicConstants
+                    );
                 }
                 break;
             case 'set':
@@ -237,11 +253,38 @@ export default function TabTwoScreen() {
                     anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
                     anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 } else {
-                    console.log("set -> pass")
+                    console.log("set -> pass (crosses the net)")
                     sideOutContinues = true;
                     //sideOutState.value = 'pass';
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+                }
+                break;
+                // Check if the ball stays in the pass area
+                if (event.x > width/2 === game.ballX.value > width/2) {
+                    logToUI("set -> attack")
+                    //sideOutContinues = true;
+                    //sideOutState.value = 'pass';
+                    renderAttackPosition(
+                        event.x,event.y,
+                        game,
+                        currentPoint.set,
+                        fieldGraphicConstants
+                    );
+                } else {
+                    logToUI("set -> pass (crosses the net)")
+                    //sideOutContinues = true;
+                    //sideOutState.value = 'pass';
+                    currentPoint.teamTouches.push({
+                        team: getOtherTeam(game.teams, currentTeamTouches.team),
+                        touch: []
+                    });
+                    renderReceivingPosition(
+                        event.x,event.y,
+                        game,
+                        currentPoint.set,
+                        fieldGraphicConstants
+                    );
                 }
                 break;
             case 'attack':
