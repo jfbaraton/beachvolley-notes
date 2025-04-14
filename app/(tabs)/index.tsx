@@ -58,7 +58,7 @@ export default function TabTwoScreen() {
 
     //const sideOutState          = useSharedValue('service'); // pass, set, attack.
     const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
-    const [ debugText, setDebugText ] = useState(["debug...","?","?"]); // 0 = finland, 1 = brazil
+    const [ debugText, setDebugText ] = useState(["debug...","?","?","?","?","?"]); // 0 = finland, 1 = brazil
 
     const logToUI = (textToLog : string) => {
         console.log(textToLog)
@@ -218,8 +218,8 @@ export default function TabTwoScreen() {
                 break;
             case 'pass':
                 // Check if the ball stays in the pass area
-                if (event.x > width/2 === game.ballX.value > width/2) {
-                    logToUI("service -> pass")
+                if (event.x > width/2 === (currentTouch.ballX || game.ballX.value) > width/2) {
+                    logToUI("pass -> set")
                     //sideOutContinues = true;
                     //sideOutState.value = 'pass';
                     renderSettingPosition(
@@ -246,7 +246,7 @@ export default function TabTwoScreen() {
                 break;
             case 'set':
                 // Check if the ball stays in the pass area
-                if (event.x > width/2 === game.ballX.value > width/2) {
+                if (event.x > width/2 === (currentTouch.ballX || game.ballX.value) > width/2) {
                     logToUI("set -> attack")
                     //sideOutContinues = true;
                     //sideOutState.value = 'pass';
@@ -274,7 +274,7 @@ export default function TabTwoScreen() {
                 break;
             case 'attack':
                 // Check if the ball is opposite the service area
-                if (event.x > width/2 !== game.ballX.value > width/2) {
+                if (event.x > width/2 !== (currentTouch.ballX || game.ballX.value) > width/2) {
                     logToUI("attack -> pass (crosses the net)")
                     //sideOutContinues = true;
                     //sideOutState.value = 'pass';
@@ -369,6 +369,9 @@ export default function TabTwoScreen() {
                    />
                 </Canvas>
             </GestureDetector>
+            <Text>{debugText[debugText.length-6]}</Text>
+            <Text>{debugText[debugText.length-5]}</Text>
+            <Text>{debugText[debugText.length-4]}</Text>
             <Text>{debugText[debugText.length-3]}</Text>
             <Text>{debugText[debugText.length-2]}</Text>
             <Text>{debugText[debugText.length-1]}</Text>
