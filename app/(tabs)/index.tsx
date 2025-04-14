@@ -146,7 +146,7 @@ export default function TabTwoScreen() {
     //console.log("BallFront ", JSON.stringify(BallFront))
     const [ scoreTeam, setScoreTeam ] = useState([0,0])
     const [ setsTeam, setSetsTeam ] = useState([0,0])
-    if(scoreTeam[0]+scoreTeam[1]+setsTeam[0]+setsTeam[1] === 0) {
+    if(!game.points.length) {
         console.log("FIRST INIT PLAYER POS ---------------------------------");
         renderServingPosition(teams[0], false, game,setsTeam[0]+setsTeam[1], fieldGraphicConstants);
     }
@@ -193,13 +193,18 @@ export default function TabTwoScreen() {
                 // Check if the ball is opposite the service area
                 if (event.x > width/2 !== game.ballX.value > width/2) {
                     logToUI("service -> pass")
-                    sideOutContinues = true;
+                    //sideOutContinues = true;
                     //sideOutState.value = 'pass';
                     currentPoint.teamTouches.push({
                         team: getOtherTeam(game.teams, currentTeamTouches.team),
                         touch: []
                     });
-
+                    renderReceivingPosition(
+                        event.x,event.y,
+                        game,
+                        currentPoint.set,
+                        fieldGraphicConstants
+                    );
                     //anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
                     //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
 
@@ -372,7 +377,7 @@ const styles = StyleSheet.create({
         fontSize: 44,
     },
     smallTextButton: {
-        fontSize: 44,
+        fontSize: 16,
     }
 });
 

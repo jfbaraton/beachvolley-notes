@@ -253,8 +253,8 @@ export const getClosestPlayer = (team:Team, ballX :number, ballY :number) :Playe
     return player1Dist < player2Dist ? team.players[0] : team.players[1];
 }
 
-export const renderReceivingPosition = (ballX:number, ballY:number, isSideSwapped :boolean, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
-    console.log("renderReceivingPosition ("+game.points.length+")", isSideSwapped, "--------------------------------------")
+export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
+    console.log("renderReceivingPosition ("+game.points.length+")", "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
     console.log("currentPoint ",currentPoint);
@@ -313,15 +313,15 @@ export const renderReceivingPosition = (ballX:number, ballY:number, isSideSwappe
     // isBallOnRightSide
     // serving/attacking team
     // blockerPlayer goes face the receiver, a bit in the center in case of option
-    blockerPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX),{ duration : 1000});
+    blockerPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX),{ duration : 1000});
     blockerPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY((90*ballY+10*fieldConstants.height/2)/100),{ duration : 500});
     // defenderPlayer stays back in the center, a bit more in the diagonal?
-    defenderPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
+    defenderPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
     defenderPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height- (70*ballY+30*fieldConstants.height/2)/100),{ duration : 500});
 
     // receiving team
     // receivingPlayer behind the ball
-    receivingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ?ballX+fieldConstants.ballsize:ballX-fieldConstants.ballsize),{ duration : 500});
+    receivingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ?ballX+fieldConstants.ballsize/2:ballX-fieldConstants.ballsize/2),{ duration : 500});
     receivingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(ballY),{ duration : 500});
     //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
     // receiverMatePlayer goes to the center, 2 m from the receiver, closer to the net
