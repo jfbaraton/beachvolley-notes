@@ -245,21 +245,6 @@ export default function TabTwoScreen() {
                 }
                 break;
             case 'set':
-                // Check if the ball stays in the set area
-                if (event.x > width/2) {
-                    console.log("set -> attack")
-                    sideOutContinues = true;
-                    //sideOutState.value = 'attack';
-                    anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
-                    anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
-                } else {
-                    console.log("set -> pass (crosses the net)")
-                    sideOutContinues = true;
-                    //sideOutState.value = 'pass';
-                    taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
-                    taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
-                }
-                break;
                 // Check if the ball stays in the pass area
                 if (event.x > width/2 === game.ballX.value > width/2) {
                     logToUI("set -> attack")
@@ -288,25 +273,29 @@ export default function TabTwoScreen() {
                 }
                 break;
             case 'attack':
-                // Check if the ball stays in the set area
-                if (event.x > width/2) {
-                    console.log("attack failed")
-                    sideOutContinues = false;
-                    //sideOutState.value = 'service';
-                    teamScores(0);
-                } else {
-                    console.log("attack -> pass")
-                    sideOutContinues = true;
+                // Check if the ball is opposite the service area
+                if (event.x > width/2 !== game.ballX.value > width/2) {
+                    logToUI("attack -> pass (crosses the net)")
+                    //sideOutContinues = true;
                     //sideOutState.value = 'pass';
-                    taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
-                    taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+                    currentPoint.teamTouches.push({
+                        team: getOtherTeam(game.teams, currentTeamTouches.team),
+                        touch: []
+                    });
+                    renderReceivingPosition(
+                        event.x,event.y,
+                        game,
+                        currentPoint.set,
+                        fieldGraphicConstants
+                    );
+                    //anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
+                    //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+
+                } else {
+                    logToUI("attack failed, 4 touches");
+
+                    teamScores(game.teams[0].id === currentTeamTouches.team.id ? 1 : 0);
                 }
-                break;
-        }
-        if(sideOutContinues) {
-            console.log("move ball ",validateBallX(event.x), validateBallY(event.y))
-            ballX.value = withTiming(validateBallX(event.x),{ duration : 1000});
-            ballY.value = withTiming(validateBallY(event.y),{ duration : 1000});
         }
     }
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
