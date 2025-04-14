@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
-import { ButtonGroup } from '@rneui/themed'
+import { ButtonGroup, Text } from '@rneui/themed'
 
 import { useWindowDimensions, StyleSheet, View  } from 'react-native';
-import {Canvas,Text, Circle, Group, useImage, Image} from "@shopify/react-native-skia";
+import {Canvas, Circle, Group, useImage, Image} from "@shopify/react-native-skia";
 import {useSharedValue, withTiming} from "react-native-reanimated";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import {
+    GestureDetector,
+    Gesture,
+    GestureStateChangeEvent,
+    TapGestureHandlerEventPayload
+} from "react-native-gesture-handler";
 
 import {
 initGame,
@@ -14,14 +19,20 @@ renderReceivingPosition,
 Player,
 Team,
 Touch,
-Game,
+Game, getOtherTeam,
 FieldGraphicConstants } from '@/utils/BeachVolleyUtils';
 
+// @ts-ignore
 import BallFront from '@/assets/sprites/ball.png';
+// @ts-ignore
 import FieldFront from '@/assets/sprites/field.jpg';
+// @ts-ignore
 import TaruFront from '@/assets/sprites/Taru.png';
+// @ts-ignore
 import NiinaFront from '@/assets/sprites/Niina.jpg';
+// @ts-ignore
 import AnaPatriciaFront from '@/assets/sprites/AnaPatricia.png';
+// @ts-ignore
 import DudaFront from '@/assets/sprites/Duda.jpg';
 
 export default function TabTwoScreen() {
@@ -46,16 +57,16 @@ export default function TabTwoScreen() {
     const [ lastServingTeam, setLastServingTeam ] = useState(0); // 0 = finland, 1 = brazil
     const [ debugText, setDebugText ] = useState(["debug...","?","?"]); // 0 = finland, 1 = brazil
 
-    const logToUI = (textToLog) => {
+    const logToUI = (textToLog : string) => {
         console.log(textToLog)
         debugText.push(textToLog)
         setDebugText(JSON.parse(JSON.stringify(debugText)))
     };
 
-    const validateBallX =   (oneBallX) => Math.min(Math.max(0,oneBallX-ballsize/2), width-ballsize)
-    const validateBallY =   (oneBallY) => Math.min(Math.max(0,oneBallY-ballsize/2), height-ballsize)
-    const validatePlayerX = (onePlayerX) => Math.min(Math.max(0,onePlayerX-playerSize/2), width-playerSize)
-    const validatePlayerY = (onePlayerY) => Math.min(Math.max(0,onePlayerY-playerSize/2), height-playerSize)
+    const validateBallX =   (oneBallX : number) => Math.min(Math.max(0,oneBallX-ballsize/2), width-ballsize)
+    const validateBallY =   (oneBallY : number) => Math.min(Math.max(0,oneBallY-ballsize/2), height-ballsize)
+    const validatePlayerX = (onePlayerX : number) => Math.min(Math.max(0,onePlayerX-playerSize/2), width-playerSize)
+    const validatePlayerY = (onePlayerY : number) => Math.min(Math.max(0,onePlayerY-playerSize/2), height-playerSize)
 
     const fieldGraphicConstants = {
         width: width,
@@ -76,42 +87,36 @@ export default function TabTwoScreen() {
         validatePlayerY: validatePlayerY
     } as FieldGraphicConstants;
 
-    const ball = useImage(BallFront.uri, {
-         maxWidth: 800,
-         onError(error, retry) {
+    const ball = useImage(BallFront.uri,
+         (error :Error)=> {
            console.error('Loading failed:', error.message);
          }
-    });
-    const field = useImage(FieldFront.uri, {
-         maxWidth: 800,
-         onError(error, retry) {
-           console.error('Loading failed:', error.message);
-         }
-    });
-    const taru = useImage(TaruFront.uri, {
-         maxWidth: 800,
-         onError(error, retry) {
-           console.error('Loading failed:', error.message);
-         }
-    });
-    const niina = useImage(NiinaFront.uri, {
-         maxWidth: 800,
-         onError(error, retry) {
-           console.error('Loading failed:', error.message);
-         }
-    });
-    const anaPatricia = useImage(AnaPatriciaFront.uri, {
-         maxWidth: 800,
-         onError(error, retry) {
-           console.error('Loading failed:', error.message);
-         }
-    });
-    const duda = useImage(DudaFront.uri, {
-         maxWidth: 800,
-         onError(error, retry) {
-           console.error('Loading failed:', error.message);
-         }
-    });
+    );
+    const field = useImage(FieldFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
+    const taru = useImage(TaruFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
+    const niina = useImage(NiinaFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
+    const anaPatricia = useImage(AnaPatriciaFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
+    const duda = useImage(DudaFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
 
     const ballX = useSharedValue(validateBallX(width/7))
     const ballY = useSharedValue(validateBallY(height/2))
@@ -146,7 +151,7 @@ export default function TabTwoScreen() {
         renderServingPosition(teams[0], false, game,setsTeam[0]+setsTeam[1], fieldGraphicConstants);
     }
 
-    const teamScores = (team) => {
+    const teamScores = (team : number) => {
         //console.log("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
         //console.log("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
         scoreTeam[team]++;
@@ -176,22 +181,22 @@ export default function TabTwoScreen() {
             fieldGraphicConstants);
         setLastServingTeam(team);
     }
-    const onFieldTouch = (event) => {
+    const onFieldTouch = (event : GestureStateChangeEvent<TapGestureHandlerEventPayload>) => {
         let sideOutContinues = false;
         const currentPoint = game.points[game.points.length-1];
         const currentTeamTouches = currentPoint.teamTouches[currentPoint.teamTouches.length-1];
         const currentTouch = currentTeamTouches.touch[currentTeamTouches.touch.length-1];
         const sideOutState = currentTouch.stateName;
         console.log("touch ",sideOutState, event)
-        switch (sideOutState.value) {
+        switch (sideOutState) {
             case 'service':
                 // Check if the ball is opposite the service area
-                if (event.x > width/2 !== ballX > width/2) {
+                if (event.x > width/2 !== game.ballX.value > width/2) {
                     logToUI("service -> pass")
                     sideOutContinues = true;
                     //sideOutState.value = 'pass';
                     currentPoint.teamTouches.push({
-                        team: game.teams.findFirst(oneTeam => oneTeam.id !== currentTeamTouches.team.id),
+                        team: getOtherTeam(game.teams, currentTeamTouches.team),
                         touch: []
                     });
 
@@ -207,13 +212,13 @@ export default function TabTwoScreen() {
                 if (event.x > width/2) {
                     console.log("pass -> set")
                     sideOutContinues = true;
-                    sideOutState.value = 'set';
+                    //sideOutState = 'set';
                     dudaX.value = withTiming(validatePlayerX(event.x),{ duration : 500});
                     dudaY.value = withTiming(validatePlayerY(event.y+ballsize/2),{ duration : 500});
                 } else {
                     console.log("pass -> pass")
                     sideOutContinues = true;
-                    sideOutState.value = 'pass';
+                    //sideOutState.value = 'pass';
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
@@ -223,13 +228,13 @@ export default function TabTwoScreen() {
                 if (event.x > width/2) {
                     console.log("set -> attack")
                     sideOutContinues = true;
-                    sideOutState.value = 'attack';
+                    //sideOutState.value = 'attack';
                     anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
                     anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 } else {
                     console.log("set -> pass")
                     sideOutContinues = true;
-                    sideOutState.value = 'pass';
+                    //sideOutState.value = 'pass';
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
@@ -239,12 +244,12 @@ export default function TabTwoScreen() {
                 if (event.x > width/2) {
                     console.log("attack failed")
                     sideOutContinues = false;
-                    sideOutState.value = 'service';
+                    //sideOutState.value = 'service';
                     teamScores(0);
                 } else {
                     console.log("attack -> pass")
                     sideOutContinues = true;
-                    sideOutState.value = 'pass';
+                    //sideOutState.value = 'pass';
                     taruX.value = withTiming(validatePlayerX(event.x-ballsize/2),{ duration : 500});
                     taruY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
                 }
@@ -268,13 +273,13 @@ export default function TabTwoScreen() {
                 selectedIndex={lastServingTeam}
                 onPress={teamScores}
                 containerStyle={{ marginBottom: 20 }}
-                textStyle={{ "font-size": "2.8rem" }}
+                textStyle={styles.textButton}
             />
             <ButtonGroup
                 buttons={['  '+setsTeam[0]+ '  ', '  '+setsTeam[1]+ '  ']}
                 selectedIndex={2}
                 containerStyle={{ marginBottom: 20 }}
-                textStyle={{ "font-size": "1rem" }}
+                textStyle={styles.smallTextButton}
             />
             <GestureDetector gesture={gestureTap}>
                 <Canvas style={{ width, height }} >
@@ -362,6 +367,12 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         backgroundColor: '#0553',
+    },
+    textButton: {
+        fontSize: 44,
+    },
+    smallTextButton: {
+        fontSize: 44,
     }
 });
 

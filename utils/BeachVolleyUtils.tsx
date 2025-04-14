@@ -31,7 +31,7 @@ export interface Team {
     id:string;
     players: Player[];
     startingSide: number; // 0 matches idx, 1 opposite of idx. team 0 is defaulting to left
-    prefersBlockId: number; // 0 no opinion, Player.id
+    prefersBlockId: string; // null no opinion, Player.id
 }
 
 export const initTeams = (
@@ -47,12 +47,12 @@ export const initTeams = (
         id : team1Name,
         players: [p1, p2],
         startingSide: 0, // 0 matches idx, 1 opposite of idx. team 0 is defaulting to left
-        prefersBlockId: p2.id, // 0 no opinion, Player.id
+        prefersBlockId: p2.id, // null no opinion, Player.id
     },{
         id : team2Name,
         players: [p3, p4],
         startingSide: 0, // 0 matches idx, 1 opposite of idx. team 0 is defaulting to left
-        prefersBlockId: 0, // 0 no opinion, Player.id
+        prefersBlockId: null, // null no opinion, Player.id
     }] as Team[];
 
     return result;
@@ -232,18 +232,29 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     game.ballY.value = withTiming(fieldConstants.validateBallY(fieldConstants.servingPosY),{ duration : 50});
 }
 
-export const getDistance(p1x:number,p1Y:number,p2x:number,p2Y:number) {
+export const getDistance = (p1x:number,p1Y:number,p2x:number,p2Y:number): number => {
     return Math.sqrt(Math.pow(p1x-p2x,2)+Math.pow(p1Y-p2Y,2));
 }
 
-export const getClosestPlayer(team:Team, ballX, ballY) {
+export const getOtherPlayer = (team:Team, playerId:string) :Player =>{
+    return team.players.find(onePlayer => onePlayer.id !== playerId) || team.players[0];
+}
+export const getOtherTeam = (teams:Team[], team:Team) :Team =>{
+    return teams.find(oneTeam => oneTeam.id !== team.id) || teams[0];
+}
+
+export const getPlayerById = (team:Team, playerId:string) :Player =>{
+    return team.players.find(onePlayer => onePlayer.id === playerId) || team.players[0];
+}
+
+export const getClosestPlayer = (team:Team, ballX :number, ballY :number) :Player =>{
     const player1Dist = getDistance(ballX, ballY, team.players[0].playerX.value, team.players[0].playerY.value);
     const player2Dist = getDistance(ballX, ballY, team.players[1].playerX.value, team.players[1].playerY.value);
     return player1Dist < player2Dist ? team.players[0] : team.players[1];
 }
 
 export const renderReceivingPosition = (ballX:number, ballY:number, isSideSwapped :boolean, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
-    console.log("renderReceivingPosition ("+game.points.length+")", currentServingTeam.id, isSideSwapped, "--------------------------------------")
+    console.log("renderReceivingPosition ("+game.points.length+")", isSideSwapped, "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
     console.log("currentPoint ",currentPoint);
@@ -251,18 +262,18 @@ export const renderReceivingPosition = (ballX:number, ballY:number, isSideSwappe
     const currentTeamTouches = currentPoint.teamTouches;
     console.log("currentTeamTouches ",currentTeamTouches);
 
-    let currentTouchArr = currentTouches[currentTouches.length-1].touch;
+    let currentTouchArr = currentTeamTouches[currentTeamTouches.length-1].touch;
     console.log("currentTouchArr ",currentTouchArr);
 
-    const receivingTeam = game.teams[game.teams[0].players[0].playerX <= fieldConstants.width/2 === ballX <= fieldConstants.width/2 ? 0:1] ;
+    const receivingTeam = game.teams[game.teams[0].players[0].playerX.value <= fieldConstants.width/2 === ballX <= fieldConstants.width/2 ? 0:1] ;
     console.log("receivingTeam ",JSON.stringify(receivingTeam));
     const receivingPlayer = getClosestPlayer(receivingTeam, ballX, ballY);
-    const receiverMatePlayer = receivingTeam.findFirst(onePlayer => onePlayer.id !== receivingPlayer.id);
+    const receiverMatePlayer = getOtherPlayer(receivingTeam, receivingPlayer.id);
     console.log("receivingPlayer ",receivingPlayer)
-    let serviceTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
-    serviceTouch.isFail = 0;
+    let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
+    attackTouch.isFail = false;
     const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
-    serviceTouch.endingSide = isBallOnRightSide ? 0:1;
+    attackTouch.endingSide = isBallOnRightSide ? 0:1;
     if(!currentTouchArr.length) {
         currentTouchArr.push({
             player: receivingPlayer,
@@ -271,7 +282,7 @@ export const renderReceivingPosition = (ballX:number, ballY:number, isSideSwappe
 
             stateName: 'pass', // 'service', 'pass', 'set', 'attack'
             //subStateName: string, // 'block', 'retouch afterblock', 'joust', spike, cut, pokie, rainbow, handset, bumpset, etc
-            startingSide: serviceTouch.endingSide, // 0 left, 1 right
+            startingSide: attackTouch.endingSide, // 0 left, 1 right
             //endingSide: number, // 0 left, 1 right
             //fromAcross: boolean, // 0 no, 1 if ball comes from a diagonal angle
             //toAcross: boolean, // 0 no, 1 if ball comes from a diagonal angle
@@ -286,73 +297,36 @@ export const renderReceivingPosition = (ballX:number, ballY:number, isSideSwappe
     const currentServingTeam = currentPoint.teamTouches[0].team;
     const currentServingPlayer = currentPoint.teamTouches[0].touch[0].player;
     const lastAttackingTeam = currentTeamTouches[currentTeamTouches.length-2].team;
-    const lastAttackingPlayer = serviceTouch.player;
-    const lastNotAttackingPlayer = lastAttackingTeam.findFirst(onePlayer => onePlayer.id !== lastAttackingPlayer.id);
+    const lastAttackingPlayer = attackTouch.player;
+    const lastNotAttackingPlayer = getOtherPlayer(lastAttackingTeam, lastAttackingPlayer.id);
     const servingTeam : boolean = firstServingTeam.players[0].id !== currentServingPlayer.id; // true if the current serving team is not the first serving team
 
     // if team has a preferred blocker
     // or not the server (service)
     // or the attacker (attack)
-    const blockerPlayer = lastAttackingTeam.prefersBlockId ? lastAttackingTeam.findFirst(onePlayer => onePlayer.id === lastAttackingTeam.prefersBlockId) :
-                           serviceTouch.stateName === 'service' ? lastNotAttackingPlayer: lastAttackingPlayer;
+    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
+                           attackTouch.stateName === 'service' ? lastNotAttackingPlayer: lastAttackingPlayer;
 
-    const defenderPlayer =  lastAttackingTeam.findFirst(onePlayer => onePlayer.id !== blockerPlayer.id);
-/*
-    let taruX = blockerPlayer.playerX; // blocker
-    let taruY = blockerPlayer.playerY;
-    let niinaX = defenderPlayer.playerX; // defender
-    let niinaY = defenderPlayer.playerY;
-    let anaPatriciaX = receivingPlayer.playerX; // receiver
-    let anaPatriciaY = receivingPlayer.playerY;
-    let dudaX = receiverMatePlayer.playerX; // future setter
-    let dudaY = receiverMatePlayer.playerY;
+    const defenderPlayer =  getOtherPlayer(lastAttackingTeam, blockerPlayer.id);
 
-    let p1X = taruX;
-    let p1Y= taruY;
-    let p2X= niinaX;
-    let p2Y= niinaY;
-    let p3X= anaPatriciaX;
-    let p3Y= anaPatriciaY;
-    let p4X= dudaX;
-    let p4Y= dudaY;
-    if(servingTeam) {
-        console.log("swap serving team ",servingTeam)
-        p3X= taruX;
-        p3Y= taruY;
-        p4X= niinaX;
-        p4Y= niinaY;
-        p1X= anaPatriciaX;
-        p1Y= anaPatriciaY;
-        p2X= dudaX;
-        p2Y= dudaY;
-    }
-    if (servingPlayer === 1) {
-        console.log("swap serving player")
-        let tmp = p1X;
-        p1X = p2X;
-        p2X = tmp;
-        tmp = p1Y;
-        p1Y = p2Y;
-        p2Y = tmp;
-    }*/
     const isBallInUpperField = ballY < fieldConstants.height/2;// from UI perspective, upper screen side
     // isBallOnRightSide
     // serving/attacking team
     // blockerPlayer goes face the receiver, a bit in the center in case of option
-    p1X.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX),{ duration : 1000});
-    p1Y.value = withTiming(fieldConstants.validatePlayerY((90*ballY+10*fieldConstants.height/2)/100),{ duration : 500});
+    blockerPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX),{ duration : 1000});
+    blockerPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY((90*ballY+10*fieldConstants.height/2)/100),{ duration : 500});
     // defenderPlayer stays back in the center, a bit more in the diagonal?
-    p2X.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
-    p2Y.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height- (70*ballY+30*fieldConstants.height/2)/100),{ duration : 500});
+    defenderPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
+    defenderPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height- (70*ballY+30*fieldConstants.height/2)/100),{ duration : 500});
 
     // receiving team
     // receivingPlayer behind the ball
-    p3X.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ?ballX+fieldConstants.ballsize:ballX-fieldConstants.ballsize),{ duration : 500});
-    p3Y.value = withTiming(fieldConstants.validatePlayerY(ballY),{ duration : 500});
+    receivingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ?ballX+fieldConstants.ballsize:ballX-fieldConstants.ballsize),{ duration : 500});
+    receivingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(ballY),{ duration : 500});
     //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
     // receiverMatePlayer goes to the center, 2 m from the receiver, closer to the net
-    p4X.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ? fieldConstants.width - fieldConstants.blockingX:fieldConstants.blockingX),{ duration : 500});
-    p4Y.value = withTiming(fieldConstants.validatePlayerY(isBallInUpperField ? ballY),{ duration : 500});
+    receiverMatePlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ? fieldConstants.width - fieldConstants.blockingX:fieldConstants.blockingX),{ duration : 500});
+    receiverMatePlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(isBallInUpperField ? ballY+fieldConstants.height/5:ballY-fieldConstants.height/5),{ duration : 500});
 
     //ball
     game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
