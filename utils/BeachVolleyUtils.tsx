@@ -28,6 +28,13 @@ export interface Player {
 
 }
 
+export interface CalculatedPlayer {
+    id: string;
+    x: number; // reference to the shared value playerX.value
+    y: number; // reference to the shared value playerY.value
+    reason?:string; // reason (block, drop, call, etc)
+}
+
 export interface Team {
     id:string;
     players: Player[];
@@ -72,7 +79,8 @@ export interface Touch {
     toAcross?: boolean; // 0 no, 1 if ball comes from a diagonal angle
     isScoring?: boolean; // 0 no, 1 yes
     isFail?: boolean; // 0 no, 1 yes
-    playerExplicitMoves?: object[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
+    playerExplicitMoves?: CalculatedPlayer[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
+    playerCalculatedMoves?: CalculatedPlayer[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
     setCall?: string; // 'up', 'middle', 'antenna', 'back'
 }
 
@@ -84,6 +92,7 @@ export interface TeamTouches {
 interface Point {
     teamTouches: TeamTouches[];
     set:number;
+    wonBy ?: Team; // team id
 }
 export interface Game {
     ballX: SharedValue<number>; // reference to the shared value ballX.value
@@ -95,6 +104,11 @@ export interface Game {
     points: Point[];
 }
 
+export interface TouchIndex {
+    pointIdx: number;       // Game.points index
+    teamTouchesIdx: number; // Game.points.teamTouches index
+    touchIdx: number;       // Game.points.teamTouches.touch index
+}
 
 export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[] ) : Game => {
     "worklet";
@@ -109,6 +123,152 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
     } as Game;
 
     return result;
+}
+
+const savePlayerPositions = (currentTouch:Touch, players:Player[]) => {
+    currentTouch.playerCalculatedMoves = players.map(onePlayer => {
+        return {
+            id: onePlayer.id,
+            x: onePlayer.playerX.value,
+            y: onePlayer.playerY.value
+        };
+    })
+}
+
+export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) => {
+    if(previousTouch && previousTouch.playerCalculatedMoves && previousTouch.playerCalculatedMoves.length) {
+        game.teams.forEach(oneTeam => oneTeam.players.forEach(
+            onePlayer => {
+                previousTouch.playerCalculatedMoves &&
+                previousTouch.playerCalculatedMoves.filter(oneCalc => oneCalc.id === onePlayer.id).forEach(oneCalc => {
+                    onePlayer.playerX.value = oneCalc.x;
+                    onePlayer.playerY.value = oneCalc.y;
+                })
+            }
+        ))
+        if(typeof previousTouch.ballX !== "undefined" && typeof previousTouch.ballY !== "undefined" ) {
+            game.ballX.value = previousTouch.ballX;
+            game.ballY.value = previousTouch.ballY;
+        }
+    }
+    if(currentTouch && currentTouch.playerCalculatedMoves && currentTouch.playerCalculatedMoves.length) {
+        game.teams.forEach(oneTeam => oneTeam.players.forEach(
+            onePlayer => {
+                currentTouch.playerCalculatedMoves &&
+                currentTouch.playerCalculatedMoves.filter(oneCalc => oneCalc.id === onePlayer.id).forEach(oneCalc => {
+                    onePlayer.playerX.value = withTiming(oneCalc.x, {duration: 500});
+                    onePlayer.playerY.value = withTiming(oneCalc.y, {duration: 500});
+                })
+            }
+        ))
+
+        if(typeof currentTouch.ballX !== "undefined" && typeof currentTouch.ballY !== "undefined" ) {
+            game.ballX.value = withTiming(currentTouch.ballX, {duration: 500});
+            game.ballY.value = withTiming(currentTouch.ballY, {duration: 500});
+        }
+    }
+}
+
+export const getPreviousPointIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
+
+    if(touchIndex.teamTouchesIdx>0) {
+        return {
+            pointIdx: touchIndex.pointIdx,
+            teamTouchesIdx: touchIndex.teamTouchesIdx-1,
+            touchIdx: game.points[touchIndex.pointIdx].teamTouches[touchIndex.teamTouchesIdx-1].touch.length-1
+        } as TouchIndex
+    }
+    if(touchIndex.pointIdx>0) {
+        return {
+            pointIdx: touchIndex.pointIdx-1,
+            teamTouchesIdx: game.points[touchIndex.pointIdx-1].teamTouches.length-1,
+            touchIdx: game.points[touchIndex.pointIdx-1].teamTouches[game.points[touchIndex.pointIdx-1].teamTouches.length-1].touch.length-1
+        } as TouchIndex
+    }
+
+    return null;
+}
+
+export const getPreviousTouchIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
+    if(touchIndex.touchIdx>0) {
+        return {
+            pointIdx: touchIndex.pointIdx,
+            teamTouchesIdx: touchIndex.teamTouchesIdx,
+            touchIdx: touchIndex.touchIdx-1
+        } as TouchIndex
+    }
+    return getPreviousPointIndex(game, touchIndex);
+}
+
+export const getNextTouchIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
+    if(touchIndex.touchIdx +1 <
+        game.points[touchIndex.pointIdx].teamTouches[touchIndex.teamTouchesIdx].touch.length) {
+
+        return {
+            pointIdx: touchIndex.pointIdx,
+            teamTouchesIdx: touchIndex.teamTouchesIdx,
+            touchIdx: touchIndex.touchIdx+1
+        } as TouchIndex;
+
+    }
+
+    return getNextPointIndex(game, touchIndex);
+}
+
+export const getNextPointIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
+
+    if(touchIndex.teamTouchesIdx +1 <
+        game.points[touchIndex.pointIdx].teamTouches.length) {
+
+        return {
+            pointIdx: touchIndex.pointIdx,
+            teamTouchesIdx: touchIndex.teamTouchesIdx + 1,
+            touchIdx: 0
+        } as TouchIndex
+    }
+
+    if(touchIndex.pointIdx +1 <
+        game.points.length) {
+
+        return {
+            pointIdx: touchIndex.pointIdx+1,
+            teamTouchesIdx: 0,
+            touchIdx: 0
+        } as TouchIndex
+    }
+
+    return null;
+}
+
+export const isSameTouchIndex = (touchIndex1: TouchIndex, touchIndex2: TouchIndex) : boolean => {
+    return touchIndex1.pointIdx === touchIndex2.pointIdx &&
+           touchIndex1.teamTouchesIdx === touchIndex2.teamTouchesIdx &&
+           touchIndex1.touchIdx === touchIndex2.touchIdx;
+}
+
+export const isLastTouchIndex = (game:Game, touchIndex: TouchIndex) : boolean => {
+    try {
+        return touchIndex.pointIdx === game.points.length-1 &&
+            touchIndex.teamTouchesIdx === game.points[touchIndex.pointIdx].teamTouches.length-1 &&
+            touchIndex.touchIdx === game.points[touchIndex.pointIdx].teamTouches[touchIndex.teamTouchesIdx].touch.length-1;
+    } catch (e) {
+        return false;
+    }
+}
+
+export const getTouch = (game:Game, touchIndex: TouchIndex | null ) : Touch | null => {
+    if(!game.points || !touchIndex || game.points.length <= touchIndex.pointIdx) return null;
+    if(!game.points[touchIndex.pointIdx].teamTouches || game.points[touchIndex.pointIdx].teamTouches.length <= touchIndex.teamTouchesIdx) return null;
+    if(!game.points[touchIndex.pointIdx].teamTouches[touchIndex.teamTouchesIdx].touch || game.points[touchIndex.pointIdx].teamTouches[touchIndex.teamTouchesIdx].touch.length <= touchIndex.touchIdx) return null;
+    return game.points[touchIndex.pointIdx].teamTouches[touchIndex.teamTouchesIdx].touch[touchIndex.touchIdx];
+}
+
+export const renderTouchIndex = (game:Game, touchIndex: TouchIndex) => {
+    renderTouch(
+        game,
+        getTouch(game, touchIndex) || {} as Touch,
+        getTouch(game, getPreviousTouchIndex(game, touchIndex)) || {} as Touch,
+        )
 }
 
 export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -231,6 +391,7 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     p4Y.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height - fieldConstants.receiverY),{ duration : 500});
     game.ballX.value = withTiming(fieldConstants.validateBallX(servingTeam !== isSideSwapped ? fieldConstants.width - (fieldConstants.servingPosX+fieldConstants.ballsize):(fieldConstants.servingPosX+fieldConstants.ballsize)),{ duration : 50});
     game.ballY.value = withTiming(fieldConstants.validateBallY(fieldConstants.servingPosY),{ duration : 50});
+    savePlayerPositions(currentTouch, game.teams.flatMap(oneTeam => oneTeam.players));
 }
 
 export const getDistance = (p1x:number,p1Y:number,p2x:number,p2Y:number): number => {
@@ -332,6 +493,7 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
     //ball
     game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
     game.ballY.value = withTiming(fieldConstants.validateBallY(ballY),{ duration : 50});
+    savePlayerPositions(currentTouch, game.teams.flatMap(oneTeam => oneTeam.players));
 }
 
 export const renderSettingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -425,6 +587,7 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
     //ball
     game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
     game.ballY.value = withTiming(fieldConstants.validateBallY(ballY),{ duration : 50});
+    savePlayerPositions(currentTouch, game.teams.flatMap(oneTeam => oneTeam.players));
 }
 
 export const renderAttackPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -505,4 +668,7 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
     //ball
     game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
     game.ballY.value = withTiming(fieldConstants.validateBallY(ballY),{ duration : 50});
+    savePlayerPositions(currentTouch, game.teams.flatMap(oneTeam => oneTeam.players));
 }
+
+

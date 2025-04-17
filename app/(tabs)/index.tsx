@@ -21,8 +21,16 @@ import {
     Player,
     Team,
     Touch,
-    Game, getOtherTeam,
-FieldGraphicConstants } from '@/utils/BeachVolleyUtils';
+    Game,
+    getOtherTeam,
+    FieldGraphicConstants,
+    TouchIndex,
+    isLastTouchIndex,
+    renderTouch,
+    renderTouchIndex,
+    getNextPointIndex,
+    getNextTouchIndex, getPreviousTouchIndex, getPreviousPointIndex
+} from '@/utils/BeachVolleyUtils';
 
 // @ts-ignore
 import BallFront from '@/assets/sprites/ball.png';
@@ -148,6 +156,13 @@ export default function TabTwoScreen() {
         teams
     ));
     //logToUI("BallFront ", JSON.stringify(BallFront))
+
+    const [ isEditMode, setIsEditMode ] = useState(true)
+    const [ currentTouchIdx, setCurrentTouchIdx ] = useState({
+        pointIdx: 0,       // Game.points index
+        teamTouchesIdx: 0, // Game.points.teamTouches index
+        touchIdx: 0        // Game.points.teamTouches.touch index
+    } as TouchIndex);
     const [ scoreTeam, setScoreTeam ] = useState([0,0])
     const [ setsTeam, setSetsTeam ] = useState([0,0])
     if(!game.points.length) {
@@ -160,16 +175,46 @@ export default function TabTwoScreen() {
         switch (buttonIdx) {
             case 0:
                 logToUI("gotoMove previous Point");
+                const prevPointIdx = getPreviousPointIndex(game, currentTouchIdx);
+                if(prevPointIdx) {
+                    setCurrentTouchIdx(prevPointIdx);
+                } else {
+                    logToUI("already first point");
+                }
                 break;
             case 1:
                 logToUI("gotoMove previous touch");
+                const prevTouchIdx = getPreviousTouchIndex(game, currentTouchIdx);
+                if(prevTouchIdx) {
+                    setCurrentTouchIdx(prevTouchIdx);
+                } else {
+                    logToUI("already first touch");
+                }
                 break;
             case 2:
                 logToUI("gotoMove Next touch");
+                const nextTouchIdx = getNextTouchIndex(game, currentTouchIdx);
+                if(nextTouchIdx) {
+                    setCurrentTouchIdx(nextTouchIdx);
+                } else {
+                    logToUI("already last point");
+                }
                 break;
             case 3:
                 logToUI("gotoMove Next Point");
+                const nextPointIdx = getNextPointIndex(game, currentTouchIdx);
+                if(nextPointIdx) {
+                    setCurrentTouchIdx(nextPointIdx);
+                } else {
+                    logToUI("already last touch");
+                }
                 break;
+
+        }
+        if(isLastTouchIndex(game, currentTouchIdx)) {
+            setIsEditMode(true)
+        } else {
+            setIsEditMode(false)
         }
     }
     const teamScores = (team : number) => {
@@ -187,9 +232,9 @@ export default function TabTwoScreen() {
         }
         setScoreTeam(JSON.parse(JSON.stringify(scoreTeam)));
         //renderServingPosition(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
-        logToUI("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
-        logToUI("rotation swap... ", (scoreTeam[0]+scoreTeam[1])/rotationPace)
-        logToUI("rotation swap2... ", Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2)
+        logToUI("team "+team+" scores... "+ ''+scoreTeam[0]+ ''+scoreTeam[1])
+        logToUI("rotation swap... "+ (scoreTeam[0]+scoreTeam[1])/rotationPace)
+        logToUI("rotation swap2... "+ Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2)
         game.points.push({
             set: setsTeam[0]+setsTeam[1],
             teamTouches: []
@@ -208,117 +253,126 @@ export default function TabTwoScreen() {
         const currentTeamTouches = currentPoint.teamTouches[currentPoint.teamTouches.length-1];
         const currentTouch = currentTeamTouches.touch[currentTeamTouches.touch.length-1];
         const sideOutState = currentTouch.stateName;
-        logToUI("touch ",sideOutState, event)
-        switch (sideOutState) {
-            case 'service':
-                // Check if the ball is opposite the service area
-                if (event.x > width/2 !== game.ballX.value > width/2) {
-                    logToUI("service -> pass")
-                    //sideOutContinues = true;
-                    //sideOutState.value = 'pass';
-                    currentPoint.teamTouches.push({
-                        team: getOtherTeam(game.teams, currentTeamTouches.team),
-                        touch: []
-                    });
-                    renderReceivingPosition(
-                        event.x,event.y,
-                        game,
-                        currentPoint.set,
-                        fieldGraphicConstants
-                    );
-                    //anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
-                    //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+        logToUI("touch "+sideOutState+" "+ event)
+        if(isEditMode) {
 
-                } else {
-                    logToUI("service does not cross? click on the score or serve again");
-                }
-                break;
-            case 'pass':
-                // Check if the ball stays in the pass area
-                if (event.x > width/2 === (currentTouch.ballX || game.ballX.value) > width/2) {
-                    logToUI("pass -> set")
-                    //sideOutContinues = true;
-                    //sideOutState.value = 'pass';
-                    renderSettingPosition(
-                        event.x,event.y,
-                        game,
-                        currentPoint.set,
-                        fieldGraphicConstants
-                    );
-                } else {
-                    logToUI("pass -> pass")
-                    //sideOutContinues = true;
-                    //sideOutState.value = 'pass';
-                    currentPoint.teamTouches.push({
-                        team: getOtherTeam(game.teams, currentTeamTouches.team),
-                        touch: []
-                    });
-                    renderReceivingPosition(
-                        event.x,event.y,
-                        game,
-                        currentPoint.set,
-                        fieldGraphicConstants
-                    );
-                }
-                break;
-            case 'set':
-                // Check if the ball stays in the pass area
-                if (event.x > width/2 === (currentTouch.ballX || game.ballX.value) > width/2) {
-                    logToUI("set -> attack")
-                    //sideOutContinues = true;
-                    //sideOutState.value = 'pass';
-                    renderAttackPosition(
-                        event.x,event.y,
-                        game,
-                        currentPoint.set,
-                        fieldGraphicConstants
-                    );
-                } else {
-                    logToUI("set -> pass (crosses the net)")
-                    //sideOutContinues = true;
-                    //sideOutState.value = 'pass';
-                    currentPoint.teamTouches.push({
-                        team: getOtherTeam(game.teams, currentTeamTouches.team),
-                        touch: []
-                    });
-                    renderReceivingPosition(
-                        event.x,event.y,
-                        game,
-                        currentPoint.set,
-                        fieldGraphicConstants
-                    );
-                }
-                break;
-            case 'attack':
-                // Check if the ball is opposite the service area
-                if (event.x > width/2 !== (currentTouch.ballX || game.ballX.value) > width/2) {
-                    logToUI("attack -> pass (crosses the net)")
-                    //sideOutContinues = true;
-                    //sideOutState.value = 'pass';
-                    currentPoint.teamTouches.push({
-                        team: getOtherTeam(game.teams, currentTeamTouches.team),
-                        touch: []
-                    });
-                    renderReceivingPosition(
-                        event.x,event.y,
-                        game,
-                        currentPoint.set,
-                        fieldGraphicConstants
-                    );
-                    //anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
-                    //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
+            switch (sideOutState) {
+                case 'service':
+                    // Check if the ball is opposite the service area
+                    if (event.x > width/2 !== game.ballX.value > width/2) {
+                        logToUI("service -> pass")
+                        //sideOutContinues = true;
+                        //sideOutState.value = 'pass';
+                        currentPoint.teamTouches.push({
+                            team: getOtherTeam(game.teams, currentTeamTouches.team),
+                            touch: []
+                        });
+                        renderReceivingPosition(
+                            event.x,event.y,
+                            game,
+                            currentPoint.set,
+                            fieldGraphicConstants
+                        );
+                        //anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
+                        //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
 
-                } else {
-                    logToUI("attack failed, 4 touches");
+                    } else {
+                        logToUI("service does not cross? click on the score or serve again");
+                    }
+                    break;
+                case 'pass':
+                    // Check if the ball stays in the pass area
+                    if (event.x > width/2 === (currentTouch.ballX || game.ballX.value) > width/2) {
+                        logToUI("pass -> set")
+                        //sideOutContinues = true;
+                        //sideOutState.value = 'pass';
+                        renderSettingPosition(
+                            event.x,event.y,
+                            game,
+                            currentPoint.set,
+                            fieldGraphicConstants
+                        );
+                    } else {
+                        logToUI("pass -> pass")
+                        //sideOutContinues = true;
+                        //sideOutState.value = 'pass';
+                        currentPoint.teamTouches.push({
+                            team: getOtherTeam(game.teams, currentTeamTouches.team),
+                            touch: []
+                        });
+                        renderReceivingPosition(
+                            event.x,event.y,
+                            game,
+                            currentPoint.set,
+                            fieldGraphicConstants
+                        );
+                    }
+                    break;
+                case 'set':
+                    // Check if the ball stays in the pass area
+                    if (event.x > width/2 === (currentTouch.ballX || game.ballX.value) > width/2) {
+                        logToUI("set -> attack")
+                        //sideOutContinues = true;
+                        //sideOutState.value = 'pass';
+                        renderAttackPosition(
+                            event.x,event.y,
+                            game,
+                            currentPoint.set,
+                            fieldGraphicConstants
+                        );
+                    } else {
+                        logToUI("set -> pass (crosses the net)")
+                        //sideOutContinues = true;
+                        //sideOutState.value = 'pass';
+                        currentPoint.teamTouches.push({
+                            team: getOtherTeam(game.teams, currentTeamTouches.team),
+                            touch: []
+                        });
+                        renderReceivingPosition(
+                            event.x,event.y,
+                            game,
+                            currentPoint.set,
+                            fieldGraphicConstants
+                        );
+                    }
+                    break;
+                case 'attack':
+                    // Check if the ball is opposite the service area
+                    if (event.x > width/2 !== (currentTouch.ballX || game.ballX.value) > width/2) {
+                        logToUI("attack -> pass (crosses the net)")
+                        //sideOutContinues = true;
+                        //sideOutState.value = 'pass';
+                        currentPoint.teamTouches.push({
+                            team: getOtherTeam(game.teams, currentTeamTouches.team),
+                            touch: []
+                        });
+                        renderReceivingPosition(
+                            event.x,event.y,
+                            game,
+                            currentPoint.set,
+                            fieldGraphicConstants
+                        );
+                        //anaPatriciaX.value = withTiming(validatePlayerX(event.x+ballsize/2),{ duration : 500});
+                        //anaPatriciaY.value = withTiming(validatePlayerY(event.y),{ duration : 500});
 
-                    teamScores(game.teams[0].id === currentTeamTouches.team.id ? 1 : 0);
-                }
+                    } else {
+                        logToUI("attack failed, 4 touches");
+
+                        teamScores(game.teams[0].id === currentTeamTouches.team.id ? 1 : 0);
+                    }
+            }
+
+        } else {
+            logToUI("not in edit mode, touch ignored");
         }
     }
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
 
     if (!ball || !field || !taru || !niina || !anaPatricia || !duda) {
         return <Text>Image is loading...</Text>;
+    }
+    if(!isEditMode) {
+        renderTouchIndex(game,currentTouchIdx);
     }
     return (
         <View style={styles.container}>
