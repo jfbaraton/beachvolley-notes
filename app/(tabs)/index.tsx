@@ -147,17 +147,34 @@ export default function TabTwoScreen() {
         ballY,
         teams
     ));
-    //console.log("BallFront ", JSON.stringify(BallFront))
+    //logToUI("BallFront ", JSON.stringify(BallFront))
     const [ scoreTeam, setScoreTeam ] = useState([0,0])
     const [ setsTeam, setSetsTeam ] = useState([0,0])
     if(!game.points.length) {
-        console.log("FIRST INIT PLAYER POS ---------------------------------");
+        logToUI("FIRST INIT PLAYER POS ---------------------------------");
         renderServingPosition(teams[0], false, game,setsTeam[0]+setsTeam[1], fieldGraphicConstants);
     }
 
+    const gotoMove = (buttonIdx : number) => {
+        //logToUI("gotoMove "+buttonIdx)
+        switch (buttonIdx) {
+            case 0:
+                logToUI("gotoMove previous Point");
+                break;
+            case 1:
+                logToUI("gotoMove previous touch");
+                break;
+            case 2:
+                logToUI("gotoMove Next touch");
+                break;
+            case 3:
+                logToUI("gotoMove Next Point");
+                break;
+        }
+    }
     const teamScores = (team : number) => {
-        //console.log("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
-        //console.log("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
+        //logToUI("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
+        //logToUI("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
         scoreTeam[team]++;
         const isLastSet = setsTeam[0]+setsTeam[1] >=2;
         const rotationPace = isLastSet ? 5 : 7;
@@ -170,9 +187,9 @@ export default function TabTwoScreen() {
         }
         setScoreTeam(JSON.parse(JSON.stringify(scoreTeam)));
         //renderServingPosition(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
-        console.log("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
-        console.log("rotation swap... ", (scoreTeam[0]+scoreTeam[1])/rotationPace)
-        console.log("rotation swap2... ", Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2)
+        logToUI("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
+        logToUI("rotation swap... ", (scoreTeam[0]+scoreTeam[1])/rotationPace)
+        logToUI("rotation swap2... ", Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2)
         game.points.push({
             set: setsTeam[0]+setsTeam[1],
             teamTouches: []
@@ -191,7 +208,7 @@ export default function TabTwoScreen() {
         const currentTeamTouches = currentPoint.teamTouches[currentPoint.teamTouches.length-1];
         const currentTouch = currentTeamTouches.touch[currentTeamTouches.touch.length-1];
         const sideOutState = currentTouch.stateName;
-        console.log("touch ",sideOutState, event)
+        logToUI("touch ",sideOutState, event)
         switch (sideOutState) {
             case 'service':
                 // Check if the ball is opposite the service area
@@ -375,6 +392,14 @@ export default function TabTwoScreen() {
             <Text>{debugText[debugText.length-3]}</Text>
             <Text>{debugText[debugText.length-2]}</Text>
             <Text>{debugText[debugText.length-1]}</Text>
+
+            <ButtonGroup
+                buttons={[ '\u{300a}', '\u{2329}', '\u{232a}', '\u{300b}']}
+                selectedIndex={10}
+                containerStyle={{ marginBottom: 20 }}
+                textStyle={styles.textButton}
+                onPress={gotoMove}
+            />
         </View>
     );
 }
