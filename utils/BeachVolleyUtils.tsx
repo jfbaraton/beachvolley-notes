@@ -1,4 +1,4 @@
-import { withTiming} from "react-native-reanimated";
+import { withTiming, withSequence} from "react-native-reanimated";
 import type { SharedValue } from "react-native-reanimated";
 
 export interface FieldGraphicConstants {
@@ -141,19 +141,26 @@ const savePlayerPositions = (currentTouch:Touch, players:Player[]) => {
 }
 
 export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) => {
+    game.teams.forEach(oneTeam => oneTeam.players.forEach(
+                onePlayer => {
+                    onePlayer.plannedMoveXSeq = [];
+                    onePlayer.plannedMoveYSeq = [];
+                }));
+    game.plannedBallMoveXSeq = [];
+    game.plannedBallMoveYSeq = [];
     if(previousTouch && previousTouch.playerCalculatedMoves && previousTouch.playerCalculatedMoves.length) {
         game.teams.forEach(oneTeam => oneTeam.players.forEach(
             onePlayer => {
                 previousTouch.playerCalculatedMoves &&
                 previousTouch.playerCalculatedMoves.filter(oneCalc => oneCalc.id === onePlayer.id).forEach(oneCalc => {
-                    onePlayer.playerX.value = oneCalc.x;
-                    onePlayer.playerY.value = oneCalc.y;
+                    onePlayer.plannedMoveXSeq.push( withTiming(oneCalc.x, {duration: 50}));
+                    onePlayer.plannedMoveYSeq.push( withTiming(oneCalc.y, {duration: 50}));
                 })
             }
         ))
         if(typeof previousTouch.ballX !== "undefined" && typeof previousTouch.ballY !== "undefined" ) {
-            game.ballX.value = previousTouch.ballX;
-            game.ballY.value = previousTouch.ballY;
+            game.plannedBallMoveXSeq.push( withTiming(previousTouch.ballX, {duration: 50}));
+            game.plannedBallMoveYSeq.push( withTiming(previousTouch.ballY, {duration: 50}));
         }
     }
     if(currentTouch && currentTouch.playerCalculatedMoves && currentTouch.playerCalculatedMoves.length) {
@@ -161,16 +168,32 @@ export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) 
             onePlayer => {
                 currentTouch.playerCalculatedMoves &&
                 currentTouch.playerCalculatedMoves.filter(oneCalc => oneCalc.id === onePlayer.id).forEach(oneCalc => {
-                    onePlayer.playerX.value = withTiming(oneCalc.x, {duration: 500});
-                    onePlayer.playerY.value = withTiming(oneCalc.y, {duration: 500});
+                    onePlayer.plannedMoveXSeq.push( withTiming(oneCalc.x, {duration: 500}));
+                    onePlayer.plannedMoveYSeq.push( withTiming(oneCalc.y, {duration: 500}));
                 })
             }
         ))
 
         if(typeof currentTouch.ballX !== "undefined" && typeof currentTouch.ballY !== "undefined" ) {
-            game.ballX.value = withTiming(currentTouch.ballX, {duration: 500});
-            game.ballY.value = withTiming(currentTouch.ballY, {duration: 500});
+            game.plannedBallMoveXSeq.push( withTiming(currentTouch.ballX, {duration: 500}));
+            game.plannedBallMoveYSeq.push( withTiming(currentTouch.ballY, {duration: 500}));
         }
+    }
+
+    game.teams.forEach(oneTeam => oneTeam.players.forEach(
+        onePlayer => {
+            if(onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.length) {
+                onePlayer.playerX.value = withSequence(...onePlayer.plannedMoveXSeq)
+            }
+            if(onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.length) {
+                onePlayer.playerY.value = withSequence(...onePlayer.plannedMoveYSeq)
+            }
+        }));
+    if(game.plannedBallMoveXSeq && game.plannedBallMoveXSeq.length) {
+        game.ballX.value = withSequence(...game.plannedBallMoveXSeq)
+    }
+    if(game.plannedBallMoveYSeq && game.plannedBallMoveYSeq.length) {
+        game.ballY.value = withSequence(...game.plannedBallMoveYSeq)
     }
 }
 
