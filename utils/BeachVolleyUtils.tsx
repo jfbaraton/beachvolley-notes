@@ -104,6 +104,11 @@ export interface Game {
     points: Point[];
 }
 
+export interface Score {
+    scoreTeam : number[];
+    setsTeam : number[];
+}
+
 export interface TouchIndex {
     pointIdx: number;       // Game.points index
     teamTouchesIdx: number; // Game.points.teamTouches index
@@ -269,6 +274,29 @@ export const renderTouchIndex = (game:Game, touchIndex: TouchIndex) => {
         getTouch(game, touchIndex) || {} as Touch,
         getTouch(game, getPreviousTouchIndex(game, touchIndex)) || {} as Touch,
         )
+}
+
+export const calculateScore(game:Game, currentTouchIndex:TouchIndex) : Score {
+    const result = {
+        scoreTeam : [0,0],
+        setsTeam : [0,0]
+    } as Score;
+    if(!game || !game.points.length) return result;
+    game.points.forEach( (onePoint, pointIdx) => {
+        if(onePoint.wonBy && (!currentTouchIndex || pointIdx <=  currentTouchIndex.pointIdx)) {
+            let team = game.teams[0].id === onePoint.wonBy.id ? 0 : 1;
+            result.scoreTeam[team]++;
+            const isLastSet = result.setsTeam[0]+result.setsTeam[1] >=2;
+            const rotationPace = isLastSet ? 5 : 7;
+            const pointsPerSet = isLastSet ? 15 : 21;
+            if(  result.scoreTeam[team] >= pointsPerSet && result.scoreTeam[team]-result.scoreTeam[1-team] >= 2) {
+                result.setsTeam[team]++;
+                result.scoreTeam[0]=0;
+                result.scoreTeam[1]=0;
+            }
+        }
+    })
+    return result;
 }
 
 export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
