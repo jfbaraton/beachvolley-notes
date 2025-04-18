@@ -171,7 +171,7 @@ export default function TabTwoScreen() {
     } as Score)
     if(!game.points.length) {
         logToUI("FIRST INIT PLAYER POS ---------------------------------");
-        renderServingPosition(teams[0], false, game,setsTeam[0]+setsTeam[1], fieldGraphicConstants);
+        renderServingPosition(teams[0], false, game,score.setsTeam[0]+score.setsTeam[1], fieldGraphicConstants);
     }
 
     const gotoMove = (buttonIdx : number) => {
@@ -237,6 +237,8 @@ export default function TabTwoScreen() {
             teamTouchesIdx: 0,
             touchIdx: 0
         } as TouchIndex);
+        const isLastSet = newScore.setsTeam[0]+newScore.setsTeam[1] >=2;
+        const rotationPace = isLastSet ? 5 : 7;
         //renderServingPosition(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
         logToUI("team "+team+" scores... "+ ''+newScore.scoreTeam[0]+ ''+newScore.scoreTeam[1])
         logToUI("rotation swap... "+ (newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)

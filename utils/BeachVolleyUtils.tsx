@@ -276,7 +276,7 @@ export const renderTouchIndex = (game:Game, touchIndex: TouchIndex) => {
         )
 }
 
-export const calculateScore(game:Game, currentTouchIndex:TouchIndex) : Score {
+export const calculateScore = (game:Game, currentTouchIndex:TouchIndex) : Score => {
     const result = {
         scoreTeam : [0,0],
         setsTeam : [0,0]
