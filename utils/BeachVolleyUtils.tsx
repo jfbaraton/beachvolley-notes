@@ -130,12 +130,14 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
     return result;
 }
 
-const savePlayerPositions = (currentTouch:Touch, players:Player[]) => {
-    currentTouch.playerCalculatedMoves = players.map(onePlayer => {
+const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPositions:object[][]) => {
+    currentTouch.ballX = ballx;
+    currentTouch.ballY = bally;
+    currentTouch.playerCalculatedMoves = playerPositions.map(onePlayerPosition => {
         return {
-            id: onePlayer.id,
-            x: onePlayer.playerX.value,
-            y: onePlayer.playerY.value
+            id: onePlayerPosition[0],
+            x: onePlayerPosition[1],
+            y: onePlayerPosition[2]
         };
     })
 }
@@ -394,31 +396,43 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     const servingTeam : boolean = firstServingTeam.id !== currentServingTeam.id; // true if the current serving team is not the first serving team
 
 
+    let taruId = game.teams[0].players[0].id;
     let taruX = game.teams[0].players[0].playerX;
     let taruY = game.teams[0].players[0].playerY;
+    let niinaId = game.teams[0].players[1].id;
     let niinaX = game.teams[0].players[1].playerX;
     let niinaY = game.teams[0].players[1].playerY;
+    let anaPatriciaId = game.teams[1].players[0].id;
     let anaPatriciaX = game.teams[1].players[0].playerX;
     let anaPatriciaY = game.teams[1].players[0].playerY;
+    let dudaId = game.teams[1].players[1].id;
     let dudaX = game.teams[1].players[1].playerX;
     let dudaY = game.teams[1].players[1].playerY;
 
+    let p1id = taruId;
     let p1X = taruX;
     let p1Y= taruY;
+    let p2id = niinaId;
     let p2X= niinaX;
     let p2Y= niinaY;
+    let p3id = anaPatriciaId;
     let p3X= anaPatriciaX;
     let p3Y= anaPatriciaY;
+    let p4id = dudaId;
     let p4X= dudaX;
     let p4Y= dudaY;
     if(servingTeam) {
         console.log("swap serving team ",servingTeam)
+        p3id= taruId;
         p3X= taruX;
         p3Y= taruY;
+        p4id= niinaId;
         p4X= niinaX;
         p4Y= niinaY;
+        p1id= anaPatriciaId;
         p1X= anaPatriciaX;
         p1Y= anaPatriciaY;
+        p2id= dudaId;
         p2X= dudaX;
         p2Y= dudaY;
     }
@@ -427,22 +441,43 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
         let tmp = p1X;
         p1X = p2X;
         p2X = tmp;
+
         tmp = p1Y;
         p1Y = p2Y;
         p2Y = tmp;
+
+        tmp = p1id;
+        p1id = p2id;
+        p2id = tmp;
     }
-    p1X.value = withTiming(fieldConstants.validatePlayerX(servingTeam !== isSideSwapped? fieldConstants.width - fieldConstants.servingPosX :fieldConstants.servingPosX),{ duration : 500});
-    p1Y.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.servingPosY),{ duration : 500});
-    p2X.value = withTiming(fieldConstants.validatePlayerX(servingTeam !== isSideSwapped ? fieldConstants.width - fieldConstants.serverMateX:fieldConstants.serverMateX),{ duration : 500});
-    p2Y.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.serverMateY),{ duration : 500});
-    p3X.value = withTiming(fieldConstants.validatePlayerX(servingTeam !== isSideSwapped ? fieldConstants.width - fieldConstants.receiverX:fieldConstants.receiverX),{ duration : 500});
-    p3Y.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.receiverY),{ duration : 500});
+    const p1xTarget = fieldConstants.validatePlayerX(servingTeam !== isSideSwapped? fieldConstants.width - fieldConstants.servingPosX :fieldConstants.servingPosX);
+    p1X.value = withTiming(p1xTarget,{ duration : 500});
+    const p1yTarget = fieldConstants.validatePlayerY(fieldConstants.servingPosY);
+    p1Y.value = withTiming(p1yTarget,{ duration : 500});
+    const p2xTarget = fieldConstants.validatePlayerX(servingTeam !== isSideSwapped ? fieldConstants.width - fieldConstants.serverMateX:fieldConstants.serverMateX);
+    p2X.value = withTiming(p2xTarget,{ duration : 500});
+    const p2yTarget = fieldConstants.validatePlayerY(fieldConstants.serverMateY);
+    p2Y.value = withTiming(p2yTarget,{ duration : 500});
+    const p3xTarget = fieldConstants.validatePlayerX(servingTeam !== isSideSwapped ? fieldConstants.width - fieldConstants.receiverX:fieldConstants.receiverX);
+    p3X.value = withTiming(p3xTarget,{ duration : 500});
+    const p3yTarget = fieldConstants.validatePlayerY(fieldConstants.receiverY);
+    p3Y.value = withTiming(p3yTarget,{ duration : 500});
     //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
-    p4X.value = withTiming(fieldConstants.validatePlayerX(servingTeam !== isSideSwapped ? fieldConstants.width - fieldConstants.receiverX:fieldConstants.receiverX),{ duration : 500});
-    p4Y.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height - fieldConstants.receiverY),{ duration : 500});
-    game.ballX.value = withTiming(fieldConstants.validateBallX(servingTeam !== isSideSwapped ? fieldConstants.width - (fieldConstants.servingPosX+fieldConstants.ballsize):(fieldConstants.servingPosX+fieldConstants.ballsize)),{ duration : 50});
-    game.ballY.value = withTiming(fieldConstants.validateBallY(fieldConstants.servingPosY),{ duration : 50});
-    savePlayerPositions(currentTouch, game.teams.flatMap(oneTeam => oneTeam.players));
+    const p4xTarget = fieldConstants.validatePlayerX(servingTeam !== isSideSwapped ? fieldConstants.width - fieldConstants.receiverX:fieldConstants.receiverX);
+    p4X.value = withTiming(p4xTarget,{ duration : 500});
+    const p4yTarget = fieldConstants.validatePlayerY(fieldConstants.height - fieldConstants.receiverY);
+    p4Y.value = withTiming(p4yTarget,{ duration : 500});
+    const ballxTarget = fieldConstants.validateBallX(servingTeam !== isSideSwapped ? fieldConstants.width - (fieldConstants.servingPosX+fieldConstants.ballsize):(fieldConstants.servingPosX+fieldConstants.ballsize));
+    game.ballX.value = withTiming(ballxTarget,{ duration : 50});
+    const ballyTarget = fieldConstants.validateBallY(fieldConstants.servingPosY);
+    game.ballY.value = withTiming(ballyTarget,{ duration : 50});
+    savePositions(currentTouch,
+        ballxTarget, ballyTarget,
+        [[ p1id,p1xTarget,p1yTarget],
+         [ p2id,p2xTarget,p2yTarget],
+         [ p3id,p3xTarget,p3yTarget],
+         [ p4id,p4xTarget,p4yTarget]
+        ]);
 }
 
 export const getDistance = (p1x:number,p1Y:number,p2x:number,p2Y:number): number => {
@@ -526,25 +561,41 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
     // isBallOnRightSide
     // serving/attacking team
     // blockerPlayer goes face the receiver, a bit in the center in case of option
-    blockerPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX),{ duration : 1000});
-    blockerPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY((90*ballY+10*fieldConstants.height/2)/100),{ duration : 500});
+    const blockerPlayerxTarget = fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX);
+    blockerPlayer.playerX.value = withTiming(blockerPlayerxTarget,{ duration : 1000});
+    const blockerPlayeryTarget = fieldConstants.validatePlayerY((90*ballY+10*fieldConstants.height/2)/100);
+    blockerPlayer.playerY.value = withTiming(blockerPlayeryTarget,{ duration : 500});
     // defenderPlayer stays back in the center, a bit more in the diagonal?
-    defenderPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
-    defenderPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height- (70*ballY+30*fieldConstants.height/2)/100),{ duration : 500});
+    const defenderPlayerxTarget = fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX);
+    defenderPlayer.playerX.value = withTiming(defenderPlayerxTarget,{ duration : 500});
+    const defenderPlayeryTarget = fieldConstants.validatePlayerY(fieldConstants.height- (70*ballY+30*fieldConstants.height/2)/100);
+    defenderPlayer.playerY.value = withTiming(defenderPlayeryTarget,{ duration : 500});
 
     // receiving team
     // receivingPlayer behind the ball
-    receivingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ?ballX+fieldConstants.ballsize/2:ballX-fieldConstants.ballsize/2),{ duration : 500});
-    receivingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(ballY),{ duration : 500});
+    const receivingPlayerxTarget = fieldConstants.validatePlayerX(isBallOnRightSide ?ballX+fieldConstants.ballsize/2:ballX-fieldConstants.ballsize/2);
+    receivingPlayer.playerX.value = withTiming(receivingPlayerxTarget,{ duration : 500});
+    const receivingPlayeryTarget = fieldConstants.validatePlayerY(ballY);
+    receivingPlayer.playerY.value = withTiming(receivingPlayeryTarget,{ duration : 500});
     //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
     // receiverMatePlayer goes to the center, 2 m from the receiver, closer to the net
-    receiverMatePlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ? fieldConstants.width - fieldConstants.blockingX:fieldConstants.blockingX),{ duration : 500});
-    receiverMatePlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(isBallInUpperField ? ballY+fieldConstants.height/5:ballY-fieldConstants.height/5),{ duration : 500});
+    const receiverMatePlayerxTarget = fieldConstants.validatePlayerX(isBallOnRightSide ? fieldConstants.width - fieldConstants.blockingX:fieldConstants.blockingX);
+    receiverMatePlayer.playerX.value = withTiming(receiverMatePlayerxTarget,{ duration : 500});
+    const receiverMatePlayeryTarget = fieldConstants.validatePlayerY(isBallInUpperField ? ballY+fieldConstants.height/5:ballY-fieldConstants.height/5);
+    receiverMatePlayer.playerY.value = withTiming(receiverMatePlayeryTarget,{ duration : 500});
 
     //ball
-    game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
-    game.ballY.value = withTiming(fieldConstants.validateBallY(ballY),{ duration : 50});
-    savePlayerPositions(currentTouch, game.teams.flatMap(oneTeam => oneTeam.players));
+    const ballxTarget = fieldConstants.validateBallX(ballX);
+    game.ballX.value = withTiming(ballxTarget,{ duration : 50});
+    const ballyTarget = fieldConstants.validateBallY(ballY);
+    game.ballY.value = withTiming(ballyTarget,{ duration : 50});
+    savePositions(currentTouch,
+            ballxTarget, ballyTarget,
+            [[ blockerPlayer.id,blockerPlayerxTarget,blockerPlayeryTarget],
+             [ defenderPlayer.id,defenderPlayerxTarget,defenderPlayeryTarget],
+             [ receivingPlayer.id,receivingPlayerxTarget,receivingPlayeryTarget],
+             [ receiverMatePlayer.id,receiverMatePlayerxTarget,receiverMatePlayeryTarget]
+            ]);
 }
 
 export const renderSettingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -601,44 +652,60 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
     const blockerPlayer = lastAttackingTeam.prefersBlockId ? getPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
                            attackTouch.stateName === 'service' ? lastNotAttackingPlayer: lastAttackingPlayer;
 
-    //const defenderPlayer =  getOtherPlayer(lastAttackingTeam, blockerPlayer.id);
+    const defenderPlayer =  getOtherPlayer(lastAttackingTeam, blockerPlayer.id);
 
     const isBallInUpperField = ballY < fieldConstants.height/2;// from UI perspective, upper screen side
     // isBallOnRightSide
     // defending team
     // blockerPlayer goes face the settet in case of option
-    blockerPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(
+    const blockerPlayerxTarget = fieldConstants.validatePlayerX(
         !isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX
-        ),{ duration : 1000});
-    blockerPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(
+        );
+    blockerPlayer.playerX.value = withTiming(blockerPlayerxTarget,{ duration : 500});
+    const blockerPlayeryTarget = fieldConstants.validatePlayerY(
         (90*ballY+10*fieldConstants.height/2)/100
-        ),{ duration : 500});
+        );
+    blockerPlayer.playerY.value = withTiming(blockerPlayeryTarget,{ duration : 500});
     // defenderPlayer does not move?
     //defenderPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
+    const defenderPlayerxTarget = defenderPlayer.playerX.value;
     //defenderPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height- (70*ballY+30*fieldConstants.height/2)/100),{ duration : 500});
+    const defenderPlayeryTarget = defenderPlayer.playerY.value;
 
     const isPassingPlayerAboveSetter = passingPlayer.playerY.value < settingPlayer.playerY.value; //higher in the UI
     // team now holding the ball
     // passingPlayer approaches
-    passingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(
+    const passingPlayerxTarget = fieldConstants.validatePlayerX(
         isBallOnRightSide ?fieldConstants.width - fieldConstants.approachX:fieldConstants.approachX
-    ),{ duration : 500});
-    passingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(
+        );
+    passingPlayer.playerX.value = withTiming(passingPlayerxTarget,{ duration : 500});
+    const passingPlayeryTarget = fieldConstants.validatePlayerY(
         isPassingPlayerAboveSetter ? ballY-fieldConstants.height/6 : ballY+fieldConstants.height/6
-    ),{ duration : 500});
+        );
+    passingPlayer.playerY.value = withTiming(passingPlayeryTarget,{ duration : 500});
     //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
     // settingPlayer behind the ball
-    settingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(
+    const settingPlayerxTarget = fieldConstants.validatePlayerX(
         ballX
-    ),{ duration : 500});
-    settingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(
+        );
+    settingPlayer.playerX.value = withTiming(settingPlayerxTarget,{ duration : 500});
+    const settingPlayeryTarget = fieldConstants.validatePlayerY(
         isPassingPlayerAboveSetter ? ballY+fieldConstants.ballsize/2:ballY-fieldConstants.ballsize/2
-    ),{ duration : 500});
+        );
+    settingPlayer.playerY.value = withTiming(settingPlayeryTarget,{ duration : 500});
 
     //ball
-    game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
-    game.ballY.value = withTiming(fieldConstants.validateBallY(ballY),{ duration : 50});
-    savePlayerPositions(currentTouch, game.teams.flatMap(oneTeam => oneTeam.players));
+    const ballxTarget = fieldConstants.validateBallX(ballX);
+    game.ballX.value = withTiming(ballxTarget,{ duration : 50});
+    const ballyTarget = fieldConstants.validateBallY(ballY);
+    game.ballY.value = withTiming(ballyTarget,{ duration : 50});
+    savePositions(currentTouch,
+        ballxTarget, ballyTarget,
+        [[ blockerPlayer.id,blockerPlayerxTarget,blockerPlayeryTarget],
+         [ defenderPlayer.id,defenderPlayerxTarget,defenderPlayeryTarget],
+         [ passingPlayer.id,passingPlayerxTarget,passingPlayeryTarget],
+         [ settingPlayer.id,settingPlayerxTarget,settingPlayeryTarget]
+        ]);
 }
 
 export const renderAttackPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -701,25 +768,40 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
     // isBallOnRightSide
     // defending team
     // blockerPlayer goes face the settet in case of option
-    blockerPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX),{ duration : 1000});
-    blockerPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(ballY),{ duration : 500});
+    const blockerPlayerxTarget = fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.blockingX :fieldConstants.blockingX);
+    blockerPlayer.playerX.value = withTiming(blockerPlayerxTarget,{ duration : 1000});
+    const blockerPlayeryTarget = fieldConstants.validatePlayerY(ballY);
+    blockerPlayer.playerY.value = withTiming(blockerPlayeryTarget,{ duration : 500});
     // defenderPlayer does not move?
-    defenderPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX),{ duration : 500});
-    defenderPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(fieldConstants.height- (90*ballY+10*fieldConstants.height/2)/100),{ duration : 500});
+    const defenderPlayerxTarget = fieldConstants.validatePlayerX(!isBallOnRightSide? fieldConstants.width - fieldConstants.serverBlockerMateX :fieldConstants.serverBlockerMateX);
+    defenderPlayer.playerX.value = withTiming(defenderPlayerxTarget,{ duration : 500});
+    const defenderPlayeryTarget = fieldConstants.validatePlayerY(fieldConstants.height- (90*ballY+10*fieldConstants.height/2)/100);
+    defenderPlayer.playerY.value = withTiming(defenderPlayeryTarget,{ duration : 500});
 
     // team now holding the ball
     // attackingPlayer is at the ball
-    attackingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(isBallOnRightSide ?ballX+fieldConstants.ballsize/2:ballX-fieldConstants.ballsize/2),{ duration : 500});
-    attackingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(ballY),{ duration : 500});
-    //console.log("receiving player 2 ", receiverX, height - receiverY ,receiverY , height)
+    const attackingPlayerxTarget = fieldConstants.validatePlayerX(isBallOnRightSide ?ballX+fieldConstants.ballsize/2:ballX-fieldConstants.ballsize/2);
+    attackingPlayer.playerX.value = withTiming(attackingPlayerxTarget,{ duration : 500});
+    const attackingPlayeryTarget = fieldConstants.validatePlayerY(ballY);
+    attackingPlayer.playerY.value = withTiming(attackingPlayeryTarget,{ duration : 500});
     // settingPlayer back to defending position or Blocker
     //settingPlayer.playerX.value = withTiming(fieldConstants.validatePlayerX(ballX),{ duration : 500});
     //settingPlayer.playerY.value = withTiming(fieldConstants.validatePlayerY(isBallInUpperField ? ballY+fieldConstants.ballsize/2:ballY-fieldConstants.ballsize/2),{ duration : 500});
+    const settingPlayerxTarget = settingPlayer.playerX.value;
+    const settingPlayeryTarget = settingPlayer.playerY.value;
 
     //ball
-    game.ballX.value = withTiming(fieldConstants.validateBallX(ballX),{ duration : 50});
-    game.ballY.value = withTiming(fieldConstants.validateBallY(ballY),{ duration : 50});
-    savePlayerPositions(currentTouch, game.teams.flatMap(oneTeam => oneTeam.players));
+    const ballxTarget = fieldConstants.validateBallX(ballX);
+    game.ballX.value = withTiming(ballxTarget,{ duration : 50});
+    const ballyTarget = fieldConstants.validateBallY(ballY);
+    game.ballY.value = withTiming(ballyTarget,{ duration : 50});
+    savePositions(currentTouch,
+        ballxTarget, ballyTarget,
+        [[ blockerPlayer.id,blockerPlayerxTarget,blockerPlayeryTarget],
+         [ defenderPlayer.id,defenderPlayerxTarget,defenderPlayeryTarget],
+         [ attackingPlayer.id,attackingPlayerxTarget,attackingPlayeryTarget],
+         [ settingPlayer.id,settingPlayerxTarget,settingPlayeryTarget]
+        ]);
 }
 
 
