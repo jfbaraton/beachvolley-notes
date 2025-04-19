@@ -170,7 +170,7 @@ export default function TabTwoScreen() {
         setsTeam : [0,0]
     } as Score)
     if(!game.points.length) {
-        logToUI("FIRST INIT PLAYER POS ---------------------------------");
+        //logToUI("FIRST INIT PLAYER POS ---------------------------------");
         renderServingPosition(teams[0], false, game,score.setsTeam[0]+score.setsTeam[1], fieldGraphicConstants);
     }
 
@@ -179,7 +179,7 @@ export default function TabTwoScreen() {
         let newTouchIdx = currentTouchIdx;
         switch (buttonIdx) {
             case 0:
-                logToUI("gotoMove previous Point "+JSON.stringify(currentTouchIdx));
+                //logToUI("gotoMove previous Point "+JSON.stringify(currentTouchIdx));
                 newTouchIdx = getPreviousPointIndex(game, currentTouchIdx);
                 if(newTouchIdx) {
                     logToUI("previous Point "+JSON.stringify(newTouchIdx));
@@ -189,7 +189,7 @@ export default function TabTwoScreen() {
                 }
                 break;
             case 1:
-                logToUI("gotoMove previous touch");
+                //("gotoMove previous touch");
                 newTouchIdx = getPreviousTouchIndex(game, currentTouchIdx);
                 if(newTouchIdx) {
                     setCurrentTouchIdx(newTouchIdx);
@@ -198,7 +198,7 @@ export default function TabTwoScreen() {
                 }
                 break;
             case 2:
-                logToUI("gotoMove Next touch");
+                //logToUI("gotoMove Next touch");
                 newTouchIdx = getNextTouchIndex(game, currentTouchIdx);
                 if(newTouchIdx) {
                     setCurrentTouchIdx(newTouchIdx);
@@ -207,7 +207,7 @@ export default function TabTwoScreen() {
                 }
                 break;
             case 3:
-                logToUI("gotoMove Next Point");
+                //logToUI("gotoMove Next Point");
                 newTouchIdx = getNextPointIndex(game, currentTouchIdx);
                 if(newTouchIdx) {
                     setCurrentTouchIdx(newTouchIdx);
@@ -243,9 +243,9 @@ export default function TabTwoScreen() {
         const isLastSet = newScore.setsTeam[0]+newScore.setsTeam[1] >=2;
         const rotationPace = isLastSet ? 5 : 7;
         //renderServingPosition(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
-        logToUI("team "+team+" scores... "+ ''+newScore.scoreTeam[0]+ ''+newScore.scoreTeam[1])
-        logToUI("rotation swap... "+ (newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)
-        logToUI("rotation swap2... "+ Math.floor((newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)%2)
+        //logToUI("team "+team+" scores... "+ ''+newScore.scoreTeam[0]+ ''+newScore.scoreTeam[1])
+        //logToUI("rotation swap... "+ (newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)
+        //logToUI("rotation swap2... "+ Math.floor((newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)%2)
 
         game.points.push({
             set: newScore.setsTeam[0]+newScore.setsTeam[1],
@@ -268,7 +268,7 @@ export default function TabTwoScreen() {
         const currentTeamTouches = currentPoint.teamTouches[currentPoint.teamTouches.length-1];
         const currentTouch = currentTeamTouches.touch[currentTeamTouches.touch.length-1];
         const sideOutState = currentTouch.stateName;
-        logToUI("touch "+sideOutState+" "+JSON.stringify(currentTouchIdx))
+        //logToUI("touch "+sideOutState+" "+JSON.stringify(currentTouchIdx))
         if(isEditMode) {
 
             switch (sideOutState) {
@@ -421,7 +421,7 @@ export default function TabTwoScreen() {
     if(!isEditMode) {
         renderTouchIndex(game,currentTouchIdx);
     }
-    console.log("RENDER------------------------------------------------")
+    //console.log("RENDER------------------------------------------------")
     return (
         <View style={styles.container}>
             <ButtonGroup

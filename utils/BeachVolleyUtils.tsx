@@ -310,16 +310,16 @@ export const renderTouchIndex = (game:Game, touchIndex: TouchIndex) => {
 }
 
 export const calculateScore = (game:Game, currentTouchIndex:TouchIndex) : Score => {
-    console.log("calculateScore ",currentTouchIndex)
+    //console.log("calculateScore ",currentTouchIndex)
     const result = {
         scoreTeam : [0,0],
         setsTeam : [0,0]
     } as Score;
     if(!game || !game.points.length) return result;
     game.points.forEach( (onePoint, pointIdx) => {
-        console.log("("+pointIdx+") won by "+ (onePoint.wonBy ? onePoint.wonBy.id: "???"))
+        //console.log("("+pointIdx+") won by "+ (onePoint.wonBy ? onePoint.wonBy.id: "???"))
         if(onePoint.wonBy && (!currentTouchIndex || pointIdx <  currentTouchIndex.pointIdx)) {
-            console.log("("+pointIdx+") counts")
+            //console.log("("+pointIdx+") counts")
             let team = game.teams[0].id === onePoint.wonBy.id ? 0 : 1;
             result.scoreTeam[team]++;
             const isLastSet = result.setsTeam[0]+result.setsTeam[1] >=2;
@@ -332,12 +332,12 @@ export const calculateScore = (game:Game, currentTouchIndex:TouchIndex) : Score 
             }
         }
     })
-    console.log("calculateScore RETURNS ",result)
+    //console.log("calculateScore RETURNS ",result)
     return result;
 }
 
 export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
-    console.log("renderServingPosition ("+game.points.length+")", currentServingTeam.id, isSideSwapped, "--------------------------------------")
+    //console.log("renderServingPosition ("+game.points.length+")", currentServingTeam.id, isSideSwapped, "--------------------------------------")
     /*const isFirstTouch =
         !game.points ||
         game.points.length === 0 ||
@@ -354,23 +354,23 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
         }];
     }
     const currentPoint = game.points[game.points.length - 1];
-    console.log("currentPoint ",currentPoint);
+    //console.log("currentPoint ",currentPoint);
     if(!currentPoint.teamTouches ||
         currentPoint.teamTouches.length === 0) {
         console.log("init currentPoint.teamTouches ");
         currentPoint.teamTouches = [];
     }
     const currentTeamTouches = currentPoint.teamTouches;
-    console.log("currentTeamTouches ",currentTeamTouches);
+    //console.log("currentTeamTouches ",currentTeamTouches);
     if(!currentTeamTouches.length || !currentTeamTouches[0].team) {
-        console.log("set Team of currentPoint.teamTouches ");
+        //console.log("set Team of currentPoint.teamTouches ");
         currentTeamTouches.push({
             team: currentServingTeam,
             touch: []
         });
     }
     let currentTouchArr = currentTeamTouches[currentTeamTouches.length-1].touch;
-    console.log("currentTouchArr ",currentTouchArr);
+    //console.log("currentTouchArr ",currentTouchArr);
 
     // serving player is 1 if team started serving / gained service an even number of times
     const teamsNewServes = game.points.filter( (point, idx) => idx ===0 ||
@@ -381,7 +381,7 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
             teamId:point.teamTouches[0].team.id,
             playerId: point.teamTouches[0].touch.length ? point.teamTouches[0].touch[0].player.id : -1
         };});
-    console.log("teamsNewServes ",JSON.stringify(teamsNewServes));
+    //console.log("teamsNewServes ",JSON.stringify(teamsNewServes));
     const servingPlayer : number = 1-(teamsNewServes.length%2);
     console.log("servingPlayer ",servingPlayer)
     if(!currentTouchArr.length) {
@@ -434,7 +434,7 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     let p4X= dudaX;
     let p4Y= dudaY;
     if(servingTeam) {
-        console.log("swap serving team ",servingTeam)
+        //console.log("swap serving team ",servingTeam)
         p3id= taruId;
         p3X= taruX;
         p3Y= taruY;
@@ -449,7 +449,7 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
         p2Y= dudaY;
     }
     if (servingPlayer === 1) {
-        console.log("swap serving player")
+        //console.log("swap serving player")
         let tmp = p1X;
         p1X = p2X;
         p2X = tmp;
@@ -514,7 +514,7 @@ export const getClosestPlayer = (team:Team, ballX :number, ballY :number) :Playe
 }
 
 export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
-    console.log("renderReceivingPosition ("+game.points.length+")", "--------------------------------------")
+    //console.log("renderReceivingPosition ("+game.points.length+")", "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
     //console.log("currentPoint ",currentPoint);
@@ -526,10 +526,10 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
     //console.log("currentTouchArr ",currentTouchArr);
 
     const receivingTeam = game.teams[game.teams[0].players[0].playerX.value <= fieldConstants.width/2 === ballX <= fieldConstants.width/2 ? 0:1] ;
-    console.log("receivingTeam ",receivingTeam.id);
+    //console.log("receivingTeam ",receivingTeam.id);
     const receivingPlayer = getClosestPlayer(receivingTeam, ballX, ballY);
     const receiverMatePlayer = getOtherPlayer(receivingTeam, receivingPlayer.id);
-    console.log("receivingPlayer ",receivingPlayer.id)
+    //console.log("receivingPlayer ",receivingPlayer.id)
     let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
     attackTouch.isFail = false;
     const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
@@ -611,23 +611,23 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
 }
 
 export const renderSettingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
-    console.log("renderSettingPosition ("+game.points.length+")", "--------------------------------------")
+    //console.log("renderSettingPosition ("+game.points.length+")", "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
-    console.log("currentPoint ",currentPoint);
+    //console.log("currentPoint ",currentPoint);
 
     const currentTeamTouches = currentPoint.teamTouches;
-    console.log("currentTeamTouches ",currentTeamTouches);
+    //console.log("currentTeamTouches ",currentTeamTouches);
 
     let currentTouchArr = currentTeamTouches[currentTeamTouches.length-1].touch;
-    console.log("currentTouchArr ",currentTouchArr);
+    //console.log("currentTouchArr ",currentTouchArr);
 
     const passingTeam = currentTeamTouches[currentTeamTouches.length-1].team ;
-    console.log("passingTeam ",passingTeam.id);
+    //console.log("passingTeam ",passingTeam.id);
     const passingPlayer = currentTouchArr[currentTouchArr.length-1].player;
     const settingPlayer = getOtherPlayer(passingTeam, passingPlayer.id);
-    console.log("passingPlayer ",passingPlayer.id)
-    console.log("settingPlayer ",settingPlayer.id)
+    //console.log("passingPlayer ",passingPlayer.id)
+    //console.log("settingPlayer ",settingPlayer.id)
     let passTouch = currentTouchArr[currentTouchArr.length-1];
     passTouch.isFail = false;
     const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
@@ -721,23 +721,23 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
 }
 
 export const renderAttackPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
-    console.log("renderAttackPosition ("+game.points.length+")", "--------------------------------------")
+    //console.log("renderAttackPosition ("+game.points.length+")", "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
-    console.log("currentPoint ",currentPoint);
+    //console.log("currentPoint ",currentPoint);
 
     const currentTeamTouches = currentPoint.teamTouches;
-    console.log("currentTeamTouches ",currentTeamTouches);
+    //console.log("currentTeamTouches ",currentTeamTouches);
 
     let currentTouchArr = currentTeamTouches[currentTeamTouches.length-1].touch;
-    console.log("currentTouchArr ",currentTouchArr);
+    //console.log("currentTouchArr ",currentTouchArr);
 
     const passingTeam = currentTeamTouches[currentTeamTouches.length-1].team ;
-    console.log("passingTeam ",passingTeam.id);
+    //console.log("passingTeam ",passingTeam.id);
     const settingPlayer = currentTouchArr[currentTouchArr.length-1].player;
     const attackingPlayer = getOtherPlayer(passingTeam, settingPlayer.id);
-    console.log("settingPlayer ",settingPlayer.id)
-    console.log("attackingPlayer ",attackingPlayer.id)
+    //console.log("settingPlayer ",settingPlayer.id)
+    //console.log("attackingPlayer ",attackingPlayer.id)
     let passTouch = currentTouchArr[currentTouchArr.length-1];
     passTouch.isFail = false;
     const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
