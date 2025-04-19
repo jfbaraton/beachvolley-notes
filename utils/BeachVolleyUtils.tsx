@@ -201,6 +201,25 @@ export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) 
 
 export const getPreviousPointIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
 
+    if(touchIndex.pointIdx>0) {
+        return {
+            pointIdx: touchIndex.pointIdx-1,
+            teamTouchesIdx: 0,
+            touchIdx: 0
+        } as TouchIndex
+    }
+
+    return null;
+}
+
+export const getPreviousTouchIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
+    if(touchIndex.touchIdx>0) {
+        return {
+            pointIdx: touchIndex.pointIdx,
+            teamTouchesIdx: touchIndex.teamTouchesIdx,
+            touchIdx: touchIndex.touchIdx-1
+        } as TouchIndex
+    }
     if(touchIndex.teamTouchesIdx>0) {
         return {
             pointIdx: touchIndex.pointIdx,
@@ -219,17 +238,6 @@ export const getPreviousPointIndex = (game:Game, touchIndex: TouchIndex) : Touch
     return null;
 }
 
-export const getPreviousTouchIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
-    if(touchIndex.touchIdx>0) {
-        return {
-            pointIdx: touchIndex.pointIdx,
-            teamTouchesIdx: touchIndex.teamTouchesIdx,
-            touchIdx: touchIndex.touchIdx-1
-        } as TouchIndex
-    }
-    return getPreviousPointIndex(game, touchIndex);
-}
-
 export const getNextTouchIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
     if(touchIndex.touchIdx +1 <
         game.points[touchIndex.pointIdx].teamTouches[touchIndex.teamTouchesIdx].touch.length) {
@@ -242,11 +250,6 @@ export const getNextTouchIndex = (game:Game, touchIndex: TouchIndex) : TouchInde
 
     }
 
-    return getNextPointIndex(game, touchIndex);
-}
-
-export const getNextPointIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
-
     if(touchIndex.teamTouchesIdx +1 <
         game.points[touchIndex.pointIdx].teamTouches.length) {
 
@@ -256,6 +259,11 @@ export const getNextPointIndex = (game:Game, touchIndex: TouchIndex) : TouchInde
             touchIdx: 0
         } as TouchIndex
     }
+
+     return getNextPointIndex(game, touchIndex);
+}
+
+export const getNextPointIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {
 
     if(touchIndex.pointIdx +1 <
         game.points.length) {
@@ -302,13 +310,16 @@ export const renderTouchIndex = (game:Game, touchIndex: TouchIndex) => {
 }
 
 export const calculateScore = (game:Game, currentTouchIndex:TouchIndex) : Score => {
+    console.log("calculateScore ",currentTouchIndex)
     const result = {
         scoreTeam : [0,0],
         setsTeam : [0,0]
     } as Score;
     if(!game || !game.points.length) return result;
     game.points.forEach( (onePoint, pointIdx) => {
-        if(onePoint.wonBy && (!currentTouchIndex || pointIdx <=  currentTouchIndex.pointIdx)) {
+        console.log("("+pointIdx+") won by "+ (onePoint.wonBy ? onePoint.wonBy.id: "???"))
+        if(onePoint.wonBy && (!currentTouchIndex || pointIdx <  currentTouchIndex.pointIdx)) {
+            console.log("("+pointIdx+") counts")
             let team = game.teams[0].id === onePoint.wonBy.id ? 0 : 1;
             result.scoreTeam[team]++;
             const isLastSet = result.setsTeam[0]+result.setsTeam[1] >=2;
@@ -321,6 +332,7 @@ export const calculateScore = (game:Game, currentTouchIndex:TouchIndex) : Score 
             }
         }
     })
+    console.log("calculateScore RETURNS ",result)
     return result;
 }
 
