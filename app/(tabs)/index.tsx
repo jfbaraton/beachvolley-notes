@@ -31,7 +31,8 @@ import {
     renderTouchIndex,
     getNextPointIndex,
     getNextTouchIndex, getPreviousTouchIndex, getPreviousPointIndex,
-    calculateScore
+    calculateScore,
+    isSideSwapped, addLineEvent
 } from '@/utils/BeachVolleyUtils';
 
 // @ts-ignore
@@ -174,6 +175,45 @@ export default function TabTwoScreen() {
         renderServingPosition(teams[0], false, game,score.setsTeam[0]+score.setsTeam[1], fieldGraphicConstants);
     }
 
+    const onLineEvent = (buttonIdx : number) => {
+        //logToUI("lineEvent "+buttonIdx)
+        // 'OUT', 'OUT touched', 'IN','FAIL' 'Net fault', 'Net fault','FAIL','IN', 'OUT touched', 'OUT'
+        let newTouchIdx = currentTouchIdx;
+        switch (buttonIdx) {
+            case 0: // left 'OUT'
+                addLineEvent(game, currentTouchIdx, true, 'OUT', fieldGraphicConstants, teamScores);
+                break;
+            case 1: // left 'OUT touched'
+                addLineEvent(game, currentTouchIdx, true, 'OUT touched', fieldGraphicConstants, teamScores);
+                break;
+            case 2: // left 'IN'
+                addLineEvent(game, currentTouchIdx, true, 'IN', fieldGraphicConstants, teamScores);
+                break;
+            case 3: // left 'FAIL'
+                addLineEvent(game, currentTouchIdx, true, 'FAIL', fieldGraphicConstants, teamScores);
+                break;
+            case 4: // left 'Net fault'
+                addLineEvent(game, currentTouchIdx, true, 'Net fault', fieldGraphicConstants, teamScores);
+                break;
+            case 5: // left 'Net fault'
+                addLineEvent(game, currentTouchIdx, false, 'Net fault', fieldGraphicConstants, teamScores);
+                break;
+            case 6: // left 'FAIL'
+                addLineEvent(game, currentTouchIdx, false, 'FAIL', fieldGraphicConstants, teamScores);
+                break;
+            case 7: // left 'IN'
+                addLineEvent(game, currentTouchIdx, false, 'IN', fieldGraphicConstants, teamScores);
+                break;
+            case 8: // left 'OUT touched'
+                addLineEvent(game, currentTouchIdx, false, 'OUT touched', fieldGraphicConstants, teamScores);
+                break;
+            case 9: // left 'OUT'
+                addLineEvent(game, currentTouchIdx, false, 'OUT', fieldGraphicConstants, teamScores);
+                break;
+        }
+
+    }
+
     const gotoMove = (buttonIdx : number) => {
         //logToUI("gotoMove "+buttonIdx)
         let newTouchIdx = currentTouchIdx;
@@ -240,12 +280,6 @@ export default function TabTwoScreen() {
         const newScore = calculateScore(game, newTouchIdx);
         //logToUI("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
         //logToUI("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
-        const isLastSet = newScore.setsTeam[0]+newScore.setsTeam[1] >=2;
-        const rotationPace = isLastSet ? 5 : 7;
-        //renderServingPosition(team, 0, Math.floor((scoreTeam[0]+scoreTeam[1])/rotationPace)%2===1);
-        //logToUI("team "+team+" scores... "+ ''+newScore.scoreTeam[0]+ ''+newScore.scoreTeam[1])
-        //logToUI("rotation swap... "+ (newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)
-        //logToUI("rotation swap2... "+ Math.floor((newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)%2)
 
         game.points.push({
             set: newScore.setsTeam[0]+newScore.setsTeam[1],
@@ -256,7 +290,7 @@ export default function TabTwoScreen() {
 
         renderServingPosition(
             newServingTeam,
-            Math.floor((newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)%2===1,
+            isSideSwapped(game, newTouchIdx),
             game,
             newScore.setsTeam[0]+newScore.setsTeam[1],
             fieldGraphicConstants);
@@ -434,6 +468,13 @@ export default function TabTwoScreen() {
             <ButtonGroup
                 buttons={['  '+score.setsTeam[0]+ '  ', '  '+score.setsTeam[1]+ '  ']}
                 selectedIndex={2}
+                containerStyle={{ marginBottom: 20 }}
+                textStyle={styles.smallTextButton}
+            />
+            <ButtonGroup
+                buttons={['OUT', 'OUT touched', 'IN','FAIL' 'Net fault', 'Net fault','FAIL','IN', 'OUT touched', 'OUT']}
+                selectedIndex={100}
+                onPress={onLineEvent}
                 containerStyle={{ marginBottom: 20 }}
                 textStyle={styles.smallTextButton}
             />

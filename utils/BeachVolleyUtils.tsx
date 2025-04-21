@@ -816,4 +816,33 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
         ]);
 }
 
+export const isSideSwapped = (game: Game, currentTouchIdx:TouchIndex) => {
+    const newScore = calculateScore(game, TouchIndex);
+    const isLastSet = newScore.setsTeam[0]+newScore.setsTeam[1] >=2;
+    const rotationPace = isLastSet ? 5 : 7;
+    return Math.floor((newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)%2===1;
+}
+
+export const addLineEvent = (game: Game, currentTouchIdx:TouchIndex, isLeft:boolean, event:string fieldConstants:FieldGraphicConstants, teamScores:Function) => {
+    //  event 'OUT', 'OUT touched', 'IN','FAIL' 'Net fault'
+    // teamScores = (scoringTeamSide : number) => {
+    // newServingTeam = teams[0].startingSide === 0 ? teams[team] : teams[1-team];
+
+    // 1st touch OUT         -> last team (attacking opposite side) fails out
+    // 1st touch OUT         -> current team (same side) fails out
+
+    // 2-3 touch OUT         -> current team (same side) fails out
+    // 2-3 touch OUT         -> current team (opposite side) fails out // side does not matter
+
+
+    // 1st touch OUT touched -> current team (same side) fails out
+    // 1st touch OUT touched -> opposite team (opposite side) fails out
+
+    // true if the isLeft/event side scores
+    const isSideScores =
+    const sideSwapped = isSideSwapped(game, currentTouchIdx);
+    const scoringTeamSide = sideSwapped === isLeft ? 1 : 0;
+
+    teamScores(scoringTeamSide);
+}
 
