@@ -25,7 +25,13 @@ export interface Player {
     id: string;
     playerX: SharedValue<number>; // reference to the shared value playerX.value
     playerY: SharedValue<number>; // reference to the shared value playerY.value
-
+    plannedMoveXSeq?:number[];
+    plannedMoveYSeq?:number[];
+}
+export interface PlayerPosition {
+    id: string;
+    x: number; // reference to the shared value playerX.value
+    y: number; // reference to the shared value playerY.value
 }
 
 export interface CalculatedPlayer {
@@ -102,6 +108,8 @@ export interface Game {
     windStrength: number; // m/s
     windAngle: number; // 0 is left to right, 90 is upwards, 180 is right to left, 270 is downwards
     points: Point[];
+    plannedBallMoveXSeq ?: number[];
+    plannedBallMoveYSeq ?: number[];
 }
 
 export interface Score {
@@ -130,15 +138,15 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
     return result;
 }
 
-const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPositions:object[][]) => {
+const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPositions:PlayerPosition[]) => {
     currentTouch.ballX = ballx;
     currentTouch.ballY = bally;
     currentTouch.playerCalculatedMoves = playerPositions.map(onePlayerPosition => {
         return {
-            id: onePlayerPosition[0],
-            x: onePlayerPosition[1],
-            y: onePlayerPosition[2]
-        };
+            id: onePlayerPosition.id,
+            x: onePlayerPosition.x,
+            y: onePlayerPosition.y
+        } as CalculatedPlayer;
     })
 }
 
@@ -155,8 +163,8 @@ export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) 
             onePlayer => {
                 previousTouch.playerCalculatedMoves &&
                 previousTouch.playerCalculatedMoves.filter(oneCalc => oneCalc.id === onePlayer.id).forEach(oneCalc => {
-                    onePlayer.plannedMoveXSeq.push( withTiming(oneCalc.x, {duration: 50}));
-                    onePlayer.plannedMoveYSeq.push( withTiming(oneCalc.y, {duration: 50}));
+                    onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.push( withTiming(oneCalc.x, {duration: 50}));
+                    onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.push( withTiming(oneCalc.y, {duration: 50}));
                 })
             }
         ))
@@ -170,8 +178,8 @@ export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) 
             onePlayer => {
                 currentTouch.playerCalculatedMoves &&
                 currentTouch.playerCalculatedMoves.filter(oneCalc => oneCalc.id === onePlayer.id).forEach(oneCalc => {
-                    onePlayer.plannedMoveXSeq.push( withTiming(oneCalc.x, {duration: 500}));
-                    onePlayer.plannedMoveYSeq.push( withTiming(oneCalc.y, {duration: 500}));
+                    onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.push( withTiming(oneCalc.x, {duration: 500}));
+                    onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.push( withTiming(oneCalc.y, {duration: 500}));
                 })
             }
         ))
@@ -458,9 +466,9 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
         p1Y = p2Y;
         p2Y = tmp;
 
-        tmp = p1id;
+        let tmpId = p1id;
         p1id = p2id;
-        p2id = tmp;
+        p2id = tmpId;
     }
     const p1xTarget = fieldConstants.validatePlayerX(servingTeam !== isSideSwapped? fieldConstants.width - fieldConstants.servingPosX :fieldConstants.servingPosX);
     p1X.value = withTiming(p1xTarget,{ duration : 500});
@@ -485,10 +493,11 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
     savePositions(currentTouch,
         ballxTarget, ballyTarget,
-        [[ p1id,p1xTarget,p1yTarget],
-         [ p2id,p2xTarget,p2yTarget],
-         [ p3id,p3xTarget,p3yTarget],
-         [ p4id,p4xTarget,p4yTarget]
+        [
+            {id:p1id, x:p1xTarget, y:p1yTarget},
+            {id:p2id, x:p2xTarget, y:p2yTarget},
+            {id:p3id, x:p3xTarget, y:p3yTarget},
+            {id:p4id, x:p4xTarget, y:p4yTarget}
         ]);
 }
 
@@ -602,12 +611,13 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
     const ballyTarget = fieldConstants.validateBallY(ballY);
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
     savePositions(currentTouch,
-            ballxTarget, ballyTarget,
-            [[ blockerPlayer.id,blockerPlayerxTarget,blockerPlayeryTarget],
-             [ defenderPlayer.id,defenderPlayerxTarget,defenderPlayeryTarget],
-             [ receivingPlayer.id,receivingPlayerxTarget,receivingPlayeryTarget],
-             [ receiverMatePlayer.id,receiverMatePlayerxTarget,receiverMatePlayeryTarget]
-            ]);
+        ballxTarget, ballyTarget,
+        [
+            {id:blockerPlayer.id, x:blockerPlayerxTarget, y:blockerPlayeryTarget},
+            {id:defenderPlayer.id, x:defenderPlayerxTarget, y:defenderPlayeryTarget},
+            {id:receivingPlayer.id, x:receivingPlayerxTarget, y:receivingPlayeryTarget},
+            {id:receiverMatePlayer.id, x:receiverMatePlayerxTarget, y:receiverMatePlayeryTarget}
+        ]);
 }
 
 export const renderSettingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -713,10 +723,11 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
     savePositions(currentTouch,
         ballxTarget, ballyTarget,
-        [[ blockerPlayer.id,blockerPlayerxTarget,blockerPlayeryTarget],
-         [ defenderPlayer.id,defenderPlayerxTarget,defenderPlayeryTarget],
-         [ passingPlayer.id,passingPlayerxTarget,passingPlayeryTarget],
-         [ settingPlayer.id,settingPlayerxTarget,settingPlayeryTarget]
+        [
+            {id:blockerPlayer.id, x:blockerPlayerxTarget, y:blockerPlayeryTarget},
+            {id:defenderPlayer.id, x:defenderPlayerxTarget, y:defenderPlayeryTarget},
+            {id:passingPlayer.id, x:passingPlayerxTarget, y:passingPlayeryTarget},
+            {id:settingPlayer.id, x:settingPlayerxTarget, y:settingPlayeryTarget}
         ]);
 }
 
@@ -809,21 +820,22 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
     savePositions(currentTouch,
         ballxTarget, ballyTarget,
-        [[ blockerPlayer.id,blockerPlayerxTarget,blockerPlayeryTarget],
-         [ defenderPlayer.id,defenderPlayerxTarget,defenderPlayeryTarget],
-         [ attackingPlayer.id,attackingPlayerxTarget,attackingPlayeryTarget],
-         [ settingPlayer.id,settingPlayerxTarget,settingPlayeryTarget]
+        [
+            {id:blockerPlayer.id, x:blockerPlayerxTarget, y:blockerPlayeryTarget},
+            {id:defenderPlayer.id, x:defenderPlayerxTarget, y:defenderPlayeryTarget},
+            {id:attackingPlayer.id, x:attackingPlayerxTarget, y:attackingPlayeryTarget},
+            {id:settingPlayer.id, x:settingPlayerxTarget, y:settingPlayeryTarget}
         ]);
 }
 
 export const isSideSwapped = (game: Game, currentTouchIdx:TouchIndex) => {
-    const newScore = calculateScore(game, TouchIndex);
+    const newScore = calculateScore(game, currentTouchIdx);
     const isLastSet = newScore.setsTeam[0]+newScore.setsTeam[1] >=2;
     const rotationPace = isLastSet ? 5 : 7;
     return Math.floor((newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)%2===1;
 }
 
-export const addLineEvent = (game: Game, currentTouchIdx:TouchIndex, isLeft:boolean, event:string fieldConstants:FieldGraphicConstants, teamScores:Function) => {
+export const addLineEvent = (game: Game, currentTouchIdx:TouchIndex, isLeft:boolean, event:string, fieldConstants:FieldGraphicConstants, teamScores:Function) => {
     //  event 'OUT', 'OUT touched', 'IN','FAIL' 'Net fault'
     // teamScores = (scoringTeamSide : number) => {
     // newServingTeam = teams[0].startingSide === 0 ? teams[team] : teams[1-team];
@@ -837,12 +849,15 @@ export const addLineEvent = (game: Game, currentTouchIdx:TouchIndex, isLeft:bool
 
     // 1st touch OUT touched -> current team (same side) fails out
     // 1st touch OUT touched -> opposite team (opposite side) fails out
+    const is1stTouch = currentTouchIdx && currentTouchIdx.touchIdx === 0;
+    const currentTouch = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx];
+    const isBallSideMatchesIsLeft = ((currentTouch.ballX || 0)<= fieldConstants.width/2) === isLeft;
 
-    // true if the isLeft/event side scores
-    const isSideScores =
-    const sideSwapped = isSideSwapped(game, currentTouchIdx);
-    const scoringTeamSide = sideSwapped === isLeft ? 1 : 0;
+    // true if the isLeft/event side team scores
+    const isSideScores = event === 'OUT' && is1stTouch && isBallSideMatchesIsLeft; // in all other cases, it is a fail for current touch
+    const sideSwapped = isSideSwapped(game, currentTouchIdx); // current team sides match the starting team sides
+    const scoringTeamSide = sideSwapped === isLeft ? isSideScores : !isSideScores;
 
-    teamScores(scoringTeamSide);
+    teamScores(scoringTeamSide ? 1 : 0);
 }
 

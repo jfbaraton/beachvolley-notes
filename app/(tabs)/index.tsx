@@ -216,7 +216,7 @@ export default function TabTwoScreen() {
 
     const gotoMove = (buttonIdx : number) => {
         //logToUI("gotoMove "+buttonIdx)
-        let newTouchIdx = currentTouchIdx;
+        let newTouchIdx: TouchIndex | null = currentTouchIdx;
         switch (buttonIdx) {
             case 0:
                 //logToUI("gotoMove previous Point "+JSON.stringify(currentTouchIdx));
@@ -472,7 +472,7 @@ export default function TabTwoScreen() {
                 textStyle={styles.smallTextButton}
             />
             <ButtonGroup
-                buttons={['OUT', 'OUT touched', 'IN','FAIL' 'Net fault', 'Net fault','FAIL','IN', 'OUT touched', 'OUT']}
+                buttons={['OUT', 'OUT touched', 'IN','FAIL', 'Net fault', 'Net fault','FAIL','IN', 'OUT touched', 'OUT']}
                 selectedIndex={100}
                 onPress={onLineEvent}
                 containerStyle={{ marginBottom: 20 }}
