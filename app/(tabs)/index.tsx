@@ -312,6 +312,7 @@ export default function TabTwoScreen() {
             teamTouches: []
         });
         setScore(newScore);
+        console.log("Score = transition to ", newTouchIdx)
         setCurrentTouchIdx(newTouchIdx);
 
         renderServingPosition(
@@ -342,12 +343,13 @@ export default function TabTwoScreen() {
                             team: getOtherTeam(game.teams, currentTeamTouches.team),
                             touch: []
                         });
-
-                        setCurrentTouchIdx({
+                        const newTouchIdx = {
                             pointIdx: currentTouchIdx.pointIdx,
                             teamTouchesIdx: currentTouchIdx.teamTouchesIdx+1,
                             touchIdx: 0
-                        } as TouchIndex);
+                        } as TouchIndex
+                        console.log("transition to ", newTouchIdx)
+                        setCurrentTouchIdx(newTouchIdx);
                         renderReceivingPosition(
                             event.x,event.y,
                             game,
@@ -468,7 +470,7 @@ export default function TabTwoScreen() {
                         teamScores(game.teams[0].id === currentTeamTouches.team.id ? 1 : 0);
                     }
             }
-            setCurrentTouchIdx(JSON.parse(JSON.stringify(currentTouchIdx)))
+            //setCurrentTouchIdx(JSON.parse(JSON.stringify(currentTouchIdx)))
         } else {
             logToUI("not in edit mode, touch ignored");
         }
@@ -479,9 +481,10 @@ export default function TabTwoScreen() {
         return <Text>Image is loading...</Text>;
     }
     if(!isEditMode) {
+        console.log("replay RENDER-----");
         renderTouchIndex(game,currentTouchIdx);
     }
-    //console.log("RENDER------------------------------------------------")
+    console.log("RENDER------------------------------------------------",currentTouchIdx)
     return (
         <View style={styles.container}>
             <div style={styles.flaggedScore}>
@@ -583,6 +586,7 @@ export default function TabTwoScreen() {
             <Text>{debugText[debugText.length-3]}</Text>
             <Text>{debugText[debugText.length-2]}</Text>
             <Text>{debugText[debugText.length-1]}</Text>
+            {/*<Text>{JSON.stringify(currentTouchIdx)}</Text>*/}
 
             <ButtonGroup
                 buttons={[ '\u{300a}', '\u{2329}', '\u{232a}', '\u{300b}']}

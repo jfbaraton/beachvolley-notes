@@ -851,7 +851,14 @@ export const addLineEvent = (game: Game, currentTouchIdx:TouchIndex, isLeft:bool
     // 1st touch OUT touched -> opposite team (opposite side) fails out
     const is1stTouch = currentTouchIdx && currentTouchIdx.touchIdx === 0;
     const currentTouch = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx];
+    console.log("currentTouchIdx ",currentTouch)
+    console.log("currentTouch ",currentTouch)
+    console.log("addLineEvent ", event, currentTouchIdx, isLeft, "ball left ",((currentTouch.ballX || 0)<= fieldConstants.width/2));
     const isBallSideMatchesIsLeft = ((currentTouch.ballX || 0)<= fieldConstants.width/2) === isLeft;
+
+    console.log("event === 'OUT' ",event === 'OUT' );
+    console.log("is1stTouch  ",is1stTouch );
+    console.log("isBallSideMatchesIsLeft ", isBallSideMatchesIsLeft);
 
     // true if the isLeft/event side team scores
     const isSideScores = event === 'OUT' && is1stTouch && isBallSideMatchesIsLeft; // in all other cases, it is a fail for current touch
