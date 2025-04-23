@@ -203,29 +203,22 @@ export default function TabTwoScreen() {
             case 2: // left 'IN'
                 addLineEvent(game, currentTouchIdx, true, 'IN', fieldGraphicConstants, teamScores);
                 break;
-            case 3: // left 'FAIL'
-                addLineEvent(game, currentTouchIdx, true, 'FAIL', fieldGraphicConstants, teamScores);
-                break;
-            case 4: // left 'Net fault'
+            case 3: // left 'Net fault'
                 addLineEvent(game, currentTouchIdx, true, 'Net fault', fieldGraphicConstants, teamScores);
                 break;
-            case 5: // left 'Net fault'
+            case 4: // left 'Net fault'
                 addLineEvent(game, currentTouchIdx, false, 'Net fault', fieldGraphicConstants, teamScores);
                 break;
-            case 6: // left 'FAIL'
-                addLineEvent(game, currentTouchIdx, false, 'FAIL', fieldGraphicConstants, teamScores);
-                break;
-            case 7: // left 'IN'
+            case 5: // left 'IN'
                 addLineEvent(game, currentTouchIdx, false, 'IN', fieldGraphicConstants, teamScores);
                 break;
-            case 8: // left 'OUT touched'
+            case 6: // left 'OUT touched'
                 addLineEvent(game, currentTouchIdx, false, 'OUT touched', fieldGraphicConstants, teamScores);
                 break;
-            case 9: // left 'OUT'
+            case 7: // left 'OUT'
                 addLineEvent(game, currentTouchIdx, false, 'OUT', fieldGraphicConstants, teamScores);
                 break;
         }
-
     }
 
     const gotoMove = (buttonIdx : number) => {
@@ -527,11 +520,12 @@ export default function TabTwoScreen() {
                 textStyle={styles.smallTextButton}
             />
             <ButtonGroup
-                buttons={['OUT', 'OUT touched', 'IN','FAIL', 'Net fault', 'Net fault','FAIL','IN', 'OUT touched', 'OUT']}
+                buttons={['OUT', 'Touched', 'IN', 'Net fault', 'Net fault','IN', 'Touched', 'OUT']}
                 selectedIndex={100}
                 onPress={onLineEvent}
                 containerStyle={{ marginBottom: 5 }}
                 textStyle={styles.smallTextButton}
+                buttonStyle={styles.buttonStyle}
             />
             <GestureDetector gesture={gestureTap}>
                 <Canvas style={{ width, height }} >
@@ -641,6 +635,9 @@ const styles = StyleSheet.create({
     },
     smallTextButton: {
         fontSize: 16,
+    },
+    buttonStyle: {
+        minWidth: 70,
     }
 });
 
