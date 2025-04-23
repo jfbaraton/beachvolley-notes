@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ButtonGroup, Text } from '@rneui/themed'
+import { ButtonGroup, Text, Image as Img } from '@rneui/themed'
 
 import { useWindowDimensions, StyleSheet, View  } from 'react-native';
 import {Canvas, Circle, Group, useImage, Image} from "@shopify/react-native-skia";
@@ -47,6 +47,10 @@ import NiinaFront from '@/assets/sprites/Niina.jpg';
 import AnaPatriciaFront from '@/assets/sprites/AnaPatricia.png';
 // @ts-ignore
 import DudaFront from '@/assets/sprites/Duda.jpg';
+// @ts-ignore
+import finlandFlagFront from '@/assets/sprites/finland_flag.png';
+// @ts-ignore
+import brazilFlagFront from '@/assets/sprites/brazil_flag.png';
 
 export default function TabTwoScreen() {
     const windowWidth = useWindowDimensions().width;
@@ -128,6 +132,16 @@ export default function TabTwoScreen() {
         }
     );
     const duda = useImage(DudaFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
+    const finlandFlag = useImage(finlandFlagFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
+    const brazilFlag = useImage(brazilFlagFront.uri,
         (error :Error)=> {
             console.error('Loading failed:', error.message);
         }
@@ -468,7 +482,7 @@ export default function TabTwoScreen() {
     }
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
 
-    if (!ball || !field || !taru || !niina || !anaPatricia || !duda) {
+    if (!ball || !field || !taru || !niina || !anaPatricia || !duda || !finlandFlag || !brazilFlag) {
         return <Text>Image is loading...</Text>;
     }
     if(!isEditMode) {
@@ -477,24 +491,46 @@ export default function TabTwoScreen() {
     //console.log("RENDER------------------------------------------------")
     return (
         <View style={styles.container}>
-            <ButtonGroup
-                buttons={['  '+score.scoreTeam[0]+ '  ', '  '+score.scoreTeam[1]+ '  ']}
-                selectedIndex={lastServingTeam}
-                onPress={teamScores}
-                containerStyle={{ marginBottom: 20 }}
-                textStyle={styles.textButton}
-            />
+            <div style={styles.flaggedScore}>
+                <Canvas style={{ height:30, width:50 }} >
+                    <Image
+                        image={finlandFlag}
+                        width={50}
+                        height={30}
+                        fit={'cover'}
+
+                    />
+                </Canvas>
+
+
+                <ButtonGroup
+                    buttons={['  '+score.scoreTeam[0]+ '  ', '  '+score.scoreTeam[1]+ '  ']}
+                    selectedIndex={lastServingTeam}
+                    onPress={teamScores}
+                    containerStyle={{ marginBottom: 5 }}
+                    textStyle={styles.textButton}
+                />
+                <Canvas style={{ height:30, width:50 }} >
+                    <Image
+                        image={brazilFlag}
+                        width={50}
+                        height={30}
+                        fit={'cover'}
+
+                    />
+                </Canvas>
+            </div>
             <ButtonGroup
                 buttons={['  '+score.setsTeam[0]+ '  ', '  '+score.setsTeam[1]+ '  ']}
                 selectedIndex={2}
-                containerStyle={{ marginBottom: 20 }}
+                containerStyle={{ marginBottom: 5 }}
                 textStyle={styles.smallTextButton}
             />
             <ButtonGroup
                 buttons={['OUT', 'OUT touched', 'IN','FAIL', 'Net fault', 'Net fault','FAIL','IN', 'OUT touched', 'OUT']}
                 selectedIndex={100}
                 onPress={onLineEvent}
-                containerStyle={{ marginBottom: 20 }}
+                containerStyle={{ marginBottom: 5 }}
                 textStyle={styles.smallTextButton}
             />
             <GestureDetector gesture={gestureTap}>
@@ -548,19 +584,16 @@ export default function TabTwoScreen() {
                    />
                 </Canvas>
             </GestureDetector>
-            <Text>{debugText[debugText.length-6]}</Text>
             <Text>{debugText[debugText.length-5]}</Text>
             <Text>{debugText[debugText.length-4]}</Text>
             <Text>{debugText[debugText.length-3]}</Text>
             <Text>{debugText[debugText.length-2]}</Text>
             <Text>{debugText[debugText.length-1]}</Text>
-            <Text>---------------------------------------------------------------------</Text>
-            <Text>{JSON.stringify(currentTouchIdx)}</Text>
 
             <ButtonGroup
                 buttons={[ '\u{300a}', '\u{2329}', '\u{232a}', '\u{300b}']}
                 selectedIndex={10}
-                containerStyle={{ marginBottom: 20 }}
+                containerStyle={{ marginBottom: 1 }}
                 textStyle={styles.textButton}
                 onPress={gotoMove}
             />
@@ -577,6 +610,12 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    flaggedScore: {
+        display: 'flex',
+        flexDirection: 'row',
+        margin:'auto',
+        alignItems: 'center'
     },
     imageContainer: {
         marginVertical: 20,
