@@ -858,6 +858,10 @@ export const addLineEvent = (game: Game, currentTouchIdx:TouchIndex, isLeft:bool
     const sideSwapped = isSideSwapped(game, currentTouchIdx); // current team sides match the starting team sides
     const scoringTeamSide = sideSwapped === isLeft ? isSideScores : !isSideScores;
 
+    /*if(currentTouchIdx.touchIdx === 3) {
+        // it is a fail from the current touch
+    }*/
+
     teamScores(scoringTeamSide ? 1 : 0);
 }
 

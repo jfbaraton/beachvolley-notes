@@ -272,6 +272,25 @@ export default function TabTwoScreen() {
         if(game.points.length) {
             game.points[game.points.length-1].wonBy = newServingTeam
         }
+
+        // log what happened
+        logToUI(newServingTeam.id+ " scores");
+        if(currentTouchIdx.teamTouchesIdx>0) {
+            //if(currentTouchIdx.touchIdx < 2 && newServingTeam.id !== game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team.id) {
+                logToUI("On an attack by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch[game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch.length-1].player.id);
+            /*} else {
+                logToUI("On a failed attack by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch[game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch.length-1].player.id);
+            }  */
+        } else {
+            // service only
+            if (newServingTeam.id === game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team.id) {
+                logToUI("On an ace by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx].player.id);
+            } else {
+                logToUI("On a failed service by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx].player.id);
+            }
+        }
+
+        // prepare new point
         const newTouchIdx = {
             pointIdx: currentTouchIdx.pointIdx+1,
             teamTouchesIdx: 0,
