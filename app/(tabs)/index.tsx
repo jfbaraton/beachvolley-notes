@@ -478,6 +478,30 @@ export default function TabTwoScreen() {
         }
     }
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
+    const END_POSITION = 200;
+
+    const onLeft = useSharedValue(true);
+    //const position = useSharedValue(0);
+
+    const panGesture = Gesture.Pan()
+        .onUpdate((e) => {
+            if (onLeft.value) {
+                taruX.value = e.translationX;
+            } else {
+                taruX.value = END_POSITION + e.translationX;
+            }
+        })
+        .onEnd((e) => {
+            if (taruX.value > END_POSITION / 2) {
+                taruX.value = withTiming(END_POSITION, { duration: 100 });
+                onLeft.value = false;
+            } else {
+                taruX.value = withTiming(0, { duration: 100 });
+                onLeft.value = true;
+            }
+        });
+
+    const composedGesture = Gesture.Race(gestureTap, panGesture);
 
     if (!ball || !field || !taru || !niina || !anaPatricia || !duda || !finlandFlag || !brazilFlag) {
         return <Text>Image is loading...</Text>;
@@ -532,7 +556,7 @@ export default function TabTwoScreen() {
                 textStyle={styles.smallTextButton}
                 buttonStyle={styles.buttonStyle}
             />
-            <GestureDetector gesture={gestureTap}>
+            <GestureDetector gesture={composedGesture}>
                 <Canvas style={{ width, height }} >
                    <Image
                         image={field}
