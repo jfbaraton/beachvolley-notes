@@ -151,8 +151,11 @@ const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPos
 }
 
 export const getPlayerPosition = (playerId:string, currentTouch:Touch) : CalculatedPlayer | undefined => {
-    const explicitResult = currentTouch.playerCalculatedMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
-    if (explicitResult) return explicitResult;
+    const explicitResult = currentTouch.playerExplicitMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
+    if (explicitResult)  {
+        console.log("getPlayerPosition("+playerId+") found explicitResult ",explicitResult)
+        return explicitResult;
+    };
     return currentTouch.playerCalculatedMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
 }
 

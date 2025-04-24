@@ -3,7 +3,7 @@ import { ButtonGroup, Text, Image as Img } from '@rneui/themed'
 
 import { useWindowDimensions, StyleSheet, View  } from 'react-native';
 import {Canvas, Circle, Group, useImage, Image} from "@shopify/react-native-skia";
-import {useSharedValue, withTiming} from "react-native-reanimated";
+import {configureReanimatedLogger, ReanimatedLogLevel, useSharedValue, withTiming} from "react-native-reanimated";
 import {
     GestureDetector,
     Gesture,
@@ -51,6 +51,13 @@ import DudaFront from '@/assets/sprites/Duda.jpg';
 import finlandFlagFront from '@/assets/sprites/finland_flag.png';
 // @ts-ignore
 import brazilFlagFront from '@/assets/sprites/brazil_flag.png';
+
+
+// This is the default configuration
+configureReanimatedLogger({
+    level: ReanimatedLogLevel.warn,
+    strict: false, // Reanimated runs in strict mode by default
+});
 
 export default function TabTwoScreen() {
     const windowWidth = useWindowDimensions().width;
@@ -264,9 +271,7 @@ export default function TabTwoScreen() {
                 break;
 
         }
-        if(isLastTouchIndex(game, currentTouchIdx)) {
-            setIsEditMode(true)
-        } else {
+        if(newTouchIdx && !isLastTouchIndex(game, newTouchIdx)) {
             setIsEditMode(false)
         }
         if(newTouchIdx && newTouchIdx !== currentTouchIdx) {
@@ -554,6 +559,10 @@ export default function TabTwoScreen() {
     }
     if(!isEditMode) {
         console.log("replay RENDER-----");
+
+        if(isLastTouchIndex(game, currentTouchIdx)) {
+            setIsEditMode(true)
+        }
         renderTouchIndex(game,currentTouchIdx);
     }
     console.log("RENDER------------------------------------------------",currentTouchIdx)
