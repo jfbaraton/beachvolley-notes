@@ -1,6 +1,11 @@
 import { withTiming, withSequence} from "react-native-reanimated";
 import type { SharedValue } from "react-native-reanimated";
 
+const BallSourceDirection_Front = 0;
+const BallSourceDirection_Left = 1;
+const BallSourceDirection_Right = 2;
+const BallSourceDirection_Behind = 3;
+
 export interface FieldGraphicConstants {
     width: number;
     height: number;
@@ -56,8 +61,7 @@ export const initTeams = (
     team1Name:string,
     team2Name:string
     ) : Team[] => {
-    "worklet";
-    let result :Team[] = [{
+    return [{
         id : team1Name,
         players: [p1, p2],
         startingSide: 0, // 0 matches idx, 1 opposite of idx. team 0 is defaulting to left
@@ -69,7 +73,6 @@ export const initTeams = (
         prefersBlockId: null, // null no opinion, Player.id
     }] as Team[];
 
-    return result;
 }
 
 export interface Touch {
@@ -81,10 +84,12 @@ export interface Touch {
     subStateName?: string; // 'block', 'retouch afterblock', 'joust', spike, cut, pokie, rainbow, handset, bumpset, etc
     startingSide?: number; // 0 left, 1 right
     endingSide?: number; // 0 left, 1 right
+    isPlayerOnRightArmSide?: number; // position of the player relative to the team. 0 left hand, 1 right hand side, from team
     fromAcross?: boolean; // 0 no, 1 if ball comes from a diagonal angle
     toAcross?: boolean; // 0 no, 1 if ball comes from a diagonal angle
     isScoring?: boolean; // 0 no, 1 yes
     isFail?: boolean; // 0 no, 1 yes
+    isSentOutOfSystem?: boolean; // 0 no, 1 yes
     playerExplicitMoves: CalculatedPlayer[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
     playerCalculatedMoves: CalculatedPlayer[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
     setCall?: string; // 'up', 'middle', 'antenna', 'back'
@@ -148,6 +153,49 @@ const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPos
             y: onePlayerPosition.y
         } as CalculatedPlayer;
     })
+}
+export const isPlayerOnRightArmSide = (player : CalculatedPlayer, otherPlayer : CalculatedPlayer, fieldWidth:number, fieldHeight:number) : boolean => {
+    if(player.x < fieldWidth/2) {
+        // left side of the screen
+        return player.y > otherPlayer.y;
+    } else {
+        // right side of the screen
+        return player.y < otherPlayer.y;
+    }
+}
+
+// 0 if ball comes from in front, 1 from the left of the player, 2 from the right.
+export const getBallSourceDirection = (player : CalculatedPlayer, ballOriginPoint : CalculatedPlayer, fieldWidth:number, fieldHeight:number) : number => {
+    if(player.x < fieldWidth/2) {
+        // left side of the screen
+        if(ballOriginPoint.x < player.x) return BallSourceDirection_Behind;
+        if((ballOriginPoint.y - player.y) / ((ballOriginPoint.x - player.x) || 1)> 0.2) return BallSourceDirection_Right;
+        if((ballOriginPoint.y - player.y) / ((ballOriginPoint.x - player.x) || 1)< -0.2) return BallSourceDirection_Left;
+    } else {
+        // right side of the screen
+        if(ballOriginPoint.x > player.x) return BallSourceDirection_Behind;
+        if((ballOriginPoint.y - player.y) / ((player.x -ballOriginPoint.x) || 1)> 0.2) return BallSourceDirection_Left;
+        if((ballOriginPoint.y - player.y) / ((player.x -ballOriginPoint.x) || 1)< -0.2) return BallSourceDirection_Right;
+    }
+    return BallSourceDirection_Front;
+}
+
+export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex ) => {
+    const currentTeam = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team;
+    const currentTouch = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx];
+    currentTouch.player = getClosestPlayer(currentTeam.players, currentTouch.ballX || 0, currentTouch.ballY || 0);
+    const otherPlayer = getOtherPlayer(currentTeam, currentTouch.player.id);
+    currentTouch.subStateName; // 'block', 'retouch afterblock', 'joust', spike, cut, pokie, rainbow, handset, bumpset, etc
+    currentTouch.startingSide; // 0 left, 1 right
+    currentTouch.endingSide; // 0 left, 1 right
+    currentTouch.isPlayerOnRightArmSide; // position of the player relative to the team. 0 left hand, 1 right hand side, from team
+    currentTouch.fromAcross; // 0 no, 1 if ball comes from a diagonal angle
+    currentTouch.toAcross; // 0 no, 1 if ball comes from a diagonal angle
+    currentTouch.isScoring; // 0 no, 1 yes
+    currentTouch.isFail; // 0 no, 1 yes
+    currentTouch.isSentOutOfSystem; // 0 no, 1 yes
+
+
 }
 
 export const getPlayerPosition = (playerId:string, currentTouch:Touch) : CalculatedPlayer | undefined => {
@@ -528,7 +576,8 @@ export const getPlayerById = (team:Team, playerId:string) :Player =>{
     return team.players.find(onePlayer => onePlayer.id === playerId) || team.players[0];
 }
 
-export const getClosestPlayer = (players:Player[], ballX :number, ballY :number) :Player =>{
+export const getClosestPlayer = (playerIds:string[], ballX :number, ballY :number, game:Game, touchIndex:TouchIndex) :Player =>{
+    // TODO: do not use Player rendered values, but getPosition(touchIndex) instead
     let result = players[0];
     let playerDist = 10000000;
     players.forEach(onePlayer => {
