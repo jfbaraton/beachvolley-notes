@@ -155,7 +155,7 @@ export const getPlayerPosition = (playerId:string, currentTouch:Touch) : Calcula
     if (explicitResult)  {
         console.log("getPlayerPosition("+playerId+") found explicitResult ",explicitResult)
         return explicitResult;
-    };
+    }
     return currentTouch.playerCalculatedMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
 }
 

@@ -558,14 +558,14 @@ export default function TabTwoScreen() {
         return <Text>Image is loading...</Text>;
     }
     if(!isEditMode) {
-        console.log("replay RENDER-----");
+        //console.log("replay RENDER-----");
 
         if(isLastTouchIndex(game, currentTouchIdx)) {
             setIsEditMode(true)
         }
         renderTouchIndex(game,currentTouchIdx);
     }
-    console.log("RENDER------------------------------------------------",currentTouchIdx)
+    //console.log("RENDER------------------------------------------------",currentTouchIdx)
     return (
         <View style={styles.container}>
             <div style={styles.flaggedScore}>
