@@ -32,7 +32,7 @@ import {
     getNextPointIndex,
     getNextTouchIndex, getPreviousTouchIndex, getPreviousPointIndex,
     calculateScore,
-    isSideSwapped, addLineEvent
+    isSideSwapped, addLineEvent, getClosestPlayer, getDistance, getTouch, CalculatedPlayer
 } from '@/utils/BeachVolleyUtils';
 
 // @ts-ignore
@@ -480,25 +480,71 @@ export default function TabTwoScreen() {
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
     const END_POSITION = 200;
 
-    const onLeft = useSharedValue(true);
+    // DnD state
+    // keep the DnD on hte same side of the field
+    const MINIMUM_DISTANCE = 50;
+    const isLeft = useSharedValue(true);
+    const isDnDPlayerId = useSharedValue("-2"); // Player id or "-1" if ball, "-2" if nothing
+
     //const position = useSharedValue(0);
 
     const panGesture = Gesture.Pan()
         .onUpdate((e) => {
-            if (onLeft.value) {
-                taruX.value = e.translationX;
-            } else {
-                taruX.value = END_POSITION + e.translationX;
+            console.log("onUpdate > "+isDnDPlayerId.value);
+            if(isDnDPlayerId.value === "-2") {
+                // discovery mode
+                // find closest draggable
+                const ballDist = getDistance(ballX.value,ballY.value, validateBallX(e.x) , validateBallY(e.y) );
+                const closestPlayer = getClosestPlayer(game.teams.flatMap(oneTeam => oneTeam.players), validatePlayerX(e.x) , validatePlayerY(e.y) );
+                const closestPlayerDist = getDistance(closestPlayer.playerX.value, closestPlayer.playerY.value, validatePlayerX(e.x) , validatePlayerY(e.y) );
+                if(MINIMUM_DISTANCE > ballDist && closestPlayerDist > ballDist) {
+                    console.log("DnD start for ball ",closestPlayerDist ,">", ballDist)
+                    isLeft.value = ballX.value < width/2;
+                    isDnDPlayerId.value = "-1"; // ball
+                } else if(MINIMUM_DISTANCE > closestPlayerDist && ballDist > closestPlayerDist) {
+                    console.log("DnD start for "+closestPlayer.id,closestPlayerDist ,">", ballDist)
+                    isLeft.value = closestPlayer.playerX.value < width/2;
+                    isDnDPlayerId.value = closestPlayer.id; // player
+                } else {
+                    console.log("nothing to DnD ",MINIMUM_DISTANCE, ballDist, closestPlayerDist);
+                    isDnDPlayerId.value = "-2"; // nothing
+                }
+            } else if (isLeft.value === (e.x < width/2)) {
+                if(isDnDPlayerId.value === "-1") {
+                    // ball DnD
+                    ballX.value = validateBallX(e.x);
+                    ballY.value = validateBallY(e.y);
+                } else {
+                    // player Dnd
+                    const player = game.teams.flatMap(oneTeam => oneTeam.players).find(player => player.id === isDnDPlayerId.value);
+                    if(player) {
+                        player.playerX.value = validatePlayerX(e.x);
+                        player.playerY.value = validatePlayerY(e.y);
+                    }
+                }
             }
         })
         .onEnd((e) => {
-            if (taruX.value > END_POSITION / 2) {
-                taruX.value = withTiming(END_POSITION, { duration: 100 });
-                onLeft.value = false;
-            } else {
-                taruX.value = withTiming(0, { duration: 100 });
-                onLeft.value = true;
+            const currentTouch = getTouch(game,currentTouchIdx);
+            if(currentTouch && isDnDPlayerId.value === "-1") {
+                currentTouch.ballX = validateBallX(e.x);
+                currentTouch.ballY = validateBallY(e.y);
+            } else if (currentTouch && isDnDPlayerId.value !== "-2") {
+                // player DnD
+                const player = game.teams.flatMap(oneTeam => oneTeam.players).find(player => player.id === isDnDPlayerId.value);
+                if(player) {
+                    currentTouch.playerExplicitMoves = currentTouch.playerExplicitMoves.filter(oneCalculatedPlayer => oneCalculatedPlayer.id !== player.id);
+                    currentTouch.playerExplicitMoves.push({
+                        id: player.id,
+                        x: validatePlayerX(e.x),
+                        y: validatePlayerY(e.y)
+                    } as CalculatedPlayer);
+                }
+
             }
+
+
+            isDnDPlayerId.value = "-2"; // nothing
         });
 
     const composedGesture = Gesture.Race(gestureTap, panGesture);

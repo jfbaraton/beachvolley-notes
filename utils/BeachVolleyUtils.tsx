@@ -85,8 +85,8 @@ export interface Touch {
     toAcross?: boolean; // 0 no, 1 if ball comes from a diagonal angle
     isScoring?: boolean; // 0 no, 1 yes
     isFail?: boolean; // 0 no, 1 yes
-    playerExplicitMoves?: CalculatedPlayer[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
-    playerCalculatedMoves?: CalculatedPlayer[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
+    playerExplicitMoves: CalculatedPlayer[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
+    playerCalculatedMoves: CalculatedPlayer[]; // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
     setCall?: string; // 'up', 'middle', 'antenna', 'back'
 }
 
@@ -150,7 +150,14 @@ const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPos
     })
 }
 
-export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) => {
+export const getPlayerPosition = (playerId:string, currentTouch:Touch) : CalculatedPlayer | undefined => {
+    const explicitResult = currentTouch.playerCalculatedMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
+    if (explicitResult) return explicitResult;
+    return currentTouch.playerCalculatedMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
+}
+
+export const renderTouch = (game:Game, currentTouch:Touch|undefined, previousTouch:Touch|undefined) => {
+    if (!currentTouch) return;
     game.teams.forEach(oneTeam => oneTeam.players.forEach(
                 onePlayer => {
                     onePlayer.plannedMoveXSeq = [];
@@ -158,14 +165,14 @@ export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) 
                 }));
     game.plannedBallMoveXSeq = [];
     game.plannedBallMoveYSeq = [];
-    if(previousTouch && previousTouch.playerCalculatedMoves && previousTouch.playerCalculatedMoves.length) {
+    if(previousTouch) {
         game.teams.forEach(oneTeam => oneTeam.players.forEach(
             onePlayer => {
-                previousTouch.playerCalculatedMoves &&
-                previousTouch.playerCalculatedMoves.filter(oneCalc => oneCalc.id === onePlayer.id).forEach(oneCalc => {
-                    onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.push( withTiming(oneCalc.x, {duration: 50}));
-                    onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.push( withTiming(oneCalc.y, {duration: 50}));
-                })
+                const onePlayerPosition = getPlayerPosition(onePlayer.id, previousTouch);
+                if (onePlayerPosition) {
+                    onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.push( withTiming(onePlayerPosition.x, {duration: 50}));
+                    onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.push( withTiming(onePlayerPosition.y, {duration: 50}));
+                }
             }
         ))
         if(typeof previousTouch.ballX !== "undefined" && typeof previousTouch.ballY !== "undefined" ) {
@@ -176,11 +183,11 @@ export const renderTouch = (game:Game, currentTouch:Touch, previousTouch:Touch) 
     if(currentTouch && currentTouch.playerCalculatedMoves && currentTouch.playerCalculatedMoves.length) {
         game.teams.forEach(oneTeam => oneTeam.players.forEach(
             onePlayer => {
-                currentTouch.playerCalculatedMoves &&
-                currentTouch.playerCalculatedMoves.filter(oneCalc => oneCalc.id === onePlayer.id).forEach(oneCalc => {
-                    onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.push( withTiming(oneCalc.x, {duration: 500}));
-                    onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.push( withTiming(oneCalc.y, {duration: 500}));
-                })
+                const onePlayerPosition = getPlayerPosition(onePlayer.id, currentTouch);
+                if (onePlayerPosition) {
+                    onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.push( withTiming(onePlayerPosition.x, {duration: 500}));
+                    onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.push( withTiming(onePlayerPosition.y, {duration: 500}));
+                }
             }
         ))
 
@@ -312,8 +319,8 @@ export const getTouch = (game:Game, touchIndex: TouchIndex | null ) : Touch | nu
 export const renderTouchIndex = (game:Game, touchIndex: TouchIndex) => {
     renderTouch(
         game,
-        getTouch(game, touchIndex) || {} as Touch,
-        getTouch(game, getPreviousTouchIndex(game, touchIndex)) || {} as Touch,
+        getTouch(game, touchIndex) as Touch,
+        getTouch(game, getPreviousTouchIndex(game, touchIndex)) as Touch,
         )
 }
 
@@ -408,6 +415,8 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
             //isFail: boolean, // 0 no, 1 yes
             //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
             //setCall: string, // 'up', 'middle', 'antenna', 'back'
+            playerExplicitMoves: [],
+            playerCalculatedMoves: []
         });
     }
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
@@ -516,10 +525,17 @@ export const getPlayerById = (team:Team, playerId:string) :Player =>{
     return team.players.find(onePlayer => onePlayer.id === playerId) || team.players[0];
 }
 
-export const getClosestPlayer = (team:Team, ballX :number, ballY :number) :Player =>{
-    const player1Dist = getDistance(ballX, ballY, team.players[0].playerX.value, team.players[0].playerY.value);
-    const player2Dist = getDistance(ballX, ballY, team.players[1].playerX.value, team.players[1].playerY.value);
-    return player1Dist < player2Dist ? team.players[0] : team.players[1];
+export const getClosestPlayer = (players:Player[], ballX :number, ballY :number) :Player =>{
+    let result = players[0];
+    let playerDist = 10000000;
+    players.forEach(onePlayer => {
+        const dist = getDistance(ballX, ballY, onePlayer.playerX.value, onePlayer.playerY.value);
+        if(dist < playerDist) {
+            playerDist = dist;
+            result = onePlayer;
+        }
+    })
+    return result;
 }
 
 export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -536,7 +552,7 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
 
     const receivingTeam = game.teams[game.teams[0].players[0].playerX.value <= fieldConstants.width/2 === ballX <= fieldConstants.width/2 ? 0:1] ;
     //console.log("receivingTeam ",receivingTeam.id);
-    const receivingPlayer = getClosestPlayer(receivingTeam, ballX, ballY);
+    const receivingPlayer = getClosestPlayer(receivingTeam.players, ballX, ballY);
     const receiverMatePlayer = getOtherPlayer(receivingTeam, receivingPlayer.id);
     //console.log("receivingPlayer ",receivingPlayer.id)
     let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
@@ -559,6 +575,8 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
             //isFail: boolean, // 0 no, 1 yes
             //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
             //setCall: string, // 'up', 'middle', 'antenna', 'back'
+            playerExplicitMoves: [],
+            playerCalculatedMoves: []
         });
     }
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
@@ -657,6 +675,8 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
         //isFail: boolean, // 0 no, 1 yes
         //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
         //setCall: string, // 'up', 'middle', 'antenna', 'back'
+        playerExplicitMoves: [],
+        playerCalculatedMoves: []
     });
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
     const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
@@ -768,6 +788,8 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
         //isFail: boolean, // 0 no, 1 yes
         //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
         //setCall: string, // 'up', 'middle', 'antenna', 'back'
+        playerExplicitMoves: [],
+        playerCalculatedMoves: []
     });
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
     const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
