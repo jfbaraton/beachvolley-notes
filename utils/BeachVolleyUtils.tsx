@@ -85,8 +85,9 @@ export interface Touch {
     startingSide?: number; // 0 left, 1 right
     endingSide?: number; // 0 left, 1 right
     isPlayerOnRightArmSide?: number; // position of the player relative to the team. 0 left hand, 1 right hand side, from team
+    ballSourceDirection?: number; // BallSourceDirection_Front - BallSourceDirection_...
     fromAcross?: boolean; // 0 no, 1 if ball comes from a diagonal angle
-    toAcross?: boolean; // 0 no, 1 if ball comes from a diagonal angle
+    toAcross?: boolean; // 0 no, 1 if ball goes to a diagonal angle
     isScoring?: boolean; // 0 no, 1 yes
     isFail?: boolean; // 0 no, 1 yes
     isSentOutOfSystem?: boolean; // 0 no, 1 yes
@@ -130,7 +131,7 @@ export interface TouchIndex {
 
 export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[] ) : Game => {
     "worklet";
-    let result :Game = {
+    return {
         ballX: ballX, // reference to the shared value ballX.value
         ballY: ballY, // reference to the shared value ballX.value
         gameTitle: 'Olympics 2024 round of 16 FRA vs SUI', // Olympics 2024 round of 16 FRA vs SUI
@@ -139,8 +140,6 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
         //windAngle: number, // 0 is left to right, 90 is upwards, 180 is right to left, 270 is downwards
         points: [] as Point[]
     } as Game;
-
-    return result;
 }
 
 const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPositions:PlayerPosition[]) => {
@@ -153,6 +152,7 @@ const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPos
             y: onePlayerPosition.y
         } as CalculatedPlayer;
     })
+    // TODO updte stats on 2 last touches
 }
 export const isPlayerOnRightArmSide = (player : CalculatedPlayer, otherPlayer : CalculatedPlayer, fieldWidth:number, fieldHeight:number) : boolean => {
     if(player.x < fieldWidth/2) {
@@ -180,17 +180,45 @@ export const getBallSourceDirection = (player : CalculatedPlayer, ballOriginPoin
     return BallSourceDirection_Front;
 }
 
-export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex ) => {
+export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTouchIdx:TouchIndex|null,nextTouchIdx:TouchIndex|null, fieldConstants:FieldGraphicConstants ) => {
     const currentTeam = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team;
     const currentTouch = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx];
+    let previousTouch = null;
+    if(previousTouchIdx) {
+        previousTouch = game.points[previousTouchIdx.pointIdx].teamTouches[previousTouchIdx.teamTouchesIdx].touch[previousTouchIdx.touchIdx];
+    } else {
+        const calcPreviousTouchIdx = getPreviousTouchIndex(game, currentTouchIdx)
+        if(calcPreviousTouchIdx) {
+            previousTouch = game.points[calcPreviousTouchIdx.pointIdx].teamTouches[calcPreviousTouchIdx.teamTouchesIdx].touch[calcPreviousTouchIdx.touchIdx];
+        }
+    }
+
     currentTouch.player = getClosestPlayer(currentTeam.players.map(onePlayer => onePlayer.id), currentTouch.ballX || 0, currentTouch.ballY || 0, game, currentTouchIdx);
+    const currentPlayerPosition = getPlayerPosition(currentTouch.player.id, currentTouch, previousTouch) as CalculatedPlayer
     const otherPlayer = getOtherPlayer(currentTeam, currentTouch.player.id);
+    const otherPlayerPosition = getPlayerPosition(otherPlayer.id, currentTouch, previousTouch) as CalculatedPlayer
     currentTouch.subStateName; // 'block', 'retouch afterblock', 'joust', spike, cut, pokie, rainbow, handset, bumpset, etc
     currentTouch.startingSide; // 0 left, 1 right
     currentTouch.endingSide; // 0 left, 1 right
-    currentTouch.isPlayerOnRightArmSide; // position of the player relative to the team. 0 left hand, 1 right hand side, from team
-    currentTouch.fromAcross; // 0 no, 1 if ball comes from a diagonal angle
-    currentTouch.toAcross; // 0 no, 1 if ball comes from a diagonal angle
+    currentTouch.isPlayerOnRightArmSide = // position of the player relative to the team. 0 left hand, 1 right hand side, from team
+        isPlayerOnRightArmSide(currentPlayerPosition, otherPlayerPosition, fieldConstants.width, fieldConstants.height) ? 1 : 0;
+    if(currentTouch.isPlayerOnRightArmSide) {
+        console.log(currentTouch.player.id+" is on right arm side")
+    } else {
+        console.log(currentTouch.player.id+" is on left arm side")
+    }
+    if(previousTouch && currentTouchIdx.teamTouchesIdx>0 && currentTouchIdx.touchIdx>0) {
+        currentTouch.ballSourceDirection = getBallSourceDirection(
+            currentPlayerPosition,
+            {id:"-1", x:previousTouch.ballX, y:previousTouch.ballY} as CalculatedPlayer,
+            fieldConstants.width,
+            fieldConstants.height,
+        ); // BallSourceDirection_Front - BallSourceDirection_...
+        console.log("STATS: ball coming from ",currentTouch.ballSourceDirection)
+        currentTouch.fromAcross = (currentTouch.ballSourceDirection === BallSourceDirection_Right || currentTouch.ballSourceDirection === BallSourceDirection_Left) // 0 no, 1 if ball comes from a diagonal angle
+    }
+
+    currentTouch.toAcross; // 0 no, 1 if ball goes to a diagonal angle
     currentTouch.isScoring; // 0 no, 1 yes
     currentTouch.isFail; // 0 no, 1 yes
     currentTouch.isSentOutOfSystem; // 0 no, 1 yes
@@ -198,16 +226,23 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex ) => {
 
 }
 
-export const getPlayerPosition = (playerId:string, currentTouch:Touch) : CalculatedPlayer | undefined => {
+export const getPlayerPosition = (playerId:string, currentTouch:Touch, previousTouch:Touch | null) : CalculatedPlayer | null => {
     const explicitResult = currentTouch.playerExplicitMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
     if (explicitResult)  {
         console.log("getPlayerPosition("+playerId+") found explicitResult ",explicitResult)
         return explicitResult;
     }
-    return currentTouch.playerCalculatedMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
+    const calculatedResult = currentTouch.playerCalculatedMoves.find(onePlayerPosition => onePlayerPosition.id === playerId);
+    if (calculatedResult)  {
+        return calculatedResult;
+    }
+    if(previousTouch) {
+        return getPlayerPosition(playerId, previousTouch, null);
+    }
+    return null;
 }
 
-export const renderTouch = (game:Game, currentTouch:Touch|undefined, previousTouch:Touch|undefined) => {
+export const renderTouch = (game:Game, currentTouch:Touch|null, previousTouch:Touch|null) => {
     if (!currentTouch) return;
     game.teams.forEach(oneTeam => oneTeam.players.forEach(
                 onePlayer => {
@@ -219,7 +254,7 @@ export const renderTouch = (game:Game, currentTouch:Touch|undefined, previousTou
     if(previousTouch) {
         game.teams.forEach(oneTeam => oneTeam.players.forEach(
             onePlayer => {
-                const onePlayerPosition = getPlayerPosition(onePlayer.id, previousTouch);
+                const onePlayerPosition = getPlayerPosition(onePlayer.id,previousTouch, null);
                 if (onePlayerPosition) {
                     onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.push( withTiming(onePlayerPosition.x, {duration: 50}));
                     onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.push( withTiming(onePlayerPosition.y, {duration: 50}));
@@ -234,7 +269,7 @@ export const renderTouch = (game:Game, currentTouch:Touch|undefined, previousTou
     if(currentTouch && currentTouch.playerCalculatedMoves && currentTouch.playerCalculatedMoves.length) {
         game.teams.forEach(oneTeam => oneTeam.players.forEach(
             onePlayer => {
-                const onePlayerPosition = getPlayerPosition(onePlayer.id, currentTouch);
+                const onePlayerPosition = getPlayerPosition(onePlayer.id, currentTouch, previousTouch);
                 if (onePlayerPosition) {
                     onePlayer.plannedMoveXSeq && onePlayer.plannedMoveXSeq.push( withTiming(onePlayerPosition.x, {duration: 500}));
                     onePlayer.plannedMoveYSeq && onePlayer.plannedMoveYSeq.push( withTiming(onePlayerPosition.y, {duration: 500}));
@@ -402,7 +437,7 @@ export const calculateScore = (game:Game, currentTouchIndex:TouchIndex) : Score 
     return result;
 }
 
-export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
+export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number, fieldConstants:FieldGraphicConstants) => {
     //console.log("renderServingPosition ("+game.points.length+")", currentServingTeam.id, isSideSwapped, "--------------------------------------")
     /*const isFirstTouch =
         !game.points ||
@@ -582,7 +617,7 @@ export const getClosestPlayer = (playerIds:string[], ballX :number, ballY :numbe
     let result;
     let playerDist = 10000000;
     playerIds.forEach(onePlayerId => {
-        const playerPosition = getPlayerPosition(onePlayerId, getTouch(game, touchIndex) as Touch);
+        const playerPosition = getPlayerPosition(onePlayerId, getTouch(game, touchIndex) as Touch, getTouch(game, getPreviousTouchIndex(game, touchIndex)));
         if(!playerPosition) return;
 
         const dist = getDistance(ballX, ballY, playerPosition.x, playerPosition.y);

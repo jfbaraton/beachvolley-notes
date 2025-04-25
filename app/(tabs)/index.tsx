@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { ButtonGroup, Text, Image as Img } from '@rneui/themed'
+import { useState } from 'react';
+import { ButtonGroup, Text} from '@rneui/themed'
 
-import { useWindowDimensions, StyleSheet, View  } from 'react-native';
-import {Canvas, Circle, Group, useImage, Image} from "@shopify/react-native-skia";
-import {configureReanimatedLogger, ReanimatedLogLevel, useSharedValue, withTiming} from "react-native-reanimated";
+import { StyleSheet, View  } from 'react-native';
+import {Canvas, useImage, Image} from "@shopify/react-native-skia";
+import {configureReanimatedLogger, ReanimatedLogLevel, useSharedValue} from "react-native-reanimated";
 import {
     GestureDetector,
     Gesture,
@@ -19,15 +19,11 @@ import {
     renderSettingPosition,
     renderAttackPosition,
     Player,
-    Team,
-    Touch,
-    Game,
     Score,
     getOtherTeam,
     FieldGraphicConstants,
     TouchIndex,
     isLastTouchIndex,
-    renderTouch,
     renderTouchIndex,
     getNextPointIndex,
     getNextTouchIndex, getPreviousTouchIndex, getPreviousPointIndex,
@@ -60,8 +56,8 @@ configureReanimatedLogger({
 });
 
 export default function TabTwoScreen() {
-    const windowWidth = useWindowDimensions().width;
-    const windowHeight = useWindowDimensions().height;
+    //const windowWidth = useWindowDimensions().width;
+    //const windowHeight = useWindowDimensions().height;
     const width = 720;
     const height = 370;
     const ballsize = width/10;
@@ -197,9 +193,7 @@ export default function TabTwoScreen() {
     }
 
     const onLineEvent = (buttonIdx : number) => {
-        //logToUI("lineEvent "+buttonIdx)
         // 'OUT', 'OUT touched', 'IN','FAIL' 'Net fault', 'Net fault','FAIL','IN', 'OUT touched', 'OUT'
-        let newTouchIdx = currentTouchIdx;
         switch (buttonIdx) {
             case 0: // left 'OUT'
                 addLineEvent(game, currentTouchIdx, true, 'OUT', fieldGraphicConstants, teamScores);
@@ -284,6 +278,7 @@ export default function TabTwoScreen() {
         if(game.points.length) {
             game.points[game.points.length-1].wonBy = newServingTeam
         }
+        // TODO updte stats on all touches of hte point
 
         // log what happened
         let recap = newServingTeam.id+ " scores";
@@ -291,9 +286,7 @@ export default function TabTwoScreen() {
             const attackType =  currentTouchIdx.teamTouchesIdx === 1 && currentTouchIdx.touchIdx <2 ? " service" : "an attack";
             //if(currentTouchIdx.touchIdx < 2 && newServingTeam.id !== game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team.id) {
             recap += " on "+attackType+" by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch[game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch.length-1].player.id;
-            /*} else {
-                logToUI("On a failed attack by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch[game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch.length-1].player.id);
-            }  */
+
         } else {
             // service only
             if (newServingTeam.id === game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team.id) {
@@ -328,10 +321,10 @@ export default function TabTwoScreen() {
             game,
             newScore.setsTeam[0]+newScore.setsTeam[1],
             fieldGraphicConstants);
+
         setLastServingTeam(team);
     }
     const onFieldTouch = (event : GestureStateChangeEvent<TapGestureHandlerEventPayload>) => {
-        let sideOutContinues = false;
         const currentPoint = game.points[game.points.length-1];
         const currentTeamTouches = currentPoint.teamTouches[currentPoint.teamTouches.length-1];
         const currentTouch = currentTeamTouches.touch[currentTeamTouches.touch.length-1];
@@ -487,13 +480,12 @@ export default function TabTwoScreen() {
         }
     }
     const gestureTap = Gesture.Tap().onStart(onFieldTouch);
-    const END_POSITION = 200;
 
     // DnD state
     // keep the DnD on hte same side of the field
     const MINIMUM_DISTANCE = 50;
     const isLeft = useSharedValue(true);
-    const isDnDPlayerId = useSharedValue("-2"); // Player id or "-1" if ball, "-2" if nothing
+    const isDnDPlayerId = useSharedValue("-2"); // Player id or "-1" for ball, "-2" if nothing
 
     //const position = useSharedValue(0);
 
@@ -535,9 +527,11 @@ export default function TabTwoScreen() {
         })
         .onEnd((e) => {
             const currentTouch = getTouch(game,currentTouchIdx);
+            let isCurrentTouchUpdated = false;
             if(currentTouch && isDnDPlayerId.value === "-1") {
                 currentTouch.ballX = validateBallX(e.x);
                 currentTouch.ballY = validateBallY(e.y);
+                isCurrentTouchUpdated = true;
             } else if (currentTouch && isDnDPlayerId.value !== "-2") {
                 // player DnD
                 const player = game.teams.flatMap(oneTeam => oneTeam.players).find(player => player.id === isDnDPlayerId.value);
@@ -548,10 +542,12 @@ export default function TabTwoScreen() {
                         x: validatePlayerX(e.x),
                         y: validatePlayerY(e.y)
                     } as CalculatedPlayer);
+                    isCurrentTouchUpdated = true;
                 }
-
             }
-
+            if(isCurrentTouchUpdated) {
+                // TODO updte stats on 3 surrounding touches
+            }
 
             isDnDPlayerId.value = "-2"; // nothing
         });
