@@ -360,6 +360,7 @@ export default function TabTwoScreen() {
                         renderReceivingPosition(
                             event.x,event.y,
                             game,
+                            currentTouchIdx,
                             currentPoint.set,
                             fieldGraphicConstants
                         );
@@ -404,6 +405,7 @@ export default function TabTwoScreen() {
                         renderReceivingPosition(
                             event.x,event.y,
                             game,
+                            currentTouchIdx,
                             currentPoint.set,
                             fieldGraphicConstants
                         );
@@ -442,6 +444,7 @@ export default function TabTwoScreen() {
                         renderReceivingPosition(
                             event.x,event.y,
                             game,
+                            currentTouchIdx,
                             currentPoint.set,
                             fieldGraphicConstants
                         );
@@ -465,6 +468,7 @@ export default function TabTwoScreen() {
                         renderReceivingPosition(
                             event.x,event.y,
                             game,
+                            currentTouchIdx,
                             currentPoint.set,
                             fieldGraphicConstants
                         );
@@ -500,7 +504,7 @@ export default function TabTwoScreen() {
                 // discovery mode
                 // find closest draggable
                 const ballDist = getDistance(ballX.value,ballY.value, validateBallX(e.x) , validateBallY(e.y) );
-                const closestPlayer = getClosestPlayer(game.teams.flatMap(oneTeam => oneTeam.players), validatePlayerX(e.x) , validatePlayerY(e.y) );
+                const closestPlayer = getClosestPlayer(game.teams.flatMap(oneTeam => oneTeam.players).map(onePlayer => onePlayer.id), validatePlayerX(e.x) , validatePlayerY(e.y),game,currentTouchIdx );
                 const closestPlayerDist = getDistance(closestPlayer.playerX.value, closestPlayer.playerY.value, validatePlayerX(e.x) , validatePlayerY(e.y) );
                 if(MINIMUM_DISTANCE > ballDist && closestPlayerDist > ballDist) {
                     console.log("DnD start for ball ",closestPlayerDist ,">", ballDist)

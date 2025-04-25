@@ -183,7 +183,7 @@ export const getBallSourceDirection = (player : CalculatedPlayer, ballOriginPoin
 export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex ) => {
     const currentTeam = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team;
     const currentTouch = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx];
-    currentTouch.player = getClosestPlayer(currentTeam.players, currentTouch.ballX || 0, currentTouch.ballY || 0);
+    currentTouch.player = getClosestPlayer(currentTeam.players.map(onePlayer => onePlayer.id), currentTouch.ballX || 0, currentTouch.ballY || 0, game, currentTouchIdx);
     const otherPlayer = getOtherPlayer(currentTeam, currentTouch.player.id);
     currentTouch.subStateName; // 'block', 'retouch afterblock', 'joust', spike, cut, pokie, rainbow, handset, bumpset, etc
     currentTouch.startingSide; // 0 left, 1 right
@@ -571,26 +571,30 @@ export const getOtherPlayer = (team:Team, playerId:string) :Player =>{
 export const getOtherTeam = (teams:Team[], team:Team) :Team =>{
     return teams.find(oneTeam => oneTeam.id !== team.id) || teams[0];
 }
-
-export const getPlayerById = (team:Team, playerId:string) :Player =>{
+export const getTeamPlayerById = (team:Team, playerId:string) :Player =>{
     return team.players.find(onePlayer => onePlayer.id === playerId) || team.players[0];
+}
+export const getPlayerById = (game:Game, playerId:string) :Player =>{
+    return game.teams.flatMap(oneTeam => oneTeam.players).find(onePlayer => onePlayer.id === playerId) || game.teams[0].players[0];
 }
 
 export const getClosestPlayer = (playerIds:string[], ballX :number, ballY :number, game:Game, touchIndex:TouchIndex) :Player =>{
-    // TODO: do not use Player rendered values, but getPosition(touchIndex) instead
-    let result = players[0];
+    let result;
     let playerDist = 10000000;
-    players.forEach(onePlayer => {
-        const dist = getDistance(ballX, ballY, onePlayer.playerX.value, onePlayer.playerY.value);
+    playerIds.forEach(onePlayerId => {
+        const playerPosition = getPlayerPosition(onePlayerId, getTouch(game, touchIndex) as Touch);
+        if(!playerPosition) return;
+
+        const dist = getDistance(ballX, ballY, playerPosition.x, playerPosition.y);
         if(dist < playerDist) {
             playerDist = dist;
-            result = onePlayer;
+            result = getPlayerById(game, onePlayerId);
         }
     })
-    return result;
+    return result || getPlayerById(game, playerIds[0]);
 }
 
-export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
+export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,currentTouchIdx:TouchIndex, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
     //console.log("renderReceivingPosition ("+game.points.length+")", "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
@@ -604,7 +608,7 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
 
     const receivingTeam = game.teams[game.teams[0].players[0].playerX.value <= fieldConstants.width/2 === ballX <= fieldConstants.width/2 ? 0:1] ;
     //console.log("receivingTeam ",receivingTeam.id);
-    const receivingPlayer = getClosestPlayer(receivingTeam.players, ballX, ballY);
+    const receivingPlayer = getClosestPlayer(receivingTeam.players.map(onePlayer => onePlayer.id), ballX, ballY, game, currentTouchIdx);
     const receiverMatePlayer = getOtherPlayer(receivingTeam, receivingPlayer.id);
     //console.log("receivingPlayer ",receivingPlayer.id)
     let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
@@ -643,7 +647,7 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game, 
     // if team has a preferred blocker
     // or not the server (service)
     // or the attacker (attack)
-    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
+    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getTeamPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
                            attackTouch.stateName === 'service' ? lastNotAttackingPlayer: lastAttackingPlayer;
 
     const defenderPlayer =  getOtherPlayer(lastAttackingTeam, blockerPlayer.id);
@@ -743,7 +747,7 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
     // if team has a preferred blocker
     // or not the server (service)
     // or the attacker (attack)
-    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
+    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getTeamPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
                            attackTouch.stateName === 'service' ? lastNotAttackingPlayer: lastAttackingPlayer;
 
     const defenderPlayer =  getOtherPlayer(lastAttackingTeam, blockerPlayer.id);
@@ -856,7 +860,7 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
     // if team has a preferred blocker
     // or not the server (service)
     // or the attacker (attack)
-    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
+    const blockerPlayer = lastAttackingTeam.prefersBlockId ? getTeamPlayerById(lastAttackingTeam, lastAttackingTeam.prefersBlockId) :
                            attackTouch.stateName === 'service' ? lastNotAttackingPlayer: lastAttackingPlayer;
 
     const defenderPlayer =  getOtherPlayer(lastAttackingTeam, blockerPlayer.id);
