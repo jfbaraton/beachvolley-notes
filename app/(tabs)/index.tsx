@@ -285,9 +285,9 @@ export default function TabTwoScreen() {
             touchIdx: 0                         // Game.points.teamTouches.touch index
         } as TouchIndex
         let prevIdx = null;
-        console.log("score->update ALL stats FROM ",touchIdxIterator.pointIdx, game.points.length - 1)
+        //console.log("score->update ALL stats FROM ",touchIdxIterator.pointIdx, game.points.length - 1)
         while(touchIdxIterator && touchIdxIterator.pointIdx === (game.points.length - 1)) {
-            console.log("score->update stats for ",touchIdxIterator);
+            //console.log("score->update stats for ",touchIdxIterator);
             updateTouchStats(game,touchIdxIterator,prevIdx,null, fieldGraphicConstants );
             prevIdx = touchIdxIterator;
             touchIdxIterator = getNextTouchIndex(game,touchIdxIterator);

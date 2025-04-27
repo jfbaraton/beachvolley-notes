@@ -171,14 +171,17 @@ export const isPlayerOnRightArmSide = (player : CalculatedPlayer, otherPlayer : 
 
 // 0 if ball comes from in front, 1 from the left of the player, 2 from the right.
 export const getBallSourceDirection = (player : CalculatedPlayer, ballOriginPoint : CalculatedPlayer, fieldWidth:number, fieldHeight:number) : number => {
+    //console.log("getBallSourceDirection "+player.id+" left?",player.x < fieldWidth/2," ball left from player", ballOriginPoint.x < player.x)
     if(player.x < fieldWidth/2) {
         // left side of the screen
         if(ballOriginPoint.x < player.x) return BallSourceDirection_Behind;
+        //console.log("left -> ",(ballOriginPoint.y - player.y),((ballOriginPoint.x - player.x) || 1)," = ", ((ballOriginPoint.y - player.y) / ((ballOriginPoint.x - player.x) || 1)))
         if((ballOriginPoint.y - player.y) / ((ballOriginPoint.x - player.x) || 1)> 0.2) return BallSourceDirection_Right;
         if((ballOriginPoint.y - player.y) / ((ballOriginPoint.x - player.x) || 1)< -0.2) return BallSourceDirection_Left;
     } else {
         // right side of the screen
         if(ballOriginPoint.x > player.x) return BallSourceDirection_Behind;
+        //console.log("left -> ",(ballOriginPoint.y - player.y),(( player.x - ballOriginPoint.x) || 1)," = ", ((ballOriginPoint.y - player.y) / ((player.x - ballOriginPoint.x) || 1)))
         if((ballOriginPoint.y - player.y) / ((player.x -ballOriginPoint.x) || 1)> 0.2) return BallSourceDirection_Left;
         if((ballOriginPoint.y - player.y) / ((player.x -ballOriginPoint.x) || 1)< -0.2) return BallSourceDirection_Right;
     }
@@ -192,10 +195,13 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     let calcPreviousTouchIdx = previousTouchIdx;
     if(!calcPreviousTouchIdx) {
         calcPreviousTouchIdx = getPreviousTouchIndex(game, currentTouchIdx)
+        //console.log("calculating prev index")
     }
 
+    //console.log("prev index ",calcPreviousTouchIdx)
     if(calcPreviousTouchIdx && calcPreviousTouchIdx.pointIdx === currentTouchIdx.pointIdx) {
         previousTouch = game.points[calcPreviousTouchIdx.pointIdx].teamTouches[calcPreviousTouchIdx.teamTouchesIdx].touch[calcPreviousTouchIdx.touchIdx];
+        //console.log("prev touch ",previousTouch)
     }
 
     let nextTouch = null;
@@ -209,6 +215,7 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     }
 
     currentTouch.player = getClosestPlayer(currentTeam.players.map(onePlayer => onePlayer.id), currentTouch.ballX || 0, currentTouch.ballY || 0, game, currentTouchIdx);
+    //console.log("updateTouchStats "+currentTouch.player.id,currentTouchIdx);
     const currentPlayerPosition = getPlayerPosition(currentTouch.player.id, currentTouch, previousTouch) as CalculatedPlayer
     const otherPlayer = getOtherPlayer(currentTeam, currentTouch.player.id);
     const otherPlayerPosition = getPlayerPosition(otherPlayer.id, currentTouch, previousTouch) as CalculatedPlayer
@@ -217,12 +224,12 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     currentTouch.endingSide; // 0 left, 1 right
     currentTouch.isPlayerOnRightArmSide = // position of the player relative to the team. 0 left hand, 1 right hand side, from team
         isPlayerOnRightArmSide(currentPlayerPosition, otherPlayerPosition, fieldConstants.width, fieldConstants.height) ? 1 : 0;
-    if(currentTouch.isPlayerOnRightArmSide) {
+    /* if(currentTouch.isPlayerOnRightArmSide) {
         console.log(currentTouch.player.id+" is on right arm side")
     } else {
         console.log(currentTouch.player.id+" is on left arm side")
-    }
-    if(previousTouch && currentTouchIdx.teamTouchesIdx>0 && currentTouchIdx.touchIdx>0) {
+    } */
+    if(previousTouch && currentTouchIdx.teamTouchesIdx>0) {
         currentTouch.ballSourceDirection = getBallSourceDirection(
             currentPlayerPosition,
             {id:"-1", x:previousTouch.ballX, y:previousTouch.ballY} as CalculatedPlayer,
@@ -238,7 +245,7 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     currentTouch.isFail; // 0 no, 1 yes
     currentTouch.isSentOutOfSystem; // 0 no, 1 yes
 
-    console.log("updatedStats :",JSON.stringify(currentTouch))
+    //console.log("updatedStats :",JSON.stringify(currentTouch))
 }
 
 export const getPlayerPosition = (playerId:string, currentTouch:Touch, previousTouch:Touch | null) : CalculatedPlayer | null => {
