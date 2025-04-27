@@ -27,7 +27,7 @@ import {
     renderTouchIndex,
     getNextPointIndex,
     getNextTouchIndex, getPreviousTouchIndex, getPreviousPointIndex,
-    calculateScore,
+    calculateScore,updateTouchStats ,
     isSideSwapped, addLineEvent, getClosestPlayer, getDistance, getTouch, CalculatedPlayer
 } from '@/utils/BeachVolleyUtils';
 
@@ -278,7 +278,20 @@ export default function TabTwoScreen() {
         if(game.points.length) {
             game.points[game.points.length-1].wonBy = newServingTeam
         }
-        // TODO updte stats on all touches of hte point
+        // update stats on all touches of the point
+        let touchIdxIterator = {
+            pointIdx: game.points.length - 1,   // Game.points index
+            teamTouchesIdx: 0,                  // Game.points.teamTouches index
+            touchIdx: 0                         // Game.points.teamTouches.touch index
+        } as TouchIndex
+        let prevIdx = null;
+        console.log("score->update ALL stats FROM ",touchIdxIterator.pointIdx, game.points.length - 1)
+        while(touchIdxIterator && touchIdxIterator.pointIdx === (game.points.length - 1)) {
+            console.log("score->update stats for ",touchIdxIterator);
+            updateTouchStats(game,touchIdxIterator,prevIdx,null, fieldGraphicConstants );
+            prevIdx = touchIdxIterator;
+            touchIdxIterator = getNextTouchIndex(game,touchIdxIterator);
+        }
 
         // log what happened
         let recap = newServingTeam.id+ " scores";
@@ -546,7 +559,7 @@ export default function TabTwoScreen() {
                 }
             }
             if(isCurrentTouchUpdated) {
-                // TODO updte stats on 3 surrounding touches
+                updateTouchStats(game,currentTouchIdx,getPreviousTouchIndex(game, currentTouchIdx),getNextTouchIndex(game, currentTouchIdx), fieldGraphicConstants )
             }
 
             isDnDPlayerId.value = "-2"; // nothing

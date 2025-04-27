@@ -142,7 +142,8 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
     } as Game;
 }
 
-const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPositions:PlayerPosition[]) => {
+const savePositions = (game:Game, currentTouchIdx:TouchIndex, ballx:number, bally:number, playerPositions:PlayerPosition[], fieldConstants:FieldGraphicConstants) => {
+    const currentTouch = getTouch(game, currentTouchIdx);
     currentTouch.ballX = ballx;
     currentTouch.ballY = bally;
     currentTouch.playerCalculatedMoves = playerPositions.map(onePlayerPosition => {
@@ -152,7 +153,11 @@ const savePositions = (currentTouch:Touch, ballx:number, bally:number, playerPos
             y: onePlayerPosition.y
         } as CalculatedPlayer;
     })
-    // TODO updte stats on 2 last touches
+    const prevTouchIdx = getPreviousTouchIndex(game, currentTouchIdx)
+    if(prevTouchIdx && prevTouchIdx.pointIdx === currentTouchIdx.pointIdx) {
+        updateTouchStats(game,prevTouchIdx,null,null, fieldConstants );
+    }
+    updateTouchStats(game,currentTouchIdx,prevTouchIdx,null, fieldConstants );
 }
 export const isPlayerOnRightArmSide = (player : CalculatedPlayer, otherPlayer : CalculatedPlayer, fieldWidth:number, fieldHeight:number) : boolean => {
     if(player.x < fieldWidth/2) {
@@ -184,13 +189,23 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     const currentTeam = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team;
     const currentTouch = game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx];
     let previousTouch = null;
-    if(previousTouchIdx) {
-        previousTouch = game.points[previousTouchIdx.pointIdx].teamTouches[previousTouchIdx.teamTouchesIdx].touch[previousTouchIdx.touchIdx];
-    } else {
-        const calcPreviousTouchIdx = getPreviousTouchIndex(game, currentTouchIdx)
-        if(calcPreviousTouchIdx) {
-            previousTouch = game.points[calcPreviousTouchIdx.pointIdx].teamTouches[calcPreviousTouchIdx.teamTouchesIdx].touch[calcPreviousTouchIdx.touchIdx];
-        }
+    let calcPreviousTouchIdx = previousTouchIdx;
+    if(!calcPreviousTouchIdx) {
+        calcPreviousTouchIdx = getPreviousTouchIndex(game, currentTouchIdx)
+    }
+
+    if(calcPreviousTouchIdx && calcPreviousTouchIdx.pointIdx === currentTouchIdx.pointIdx) {
+        previousTouch = game.points[calcPreviousTouchIdx.pointIdx].teamTouches[calcPreviousTouchIdx.teamTouchesIdx].touch[calcPreviousTouchIdx.touchIdx];
+    }
+
+    let nextTouch = null;
+    let calcNextTouchIdx = nextTouchIdx;
+    if(!calcNextTouchIdx) {
+        calcNextTouchIdx = getNextTouchIndex(game, currentTouchIdx)
+    }
+
+    if(calcNextTouchIdx && calcNextTouchIdx.pointIdx === currentTouchIdx.pointIdx) {
+        nextTouch = game.points[calcNextTouchIdx.pointIdx].teamTouches[calcNextTouchIdx.teamTouchesIdx].touch[calcNextTouchIdx.touchIdx];
     }
 
     currentTouch.player = getClosestPlayer(currentTeam.players.map(onePlayer => onePlayer.id), currentTouch.ballX || 0, currentTouch.ballY || 0, game, currentTouchIdx);
@@ -223,7 +238,7 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     currentTouch.isFail; // 0 no, 1 yes
     currentTouch.isSentOutOfSystem; // 0 no, 1 yes
 
-
+    console.log("updatedStats :",JSON.stringify(currentTouch))
 }
 
 export const getPlayerPosition = (playerId:string, currentTouch:Touch, previousTouch:Touch | null) : CalculatedPlayer | null => {
@@ -505,6 +520,12 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
             playerCalculatedMoves: []
         });
     }
+    const currentTouchIdx = {
+        pointIdx: game.points.length - 1,               // Game.points index
+        teamTouchesIdx: currentTeamTouches.length-1,    // Game.points.teamTouches index
+        touchIdx: currentTouchArr.length-1              // Game.points.teamTouches.touch index
+    } as TouchIndex;
+
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
     const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
     //const currentServingTeam = currentTouches[0].team;
@@ -586,14 +607,14 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     game.ballX.value = withTiming(ballxTarget,{ duration : 50});
     const ballyTarget = fieldConstants.validateBallY(fieldConstants.servingPosY);
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
-    savePositions(currentTouch,
+    savePositions(game,currentTouchIdx,
         ballxTarget, ballyTarget,
         [
             {id:p1id, x:p1xTarget, y:p1yTarget},
             {id:p2id, x:p2xTarget, y:p2yTarget},
             {id:p3id, x:p3xTarget, y:p3yTarget},
             {id:p4id, x:p4xTarget, y:p4yTarget}
-        ]);
+        ],fieldConstants);
 }
 
 export const getDistance = (p1x:number,p1Y:number,p2x:number,p2Y:number): number => {
@@ -629,7 +650,7 @@ export const getClosestPlayer = (playerIds:string[], ballX :number, ballY :numbe
     return result || getPlayerById(game, playerIds[0]);
 }
 
-export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,currentTouchIdx:TouchIndex, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
+export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,prevTouchIdx:TouchIndex, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
     //console.log("renderReceivingPosition ("+game.points.length+")", "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
@@ -643,7 +664,7 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,c
 
     const receivingTeam = game.teams[game.teams[0].players[0].playerX.value <= fieldConstants.width/2 === ballX <= fieldConstants.width/2 ? 0:1] ;
     //console.log("receivingTeam ",receivingTeam.id);
-    const receivingPlayer = getClosestPlayer(receivingTeam.players.map(onePlayer => onePlayer.id), ballX, ballY, game, currentTouchIdx);
+    const receivingPlayer = getClosestPlayer(receivingTeam.players.map(onePlayer => onePlayer.id), ballX, ballY, game, prevTouchIdx);
     const receiverMatePlayer = getOtherPlayer(receivingTeam, receivingPlayer.id);
     //console.log("receivingPlayer ",receivingPlayer.id)
     let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
@@ -670,6 +691,13 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,c
             playerCalculatedMoves: []
         });
     }
+
+    const currentTouchIdx = {
+        pointIdx: game.points.length - 1,               // Game.points index
+        teamTouchesIdx: currentTeamTouches.length-1,    // Game.points.teamTouches index
+        touchIdx: currentTouchArr.length-1              // Game.points.teamTouches.touch index
+    } as TouchIndex;
+
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
     const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
     const currentServingTeam = currentPoint.teamTouches[0].team;
@@ -719,14 +747,14 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,c
     game.ballX.value = withTiming(ballxTarget,{ duration : 50});
     const ballyTarget = fieldConstants.validateBallY(ballY);
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
-    savePositions(currentTouch,
+    savePositions(game,currentTouchIdx,
         ballxTarget, ballyTarget,
         [
             {id:blockerPlayer.id, x:blockerPlayerxTarget, y:blockerPlayeryTarget},
             {id:defenderPlayer.id, x:defenderPlayerxTarget, y:defenderPlayeryTarget},
             {id:receivingPlayer.id, x:receivingPlayerxTarget, y:receivingPlayeryTarget},
             {id:receiverMatePlayer.id, x:receiverMatePlayerxTarget, y:receiverMatePlayeryTarget}
-        ]);
+        ],fieldConstants);
 }
 
 export const renderSettingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -769,6 +797,13 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
         playerExplicitMoves: [],
         playerCalculatedMoves: []
     });
+
+    const currentTouchIdx = {
+        pointIdx: game.points.length - 1,               // Game.points index
+        teamTouchesIdx: currentTeamTouches.length-1,    // Game.points.teamTouches index
+        touchIdx: currentTouchArr.length-1              // Game.points.teamTouches.touch index
+    } as TouchIndex;
+
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
     const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
     const currentServingTeam = currentPoint.teamTouches[0].team;
@@ -832,14 +867,14 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
     game.ballX.value = withTiming(ballxTarget,{ duration : 50});
     const ballyTarget = fieldConstants.validateBallY(ballY);
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
-    savePositions(currentTouch,
+    savePositions(game,currentTouchIdx,
         ballxTarget, ballyTarget,
         [
             {id:blockerPlayer.id, x:blockerPlayerxTarget, y:blockerPlayeryTarget},
             {id:defenderPlayer.id, x:defenderPlayerxTarget, y:defenderPlayeryTarget},
             {id:passingPlayer.id, x:passingPlayerxTarget, y:passingPlayeryTarget},
             {id:settingPlayer.id, x:settingPlayerxTarget, y:settingPlayeryTarget}
-        ]);
+        ],fieldConstants);
 }
 
 export const renderAttackPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -882,6 +917,13 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
         playerExplicitMoves: [],
         playerCalculatedMoves: []
     });
+
+    const currentTouchIdx = {
+        pointIdx: game.points.length - 1,               // Game.points index
+        teamTouchesIdx: currentTeamTouches.length-1,    // Game.points.teamTouches index
+        touchIdx: currentTouchArr.length-1              // Game.points.teamTouches.touch index
+    } as TouchIndex;
+
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
     const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
     const currentServingTeam = currentPoint.teamTouches[0].team;
@@ -931,14 +973,14 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
     game.ballX.value = withTiming(ballxTarget,{ duration : 50});
     const ballyTarget = fieldConstants.validateBallY(ballY);
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
-    savePositions(currentTouch,
+    savePositions(game,currentTouchIdx,
         ballxTarget, ballyTarget,
         [
             {id:blockerPlayer.id, x:blockerPlayerxTarget, y:blockerPlayeryTarget},
             {id:defenderPlayer.id, x:defenderPlayerxTarget, y:defenderPlayeryTarget},
             {id:attackingPlayer.id, x:attackingPlayerxTarget, y:attackingPlayeryTarget},
             {id:settingPlayer.id, x:settingPlayerxTarget, y:settingPlayeryTarget}
-        ]);
+        ],fieldConstants);
 }
 
 export const isSideSwapped = (game: Game, currentTouchIdx:TouchIndex) => {
