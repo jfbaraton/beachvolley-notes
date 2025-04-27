@@ -27,7 +27,7 @@ import {
     renderTouchIndex,
     getNextPointIndex,
     getNextTouchIndex, getPreviousTouchIndex, getPreviousPointIndex,
-    calculateScore,updateTouchStats ,
+    calculateScore,updateTouchStats, getSuccessAndFail,
     isSideSwapped, addLineEvent, getClosestPlayer, getDistance, getTouch, CalculatedPlayer
 } from '@/utils/BeachVolleyUtils';
 
@@ -309,6 +309,19 @@ export default function TabTwoScreen() {
             }
         }
         logToUI(recap)
+        const successAndFails = getSuccessAndFail(game, currentTouchIdx);
+        successAndFails.forEach(oneTouchIdx => {
+            const oneTouch = getTouch(game, touchIdxIterator)
+            if(oneTouch.isFail) {
+                logToUI("Fail was a bad "+oneTouch.stateName+" by "+oneTouch.player.player.id)
+            }
+            if(oneTouch.isSuccess) {
+                logToUI("Success was a "+oneTouch.stateName+" by "+oneTouch.player.player.id)
+            }
+        })
+        if(!successAndFails.length) {
+            logToUI("no success or fails in this point")
+        }
 
         // prepare new point
         const newTouchIdx = {

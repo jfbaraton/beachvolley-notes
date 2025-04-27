@@ -264,6 +264,26 @@ export const getPlayerPosition = (playerId:string, currentTouch:Touch, previousT
     return null;
 }
 
+export const getSuccessAndFail = (game:Game, currentTouchIndex:TouchIndex|null):TouchIndex[] => {
+    const result = [];
+    // update stats on all touches of the point
+    let touchIdxIterator = {
+        pointIdx: currentTouchIndex.pointIdx,   // Game.points index
+        teamTouchesIdx: 0,                  // Game.points.teamTouches index
+        touchIdx: 0                         // Game.points.teamTouches.touch index
+    } as TouchIndex
+    while(touchIdxIterator && touchIdxIterator.pointIdx === currentTouchIndex.pointIdx) {
+        //console.log("score->update stats for ",touchIdxIterator);
+        const itTouch = getTouch(game, touchIdxIterator)
+        if(itTouch && (itTouch.isFail || itTouch.isSuccess)) {
+            result.push(touchIdxIterator);
+        }
+
+        touchIdxIterator = getNextTouchIndex(game,touchIdxIterator);
+    }
+    return result;
+}
+
 export const renderTouch = (game:Game, currentTouch:Touch|null, previousTouch:Touch|null) => {
     if (!currentTouch) return;
     game.teams.forEach(oneTeam => oneTeam.players.forEach(
