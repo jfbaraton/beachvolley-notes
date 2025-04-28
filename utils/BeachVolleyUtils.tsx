@@ -144,6 +144,7 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
 
 const savePositions = (game:Game, currentTouchIdx:TouchIndex, ballx:number, bally:number, playerPositions:PlayerPosition[], fieldConstants:FieldGraphicConstants) => {
     const currentTouch = getTouch(game, currentTouchIdx);
+    if(!currentTouch) return;
     currentTouch.ballX = ballx;
     currentTouch.ballY = bally;
     currentTouch.playerCalculatedMoves = playerPositions.map(onePlayerPosition => {
@@ -264,10 +265,10 @@ export const getPlayerPosition = (playerId:string, currentTouch:Touch, previousT
     return null;
 }
 
-export const getSuccessAndFail = (game:Game, currentTouchIndex:TouchIndex|null):TouchIndex[] => {
+export const getSuccessAndFail = (game:Game, currentTouchIndex:TouchIndex):TouchIndex[] => {
     const result = [];
     // update stats on all touches of the point
-    let touchIdxIterator = {
+    let touchIdxIterator: TouchIndex | null = {
         pointIdx: currentTouchIndex.pointIdx,   // Game.points index
         teamTouchesIdx: 0,                  // Game.points.teamTouches index
         touchIdx: 0                         // Game.points.teamTouches.touch index
@@ -275,7 +276,7 @@ export const getSuccessAndFail = (game:Game, currentTouchIndex:TouchIndex|null):
     while(touchIdxIterator && touchIdxIterator.pointIdx === currentTouchIndex.pointIdx) {
         //console.log("score->update stats for ",touchIdxIterator);
         const itTouch = getTouch(game, touchIdxIterator)
-        if(itTouch && (itTouch.isFail || itTouch.isSuccess)) {
+        if(itTouch && (itTouch.isFail || itTouch.isScoring)) {
             result.push(touchIdxIterator);
         }
 

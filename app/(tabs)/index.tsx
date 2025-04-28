@@ -279,7 +279,7 @@ export default function TabTwoScreen() {
             game.points[game.points.length-1].wonBy = newServingTeam
         }
         // update stats on all touches of the point
-        let touchIdxIterator = {
+        let touchIdxIterator: TouchIndex | null = {
             pointIdx: game.points.length - 1,   // Game.points index
             teamTouchesIdx: 0,                  // Game.points.teamTouches index
             touchIdx: 0                         // Game.points.teamTouches.touch index
@@ -312,11 +312,11 @@ export default function TabTwoScreen() {
         const successAndFails = getSuccessAndFail(game, currentTouchIdx);
         successAndFails.forEach(oneTouchIdx => {
             const oneTouch = getTouch(game, touchIdxIterator)
-            if(oneTouch.isFail) {
-                logToUI("Fail was a bad "+oneTouch.stateName+" by "+oneTouch.player.player.id)
+            if(oneTouch && oneTouch.isFail) {
+                logToUI("Fail was a bad "+oneTouch.stateName+" by "+oneTouch.player.id)
             }
-            if(oneTouch.isSuccess) {
-                logToUI("Success was a "+oneTouch.stateName+" by "+oneTouch.player.player.id)
+            if(oneTouch && oneTouch.isScoring) {
+                logToUI("Success was a "+oneTouch.stateName+" by "+oneTouch.player.id)
             }
         })
         if(!successAndFails.length) {
