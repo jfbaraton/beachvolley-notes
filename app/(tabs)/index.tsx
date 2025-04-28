@@ -274,9 +274,9 @@ export default function TabTwoScreen() {
         }
     }
     const teamScores = (team : number) => {
-        const newServingTeam = teams[0].startingSide === 0 ? teams[team] : teams[1-team];
+        const scoringTeam = teams[0].startingSide === 0 ? teams[team] : teams[1-team];
         if(game.points.length) {
-            game.points[game.points.length-1].wonBy = newServingTeam
+            game.points[game.points.length-1].wonBy = scoringTeam
         }
         // update stats on all touches of the point
         let touchIdxIterator: TouchIndex | null = {
@@ -285,33 +285,60 @@ export default function TabTwoScreen() {
             touchIdx: 0                         // Game.points.teamTouches.touch index
         } as TouchIndex
         let prevIdx = null;
+        let scoringTouchIdx = null;
+        let failingTouchIdx = null;
         //console.log("score->update ALL stats FROM ",touchIdxIterator.pointIdx, game.points.length - 1)
         while(touchIdxIterator && touchIdxIterator.pointIdx === (game.points.length - 1)) {
             //console.log("score->update stats for ",touchIdxIterator);
             updateTouchStats(game,touchIdxIterator,prevIdx,null, fieldGraphicConstants );
+            const itTouch = getTouch(game,touchIdxIterator);
+            // success for the last touch of the scoring team, if exists
+            if(itTouch && (itTouch.player.id === scoringTeam.players[0].id || itTouch.player.id === scoringTeam.players[1].id)
+                /*&& touchIdxIterator.teamTouchesIdx < currentTouchIdx.teamTouchesIdx*/) {
+                scoringTouchIdx = touchIdxIterator;
+                failingTouchIdx = null;
+            }
+
+            // fail for the last touch of the other team, if exists and after the success
+            if(itTouch && itTouch.player.id !== scoringTeam.players[0].id && itTouch.player.id !== scoringTeam.players[1].id && !failingTouchIdx) {
+                failingTouchIdx = touchIdxIterator;
+            }
+
             prevIdx = touchIdxIterator;
             touchIdxIterator = getNextTouchIndex(game,touchIdxIterator);
         }
+        if(scoringTouchIdx){
+            const scoringTouch = getTouch(game,scoringTouchIdx);
+            if(scoringTouch) {
+                scoringTouch.isScoring = true;
+            }
+        }
+        if(failingTouchIdx){
+            const failingTouch = getTouch(game,failingTouchIdx);
+            if(failingTouch) {
+                failingTouch.isFail = true;
+            }
+        }
 
         // log what happened
-        let recap = newServingTeam.id+ " scores";
+        /*let recap = scoringTeam.id+ " scores";
         if(currentTouchIdx.teamTouchesIdx>0) {
             const attackType =  currentTouchIdx.teamTouchesIdx === 1 && currentTouchIdx.touchIdx <2 ? " service" : "an attack";
-            //if(currentTouchIdx.touchIdx < 2 && newServingTeam.id !== game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team.id) {
+            //if(currentTouchIdx.touchIdx < 2 && scoringTeam.id !== game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team.id) {
             recap += " on "+attackType+" by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch[game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx-1].touch.length-1].player.id;
 
         } else {
             // service only
-            if (newServingTeam.id === game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team.id) {
+            if (scoringTeam.id === game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].team.id) {
                 recap += " on an ace by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx].player.id;
             } else {
                 recap += " on a failed service by "+game.points[currentTouchIdx.pointIdx].teamTouches[currentTouchIdx.teamTouchesIdx].touch[currentTouchIdx.touchIdx].player.id;
             }
         }
-        logToUI(recap)
+        logToUI(recap)*/
         const successAndFails = getSuccessAndFail(game, currentTouchIdx);
         successAndFails.forEach(oneTouchIdx => {
-            const oneTouch = getTouch(game, touchIdxIterator)
+            const oneTouch = getTouch(game, oneTouchIdx)
             if(oneTouch && oneTouch.isFail) {
                 logToUI("Fail was a bad "+oneTouch.stateName+" by "+oneTouch.player.id)
             }
@@ -340,7 +367,7 @@ export default function TabTwoScreen() {
         setScore(newScore);
         console.log("Score = transition to ", newTouchIdx)
         setCurrentTouchIdx(newTouchIdx);
-
+        const newServingTeam = scoringTeam; // logic might be added , like between sets
         renderServingPosition(
             newServingTeam,
             isSideSwapped(game, newTouchIdx),
