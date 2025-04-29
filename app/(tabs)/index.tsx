@@ -19,7 +19,7 @@ import {
     renderSettingPosition,
     renderAttackPosition,
     Player,
-    Score,
+    Score, Game,
     getOtherTeam,
     FieldGraphicConstants,
     TouchIndex,
@@ -30,6 +30,7 @@ import {
     calculateScore,updateTouchStats, getSuccessAndFail,
     isSideSwapped, addLineEvent, getClosestPlayer, getDistance, getTouch, CalculatedPlayer
 } from '@/utils/BeachVolleyUtils';
+import { presetGame } from '@/utils/sampleGame';
 
 // @ts-ignore
 import BallFront from '@/assets/sprites/ball.png';
@@ -174,10 +175,10 @@ export default function TabTwoScreen() {
         ballX,
         ballY,
         teams
-    ));
+    ,presetGame as Game));
     //logToUI("BallFront ", JSON.stringify(BallFront))
 
-    const [ isEditMode, setIsEditMode ] = useState(true)
+    const [ isEditMode, setIsEditMode ] = useState(!game.points.length)
     const [ currentTouchIdx, setCurrentTouchIdx ] = useState({
         pointIdx: 0,       // Game.points index
         teamTouchesIdx: 0, // Game.points.teamTouches index
@@ -376,6 +377,7 @@ export default function TabTwoScreen() {
             fieldGraphicConstants);
 
         setLastServingTeam(team);
+        console.log("save",JSON.stringify(game))
     }
     const onFieldTouch = (event : GestureStateChangeEvent<TapGestureHandlerEventPayload>) => {
         const currentPoint = game.points[game.points.length-1];

@@ -129,8 +129,26 @@ export interface TouchIndex {
     touchIdx: number;       // Game.points.teamTouches.touch index
 }
 
-export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[] ) : Game => {
+export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[] , loadedGame : Game|null) : Game => {
     "worklet";
+    if(loadedGame) {
+        loadedGame.points.forEach(onePoint => {
+            if(onePoint.wonBy){
+                onePoint.wonBy= teams.find(oneTeam => oneTeam.id === onePoint.wonBy.id)
+            }
+            onePoint.teamTouches.forEach(oneTeamTouches => {
+                if(oneTeamTouches.team){
+                    oneTeamTouches.team= teams.find(oneTeam => oneTeam.id === oneTeamTouches.team.id)
+                }
+
+                oneTeamTouches.touch.forEach(oneTouch => {
+                    if(oneTouch.player){
+                        oneTouch.player= teams.flatMap(oneTeam=>oneTeam.players).find(onePlayer => onePlayer.id === oneTouch.player.id)
+                    }
+                })
+            })
+        })
+    }
     return {
         ballX: ballX, // reference to the shared value ballX.value
         ballY: ballY, // reference to the shared value ballX.value
@@ -138,7 +156,7 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
         teams: teams,
         //windStrength: number, // m/s
         //windAngle: number, // 0 is left to right, 90 is upwards, 180 is right to left, 270 is downwards
-        points: [] as Point[]
+        points: loadedGame && loadedGame.points || [] as Point[]
     } as Game;
 }
 
