@@ -134,16 +134,16 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
     if(loadedGame) {
         loadedGame.points.forEach(onePoint => {
             if(onePoint.wonBy){
-                onePoint.wonBy= teams.find(oneTeam => oneTeam.id === onePoint.wonBy.id)
+                onePoint.wonBy= teams.find(oneTeam => oneTeam.id === (onePoint.wonBy && onePoint.wonBy.id))
             }
             onePoint.teamTouches.forEach(oneTeamTouches => {
                 if(oneTeamTouches.team){
-                    oneTeamTouches.team= teams.find(oneTeam => oneTeam.id === oneTeamTouches.team.id)
+                    oneTeamTouches.team= teams.find(oneTeam => oneTeam.id === oneTeamTouches.team.id) as Team
                 }
 
                 oneTeamTouches.touch.forEach(oneTouch => {
                     if(oneTouch.player){
-                        oneTouch.player= teams.flatMap(oneTeam=>oneTeam.players).find(onePlayer => onePlayer.id === oneTouch.player.id)
+                        oneTouch.player= teams.flatMap(oneTeam=>oneTeam.players).find(onePlayer => onePlayer.id === oneTouch.player.id) as Player
                     }
                 })
             })
