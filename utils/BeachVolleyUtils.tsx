@@ -242,9 +242,12 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     }
 
     currentTouch.toAcross; // 0 no, 1 if ball goes to a diagonal angle
-    currentTouch.isScoring; // 0 no, 1 yes
-    currentTouch.isFail; // 0 no, 1 yes
-    currentTouch.isSentOutOfSystem; // 0 no, 1 yes
+    //currentTouch.isScoring; // 0 no, 1 yes
+    //currentTouch.isFail; // 0 no, 1 yes
+    if(nextTouch && calcNextTouchIdx && typeof nextTouch.ballY !== "undefined" && currentTouchIdx.teamTouchesIdx === calcNextTouchIdx.teamTouchesIdx) {
+        currentTouch.isSentOutOfSystem = nextTouch.ballY > currentPlayerPosition.y && nextTouch.ballY > otherPlayerPosition.y ||
+            nextTouch.ballY < currentPlayerPosition.y && nextTouch.ballY < otherPlayerPosition.y; // 0 no, 1 yes
+    }
 
     //console.log("updatedStats :",JSON.stringify(currentTouch))
 }
