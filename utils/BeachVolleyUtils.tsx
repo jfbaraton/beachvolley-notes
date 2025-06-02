@@ -306,6 +306,32 @@ export const getSuccessAndFail = (game:Game, currentTouchIndex:TouchIndex):Touch
     }
     return result;
 }
+export const searchSimilarTouches = (game:Game, currentTouch:Touch, previousTouch:Touch|null):TouchIndex[] => {
+    const result = [];
+    let touchIdxIterator: TouchIndex | null = {
+        pointIdx: 0,   // Game.points index
+        teamTouchesIdx: 0,                  // Game.points.teamTouches index
+        touchIdx: 0                         // Game.points.teamTouches.touch index
+    } as TouchIndex
+    let prevTouchIdxIterator = null;
+    let prevItTouch = null;
+    while(touchIdxIterator && touchIdxIterator !== prevTouchIdxIterator) {
+        //console.log("score->update stats for ",touchIdxIterator);
+        const itTouch = getTouch(game, touchIdxIterator)
+        if(itTouch &&
+            currentTouch.stateName === itTouch.stateName &&
+            currentTouch.player.id === itTouch.player.id) {
+            if(!previousTouch || !prevItTouch || previousTouch.stateName!= "service" || prevItTouch.stateName=== "service") {
+                result.push(touchIdxIterator);
+            }
+
+        }
+        prevItTouch = itTouch;
+        prevTouchIdxIterator = touchIdxIterator;
+        touchIdxIterator = getNextTouchIndex(game,touchIdxIterator);
+    }
+    return result;
+}
 
 export const renderTouch = (game:Game, currentTouch:Touch|null, previousTouch:Touch|null) => {
     if (!currentTouch) return;
@@ -363,6 +389,8 @@ export const renderTouch = (game:Game, currentTouch:Touch|null, previousTouch:To
     if(game.plannedBallMoveYSeq && game.plannedBallMoveYSeq.length) {
         game.ballY.value = withSequence(...game.plannedBallMoveYSeq)
     }
+    const similarTouches = searchSimilarTouches(game,currentTouch, previousTouch);
+    console.log("searchSimilarTouches: ",similarTouches);
 }
 
 export const getPreviousPointIndex = (game:Game, touchIndex: TouchIndex) : TouchIndex | null => {

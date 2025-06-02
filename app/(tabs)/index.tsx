@@ -28,7 +28,8 @@ import {
     getNextPointIndex,
     getNextTouchIndex, getPreviousTouchIndex, getPreviousPointIndex,
     calculateScore,updateTouchStats, getSuccessAndFail,
-    isSideSwapped, addLineEvent, getClosestPlayer, getDistance, getTouch, CalculatedPlayer
+    isSideSwapped, addLineEvent, getClosestPlayer, getDistance, getTouch, CalculatedPlayer,
+    searchSimilarTouches
 } from '@/utils/BeachVolleyUtils';
 import { presetGame } from '@/utils/sampleGame';
 
