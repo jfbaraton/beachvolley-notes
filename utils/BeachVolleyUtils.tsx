@@ -257,6 +257,7 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
         ); // BallSourceDirection_Front - BallSourceDirection_...
         console.log("STATS: ball coming from ",currentTouch.ballSourceDirection)
         currentTouch.fromAcross = (currentTouch.ballSourceDirection === BallSourceDirection_Right || currentTouch.ballSourceDirection === BallSourceDirection_Left) // 0 no, 1 if ball comes from a diagonal angle
+        previousTouch.toAcross = currentTouch.fromAcross;
     }
 
     currentTouch.toAcross; // 0 no, 1 if ball goes to a diagonal angle

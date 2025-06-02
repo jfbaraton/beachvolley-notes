@@ -175,7 +175,8 @@ export default function TabTwoScreen() {
         ballX,
         ballY,
         teams
-    ,presetGame as Game));
+    ,presetGame as Game
+    ));
     //logToUI("BallFront ", JSON.stringify(BallFront))
 
     const [ isEditMode, setIsEditMode ] = useState(!game.points.length)
