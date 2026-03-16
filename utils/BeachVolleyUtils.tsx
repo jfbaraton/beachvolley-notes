@@ -152,7 +152,7 @@ export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>,
     return {
         ballX: ballX, // reference to the shared value ballX.value
         ballY: ballY, // reference to the shared value ballX.value
-        gameTitle: 'Olympics 2024 round of 16 FRA vs SUI', // Olympics 2024 round of 16 FRA vs SUI
+        gameTitle: (loadedGame && loadedGame.gameTitle) || 'Olympics 2024 round of 16 FRA vs SUI',
         teams: teams,
         //windStrength: number, // m/s
         //windAngle: number, // 0 is left to right, 90 is upwards, 180 is right to left, 270 is downwards

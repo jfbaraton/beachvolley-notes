@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { ButtonGroup, Text} from '@rneui/themed'
 
-import { StyleSheet, View  } from 'react-native';
+import { StyleSheet, View, Platform, TouchableOpacity  } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import {Canvas, useImage, Image} from "@shopify/react-native-skia";
 import {configureReanimatedLogger, ReanimatedLogLevel, useSharedValue} from "react-native-reanimated";
 import {
@@ -381,6 +384,74 @@ export default function TabTwoScreen() {
         setLastServingTeam(team);
         console.log("save",JSON.stringify(game))
     }
+
+    const exportGame = async () => {
+        const gameJson = JSON.stringify(game);
+        const fileName = `${(game.gameTitle || 'game').replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+
+        if (Platform.OS === 'web') {
+            const blob = new Blob([gameJson], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+            logToUI('Game exported: ' + fileName);
+        } else {
+            const fileUri = FileSystem.documentDirectory + fileName;
+            await FileSystem.writeAsStringAsync(fileUri, gameJson);
+            await Sharing.shareAsync(fileUri, { mimeType: 'application/json' });
+            logToUI('Game exported: ' + fileName);
+        }
+    };
+
+    const importGame = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/json',
+                copyToCacheDirectory: true,
+            });
+
+            if (result.canceled) {
+                logToUI('Import cancelled');
+                return;
+            }
+
+            const file = result.assets[0];
+            let jsonString: string;
+
+            if (Platform.OS === 'web') {
+                // On web, file.uri is a blob URL; fetch and read it
+                const response = await fetch(file.uri);
+                jsonString = await response.text();
+            } else {
+                jsonString = await FileSystem.readAsStringAsync(file.uri);
+            }
+
+            const loadedGame = JSON.parse(jsonString) as Game;
+            const newGame = initGame(ballX, ballY, teams, loadedGame);
+            setGame(newGame);
+
+            const newTouchIdx = {
+                pointIdx: 0,
+                teamTouchesIdx: 0,
+                touchIdx: 0,
+            } as TouchIndex;
+            setCurrentTouchIdx(newTouchIdx);
+
+            const newScore = newGame.points.length
+                ? calculateScore(newGame, newTouchIdx)
+                : { scoreTeam: [0, 0], setsTeam: [0, 0] } as Score;
+            setScore(newScore);
+
+            setIsEditMode(!newGame.points.length);
+            logToUI('Game imported: ' + (loadedGame.gameTitle || file.name));
+        } catch (e: any) {
+            logToUI('Import error: ' + (e.message || e));
+        }
+    };
+
     const onFieldTouch = (event : GestureStateChangeEvent<TapGestureHandlerEventPayload>) => {
         const currentPoint = game.points[game.points.length-1];
         const currentTeamTouches = currentPoint.teamTouches[currentPoint.teamTouches.length-1];
@@ -733,6 +804,14 @@ export default function TabTwoScreen() {
                 textStyle={styles.textButton}
                 onPress={gotoMove}
             />
+            <View style={styles.ioButtons}>
+                <TouchableOpacity style={styles.ioButton} onPress={importGame}>
+                    <Text style={styles.ioButtonText}>📂 Import</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.ioButton} onPress={exportGame}>
+                    <Text style={styles.ioButtonText}>💾 Export</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -780,6 +859,24 @@ const styles = StyleSheet.create({
     },
     buttonStyle: {
         minWidth: 70,
-    }
+    },
+    ioButtons: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 12,
+        marginTop: 4,
+        marginBottom: 8,
+    },
+    ioButton: {
+        backgroundColor: '#2089dc',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 6,
+    },
+    ioButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
 
