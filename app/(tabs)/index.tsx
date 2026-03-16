@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ButtonGroup, CheckBox, Text} from '@rneui/themed'
 
 import { StyleSheet, View, Platform, TouchableOpacity  } from 'react-native';
@@ -36,6 +36,7 @@ import {
     Point
 } from '@/utils/BeachVolleyUtils';
 import { presetGame } from '@/utils/sampleGame';
+import { useGameContext } from '@/utils/GameContext';
 
 // @ts-ignore
 import BallFront from '@/assets/sprites/ball.png';
@@ -209,6 +210,12 @@ export default function TabTwoScreen() {
         setsTeam : [0,0]
     } as Score)
     const [ isInvertSideSwap, setIsInvertSideSwap ] = useState(false)
+
+    const { setGame: setSharedGame } = useGameContext();
+    useEffect(() => {
+        setSharedGame(game);
+    }, [game, score]);
+
     if(!game.points.length) {
         //logToUI("FIRST INIT PLAYER POS ---------------------------------");
         renderServingPosition(teams[0], false, game,score.setsTeam[0]+score.setsTeam[1], fieldGraphicConstants);

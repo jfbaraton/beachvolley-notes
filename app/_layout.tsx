@@ -10,6 +10,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { Platform } from 'react-native';
 import {LoadSkiaWeb} from "@shopify/react-native-skia/lib/module/web";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GameProvider } from '@/utils/GameContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -71,6 +72,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
+   <GameProvider>
    <GestureHandlerRootView>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
@@ -79,5 +81,6 @@ function RootLayoutNav() {
       </Stack>
     </ThemeProvider>
      </GestureHandlerRootView>
+   </GameProvider>
   );
 }
