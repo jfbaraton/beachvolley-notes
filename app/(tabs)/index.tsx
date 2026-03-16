@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ButtonGroup, Text} from '@rneui/themed'
+import { ButtonGroup, CheckBox, Text} from '@rneui/themed'
 
 import { StyleSheet, View, Platform, TouchableOpacity  } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
@@ -32,7 +32,8 @@ import {
     getNextTouchIndex, getPreviousTouchIndex, getPreviousPointIndex,
     calculateScore,updateTouchStats, getSuccessAndFail,
     isSideSwapped, addLineEvent, getClosestPlayer, getDistance, getTouch, CalculatedPlayer,
-    searchSimilarTouches
+    searchSimilarTouches,
+    Point
 } from '@/utils/BeachVolleyUtils';
 import { presetGame } from '@/utils/sampleGame';
 
@@ -44,6 +45,10 @@ import FieldFront from '@/assets/sprites/field.jpg';
 import TaruFront from '@/assets/sprites/Taru.png';
 // @ts-ignore
 import NiinaFront from '@/assets/sprites/Niina.jpg';
+// @ts-ignore
+import JeffFront from '@/assets/sprites/Jeff.jpg';
+// @ts-ignore
+import DomnaFront from '@/assets/sprites/Domna.jpg';
 // @ts-ignore
 import AnaPatriciaFront from '@/assets/sprites/AnaPatricia.png';
 // @ts-ignore
@@ -144,6 +149,16 @@ export default function TabTwoScreen() {
             console.error('Loading failed:', error.message);
         }
     );
+    const jeff = useImage(JeffFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
+    const domna = useImage(DomnaFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
     const finlandFlag = useImage(finlandFlagFront.uri,
         (error :Error)=> {
             console.error('Loading failed:', error.message);
@@ -166,7 +181,7 @@ export default function TabTwoScreen() {
     const dudaX = useSharedValue(validatePlayerX(6*width/7))
     const dudaY = useSharedValue(validatePlayerY(3*height/4))
 
-    const teams = initTeams(
+    let teams = initTeams(
         {id:"Niina", playerX:niinaX, playerY:niinaY} as Player,
         {id:"Taru", playerX:taruX, playerY:taruY} as Player,
         {id:"AnaPatricia", playerX:anaPatriciaX, playerY:anaPatriciaY} as Player,
@@ -193,6 +208,7 @@ export default function TabTwoScreen() {
         scoreTeam : [0,0],
         setsTeam : [0,0]
     } as Score)
+    const [ isInvertSideSwap, setIsInvertSideSwap ] = useState(false)
     if(!game.points.length) {
         //logToUI("FIRST INIT PLAYER POS ---------------------------------");
         renderServingPosition(teams[0], false, game,score.setsTeam[0]+score.setsTeam[1], fieldGraphicConstants);
@@ -277,6 +293,10 @@ export default function TabTwoScreen() {
         if(newTouchIdx && newTouchIdx !== currentTouchIdx) {
             const newScore = calculateScore(game, newTouchIdx);
             setScore(newScore);
+            const point = game.points[newTouchIdx.pointIdx];
+            if (point) {
+                setIsInvertSideSwap(!!point.isInvertSideSwap);
+            }
         }
     }
     const teamScores = (team : number) => {
@@ -368,8 +388,9 @@ export default function TabTwoScreen() {
 
         game.points.push({
             set: newScore.setsTeam[0]+newScore.setsTeam[1],
-            teamTouches: []
-        });
+            teamTouches: [],
+            isInvertSideSwap: isInvertSideSwap
+        } as Point);
         setScore(newScore);
         console.log("Score = transition to ", newTouchIdx)
         setCurrentTouchIdx(newTouchIdx);
@@ -385,8 +406,21 @@ export default function TabTwoScreen() {
         console.log("save",JSON.stringify(game))
     }
 
+    const gameJsonReplacer = (_key: string, value: any) => {
+        // Replace Reanimated SharedValue objects with just their .value
+        if (value && typeof value === 'object' && value._isReanimatedSharedValue) {
+            return value.value;
+        }
+        // Strip animation sequence arrays
+        if (_key === 'plannedMoveXSeq' || _key === 'plannedMoveYSeq'
+            || _key === 'plannedBallMoveXSeq' || _key === 'plannedBallMoveYSeq') {
+            return undefined;
+        }
+        return value;
+    };
+
     const exportGame = async () => {
-        const gameJson = JSON.stringify(game);
+        const gameJson = JSON.stringify(game, gameJsonReplacer);
         const fileName = `${(game.gameTitle || 'game').replace(/[^a-zA-Z0-9]/g, '_')}.json`;
 
         if (Platform.OS === 'web') {
@@ -430,6 +464,21 @@ export default function TabTwoScreen() {
             }
 
             const loadedGame = JSON.parse(jsonString) as Game;
+            // Update player IDs and team metadata from imported data,
+            // but keep the existing SharedValues for playerX/playerY
+            const importedTeams = loadedGame.teams;
+            if (importedTeams && importedTeams.length >= 2) {
+                teams[0].id = importedTeams[0].id;
+                teams[0].startingSide = importedTeams[0].startingSide;
+                teams[0].prefersBlockId = importedTeams[0].prefersBlockId;
+                teams[0].players[0].id = importedTeams[0].players[0].id;
+                teams[0].players[1].id = importedTeams[0].players[1].id;
+                teams[1].id = importedTeams[1].id;
+                teams[1].startingSide = importedTeams[1].startingSide;
+                teams[1].prefersBlockId = importedTeams[1].prefersBlockId;
+                teams[1].players[0].id = importedTeams[1].players[0].id;
+                teams[1].players[1].id = importedTeams[1].players[1].id;
+            }
             const newGame = initGame(ballX, ballY, teams, loadedGame);
             setGame(newGame);
 
@@ -446,9 +495,50 @@ export default function TabTwoScreen() {
             setScore(newScore);
 
             setIsEditMode(!newGame.points.length);
+            setIsInvertSideSwap(newGame.points.length > 0 ? !!newGame.points[0].isInvertSideSwap : false);
             logToUI('Game imported: ' + (loadedGame.gameTitle || file.name));
         } catch (e: any) {
             logToUI('Import error: ' + (e.message || e));
+        }
+    };
+
+    const newGame = () => {
+        game.points = [];
+        const newTouchIdx = {
+            pointIdx: 0,
+            teamTouchesIdx: 0,
+            touchIdx: 0,
+        } as TouchIndex;
+        setCurrentTouchIdx(newTouchIdx);
+        setScore({ scoreTeam: [0, 0], setsTeam: [0, 0] } as Score);
+        setIsEditMode(true);
+        setIsInvertSideSwap(false);
+        setLastServingTeam(0);
+        renderServingPosition(teams[0], false, game, 0, fieldGraphicConstants);
+        logToUI('New game started');
+    };
+
+    const onSwapSidesToggle = () => {
+        const newValue = !isInvertSideSwap;
+        setIsInvertSideSwap(newValue);
+
+        // Update the current point's isInvertSideSwap
+        if (game.points.length > 0) {
+            game.points[game.points.length - 1].isInvertSideSwap = newValue;
+        }
+
+        // Re-render serving position with the new side swap
+        const currentPoint = game.points[game.points.length - 1];
+        const currentTeamTouches = currentPoint?.teamTouches[0];
+        if (currentTeamTouches) {
+            const servingTeam = currentTeamTouches.team;
+            renderServingPosition(
+                servingTeam,
+                isSideSwapped(game, currentTouchIdx),
+                game,
+                score.setsTeam[0] + score.setsTeam[1],
+                fieldGraphicConstants
+            );
         }
     };
 
@@ -682,7 +772,22 @@ export default function TabTwoScreen() {
 
     const composedGesture = Gesture.Race(gestureTap, panGesture);
 
-    if (!ball || !field || !taru || !niina || !anaPatricia || !duda || !finlandFlag || !brazilFlag) {
+    const playerImageMap: Record<string, ReturnType<typeof useImage>> = {
+        'Taru': taru,
+        'Niina': niina,
+        'Jeff': jeff,
+        'Domna': domna,
+        'AnaPatricia': anaPatricia,
+        'Duda': duda,
+    };
+
+    // Resolve sprite images for each player slot based on current player IDs
+    const p1Image = playerImageMap[game.teams[0]?.players[0]?.id] || niina;
+    const p2Image = playerImageMap[game.teams[0]?.players[1]?.id] || taru;
+    const p3Image = playerImageMap[game.teams[1]?.players[0]?.id] || anaPatricia;
+    const p4Image = playerImageMap[game.teams[1]?.players[1]?.id] || duda;
+
+    if (!ball || !field || !p1Image || !p2Image || !p3Image || !p4Image || !finlandFlag || !brazilFlag) {
         return <Text>Image is loading...</Text>;
     }
     if(!isEditMode) {
@@ -712,7 +817,7 @@ export default function TabTwoScreen() {
                     buttons={['  '+score.scoreTeam[0]+ '  ', '  '+score.scoreTeam[1]+ '  ']}
                     selectedIndex={lastServingTeam}
                     onPress={teamScores}
-                    containerStyle={{ marginBottom: 0, marginTop: 0 }}
+                    containerStyle={{ marginBottom: 0, marginTop: 0, paddingVertical: 0 }}
                     textStyle={styles.textButton}
                 />
                 <Canvas style={{ height:30, width:50 }} >
@@ -728,14 +833,23 @@ export default function TabTwoScreen() {
             <ButtonGroup
                 buttons={['  '+score.setsTeam[0]+ '  ', '  '+score.setsTeam[1]+ '  ']}
                 selectedIndex={2}
-                containerStyle={{ marginBottom: 0, marginTop: 0 }}
+                containerStyle={{ marginBottom: 0, marginTop: 0, paddingVertical: 0 }}
                 textStyle={styles.smallTextButton}
             />
+            {isEditMode && currentTouchIdx.teamTouchesIdx === 0 && currentTouchIdx.touchIdx === 0 && (
+                <CheckBox
+                    title="Swap sides"
+                    checked={isInvertSideSwap}
+                    onPress={onSwapSidesToggle}
+                    containerStyle={{ marginBottom: 0, marginTop: 0, paddingVertical: 2, backgroundColor: 'transparent' }}
+                    textStyle={styles.smallTextButton}
+                />
+            )}
             <ButtonGroup
                 buttons={['OUT', 'Touched', 'IN', 'Net fault', 'Net fault','IN', 'Touched', 'OUT']}
                 selectedIndex={100}
                 onPress={onLineEvent}
-                containerStyle={{ marginBottom: 5 }}
+                containerStyle={{ marginBottom: 5, marginTop: 0 }}
                 textStyle={styles.smallTextButton}
                 buttonStyle={styles.buttonStyle}
             />
@@ -757,7 +871,7 @@ export default function TabTwoScreen() {
                         y={ballY}
                    />
                    <Image
-                        image={taru}
+                        image={p2Image}
                         width={playerSize}
                         height={playerSize}
                         fit={'cover'}
@@ -765,7 +879,7 @@ export default function TabTwoScreen() {
                         y={taruY}
                    />
                    <Image
-                        image={niina}
+                        image={p1Image}
                         width={playerSize}
                         height={playerSize}
                         fit={'cover'}
@@ -773,7 +887,7 @@ export default function TabTwoScreen() {
                         y={niinaY}
                    />
                    <Image
-                        image={anaPatricia}
+                        image={p3Image}
                         width={playerSize}
                         height={playerSize}
                         fit={'cover'}
@@ -781,7 +895,7 @@ export default function TabTwoScreen() {
                         y={anaPatriciaY}
                    />
                    <Image
-                        image={duda}
+                        image={p4Image}
                         width={playerSize}
                         height={playerSize}
                         fit={'cover'}
@@ -805,6 +919,9 @@ export default function TabTwoScreen() {
                 onPress={gotoMove}
             />
             <View style={styles.ioButtons}>
+                <TouchableOpacity style={styles.ioButton} onPress={newGame}>
+                    <Text style={styles.ioButtonText}>🆕 New Game</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.ioButton} onPress={importGame}>
                     <Text style={styles.ioButtonText}>📂 Import</Text>
                 </TouchableOpacity>

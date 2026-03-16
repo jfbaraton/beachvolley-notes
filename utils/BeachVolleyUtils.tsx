@@ -101,10 +101,11 @@ export interface TeamTouches {
     touch: Touch[];
 }
 
-interface Point {
+export interface Point {
     teamTouches: TeamTouches[];
     set:number;
     wonBy ?: Team; // team id
+    isInvertSideSwap?: boolean; // true if the user manually swapped sides for this point
 }
 export interface Game {
     ballX: SharedValue<number>; // reference to the shared value ballX.value
@@ -1065,7 +1066,10 @@ export const isSideSwapped = (game: Game, currentTouchIdx:TouchIndex) => {
     const newScore = calculateScore(game, currentTouchIdx);
     const isLastSet = newScore.setsTeam[0]+newScore.setsTeam[1] >=2;
     const rotationPace = isLastSet ? 5 : 7;
-    return Math.floor((newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)%2===1;
+    const normalSwap = Math.floor((newScore.scoreTeam[0]+newScore.scoreTeam[1])/rotationPace)%2===1;
+    const point = game.points[currentTouchIdx.pointIdx];
+    const invertSwap = point && point.isInvertSideSwap;
+    return invertSwap ? !normalSwap : normalSwap;
 }
 
 export const addLineEvent = (game: Game, currentTouchIdx:TouchIndex, isLeft:boolean, event:string, fieldConstants:FieldGraphicConstants, teamScores:Function) => {
