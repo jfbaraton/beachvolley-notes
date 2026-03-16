@@ -712,7 +712,7 @@ export default function TabTwoScreen() {
                     buttons={['  '+score.scoreTeam[0]+ '  ', '  '+score.scoreTeam[1]+ '  ']}
                     selectedIndex={lastServingTeam}
                     onPress={teamScores}
-                    containerStyle={{ marginBottom: 5 }}
+                    containerStyle={{ marginBottom: 0, marginTop: 0 }}
                     textStyle={styles.textButton}
                 />
                 <Canvas style={{ height:30, width:50 }} >
@@ -728,7 +728,7 @@ export default function TabTwoScreen() {
             <ButtonGroup
                 buttons={['  '+score.setsTeam[0]+ '  ', '  '+score.setsTeam[1]+ '  ']}
                 selectedIndex={2}
-                containerStyle={{ marginBottom: 5 }}
+                containerStyle={{ marginBottom: 0, marginTop: 0 }}
                 textStyle={styles.smallTextButton}
             />
             <ButtonGroup
@@ -829,7 +829,8 @@ const styles = StyleSheet.create({
     flaggedScore: {
         display: 'flex',
         flexDirection: 'row',
-        margin:'auto',
+        marginHorizontal: 'auto',
+        marginVertical: 0,
         alignItems: 'center'
     },
     imageContainer: {
