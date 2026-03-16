@@ -6,6 +6,22 @@ const BallSourceDirection_Left = 1;
 const BallSourceDirection_Right = 2;
 const BallSourceDirection_Behind = 3;
 
+const TO_ACROSS_ANGLE = 45;   // degrees – deflection threshold for toAcross
+const FROM_ACROSS_ANGLE = 45; // degrees – redirection threshold for fromAcross
+const FROM_ACROSS_MIN_MOVE = 1 / 8; // fraction of field height ≈ 1 m
+
+/**
+ * Angle (in degrees, 0-180) between two 2D vectors (ux,uy) and (vx,vy).
+ * Returns 0 when either vector is degenerate (length ≈ 0).
+ */
+const angleBetweenVectors = (ux: number, uy: number, vx: number, vy: number): number => {
+    const magU = Math.sqrt(ux * ux + uy * uy);
+    const magV = Math.sqrt(vx * vx + vy * vy);
+    if (magU < 0.001 || magV < 0.001) return 0;
+    const cosAngle = Math.max(-1, Math.min(1, (ux * vx + uy * vy) / (magU * magV)));
+    return Math.acos(cosAngle) * (180 / Math.PI);
+};
+
 export interface FieldGraphicConstants {
     width: number;
     height: number;
@@ -323,8 +339,7 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
             isPlayerOnRightArmSide(currentPlayerPosition, otherPlayerPosition, fieldConstants.width, fieldConstants.height) ? 1 : 0;
     }
 
-    // --- ballSourceDirection / fromAcross ---
-    // Only compute when the ball actually crosses the net (previous touch is from a different team).
+    // --- ballSourceDirection (cross-net only, kept for other stats) ---
     const isCrossNet = calcPreviousTouchIdx &&
         calcPreviousTouchIdx.pointIdx === currentTouchIdx.pointIdx &&
         calcPreviousTouchIdx.teamTouchesIdx !== currentTouchIdx.teamTouchesIdx;
@@ -337,30 +352,55 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
             fieldConstants.width,
             fieldConstants.height,
         );
-        currentTouch.fromAcross = (currentTouch.ballSourceDirection === BallSourceDirection_Right || currentTouch.ballSourceDirection === BallSourceDirection_Left);
-        previousTouch.toAcross = currentTouch.fromAcross;
     }
 
     // --- toAcross ---
-    // If there is a next touch from a different team (ball crosses the net), compute
-    // whether the ball travels diagonally by checking the ball-source direction at the
-    // next player's position.
-    const isNextCrossNet = calcNextTouchIdx &&
-        calcNextTouchIdx.pointIdx === currentTouchIdx.pointIdx &&
-        calcNextTouchIdx.teamTouchesIdx !== currentTouchIdx.teamTouchesIdx;
+    // Angle between the incoming ball direction and the outgoing ball direction at
+    // the current touch.  > TO_ACROSS_ANGLE ⇒ toAcross = true.
+    // Requires both a previous and a next touch with ball positions.
+    const hasPrev = previousTouch &&
+        typeof previousTouch.ballX !== "undefined" && typeof previousTouch.ballY !== "undefined";
+    const hasNext = nextTouch &&
+        typeof nextTouch.ballX !== "undefined" && typeof nextTouch.ballY !== "undefined";
+    const hasCur = typeof currentTouch.ballX !== "undefined" && typeof currentTouch.ballY !== "undefined";
 
-    if(nextTouch && isNextCrossNet &&
-        typeof currentTouch.ballX !== "undefined" && typeof currentTouch.ballY !== "undefined" &&
-        typeof nextTouch.ballX !== "undefined" && typeof nextTouch.ballY !== "undefined") {
-        // Use the next touch's ball position as a proxy for where the next player receives
-        const nextPlayerPos: CalculatedPlayer = {id: nextTouch.player?.id || "-1", x: nextTouch.ballX, y: nextTouch.ballY};
-        const nextBallSourceDir = getBallSourceDirection(
-            nextPlayerPos,
-            {id:"-1", x:currentTouch.ballX, y:currentTouch.ballY} as CalculatedPlayer,
-            fieldConstants.width,
-            fieldConstants.height,
-        );
-        currentTouch.toAcross = (nextBallSourceDir === BallSourceDirection_Right || nextBallSourceDir === BallSourceDirection_Left);
+    if(hasPrev && hasCur && hasNext) {
+        // incoming direction: prevBall → currentBall
+        const inX = (currentTouch.ballX as number) - (previousTouch!.ballX as number);
+        const inY = (currentTouch.ballY as number) - (previousTouch!.ballY as number);
+        // outgoing direction: currentBall → nextBall
+        const outX = (nextTouch!.ballX as number) - (currentTouch.ballX as number);
+        const outY = (nextTouch!.ballY as number) - (currentTouch.ballY as number);
+        const deflection = angleBetweenVectors(inX, inY, outX, outY);
+        currentTouch.toAcross = deflection > TO_ACROSS_ANGLE;
+    }
+
+    // --- fromAcross ---
+    // Angle at the touch position between (direction to player's last position) and
+    // (direction to outgoing ball).  > FROM_ACROSS_ANGLE ⇒ fromAcross = true.
+    // Always false when the player moved less than ~1 m (fieldHeight / 8).
+    if(hasCur && hasNext && previousTouch) {
+        const lastPlayerPos = getPlayerPosition(currentTouch.player.id, previousTouch, null);
+        if(lastPlayerPos) {
+            const moveDistance = getDistance(
+                lastPlayerPos.x, lastPlayerPos.y,
+                currentTouch.ballX as number, currentTouch.ballY as number,
+            );
+            if(moveDistance < fieldConstants.height * FROM_ACROSS_MIN_MOVE) {
+                currentTouch.fromAcross = false;
+            } else {
+                // u = touchPos → lastPlayerPos
+                const uX = lastPlayerPos.x - (currentTouch.ballX as number);
+                const uY = lastPlayerPos.y - (currentTouch.ballY as number);
+                // v = touchPos → outgoingBall
+                const vX = (nextTouch!.ballX as number) - (currentTouch.ballX as number);
+                const vY = (nextTouch!.ballY as number) - (currentTouch.ballY as number);
+                const angle = angleBetweenVectors(uX, uY, vX, vY);
+                currentTouch.fromAcross = angle > FROM_ACROSS_ANGLE;
+            }
+        } else {
+            currentTouch.fromAcross = false;
+        }
     }
 
     // --- isSentOutOfSystem ---
