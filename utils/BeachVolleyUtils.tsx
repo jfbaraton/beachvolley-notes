@@ -233,31 +233,47 @@ const savePositions = (game:Game, currentTouchIdx:TouchIndex, ballx:number, ball
     }
     updateTouchStats(game,currentTouchIdx,prevTouchIdx,null, fieldConstants );
 }
+/**
+ * Determine if the player is on the right-arm side of their team's court.
+ * "Right-arm side" = from the player's perspective facing the net.
+ * Left side of screen → player faces right → right arm points downward (higher Y).
+ * Right side of screen → player faces left → right arm points upward (lower Y).
+ */
 export const isPlayerOnRightArmSide = (player : CalculatedPlayer, otherPlayer : CalculatedPlayer, fieldWidth:number, fieldHeight:number) : boolean => {
     if(player.x < fieldWidth/2) {
-        // left side of the screen
+        // left side of the screen, facing right → right arm = higher Y
         return player.y > otherPlayer.y;
     } else {
-        // right side of the screen
+        // right side of the screen, facing left → right arm = lower Y
         return player.y < otherPlayer.y;
     }
 }
 
-// 0 if ball comes from in front, 1 from the left of the player, 2 from the right.
+/**
+ * Determine where the ball comes from relative to the player facing the net.
+ * 0=Front (from the net), 1=Left (player's left), 2=Right (player's right), 3=Behind.
+ * Left side of screen → player faces right (increasing X towards net).
+ * Right side of screen → player faces left (decreasing X towards net).
+ * Threshold of 0.2 ≈ 11° off-centre.
+ */
 export const getBallSourceDirection = (player : CalculatedPlayer, ballOriginPoint : CalculatedPlayer, fieldWidth:number, fieldHeight:number) : number => {
-    //console.log("getBallSourceDirection "+player.id+" left?",player.x < fieldWidth/2," ball left from player", ballOriginPoint.x < player.x)
+    // If ball origin is essentially at the same spot, treat as front
+    const dx = ballOriginPoint.x - player.x;
+    const dy = ballOriginPoint.y - player.y;
+    if(Math.abs(dx) < 1 && Math.abs(dy) < 1) return BallSourceDirection_Front;
+
     if(player.x < fieldWidth/2) {
-        // left side of the screen
+        // left side of the screen, player faces right (towards higher X)
         if(ballOriginPoint.x < player.x) return BallSourceDirection_Behind;
-        //console.log("left -> ",(ballOriginPoint.y - player.y),((ballOriginPoint.x - player.x) || 1)," = ", ((ballOriginPoint.y - player.y) / ((ballOriginPoint.x - player.x) || 1)))
-        if((ballOriginPoint.y - player.y) / ((ballOriginPoint.x - player.x) || 1)> 0.2) return BallSourceDirection_Right;
-        if((ballOriginPoint.y - player.y) / ((ballOriginPoint.x - player.x) || 1)< -0.2) return BallSourceDirection_Left;
+        const ratio = dy / (dx || 1);
+        if(ratio > 0.2) return BallSourceDirection_Right;
+        if(ratio < -0.2) return BallSourceDirection_Left;
     } else {
-        // right side of the screen
+        // right side of the screen, player faces left (towards lower X)
         if(ballOriginPoint.x > player.x) return BallSourceDirection_Behind;
-        //console.log("left -> ",(ballOriginPoint.y - player.y),(( player.x - ballOriginPoint.x) || 1)," = ", ((ballOriginPoint.y - player.y) / ((player.x - ballOriginPoint.x) || 1)))
-        if((ballOriginPoint.y - player.y) / ((player.x -ballOriginPoint.x) || 1)> 0.2) return BallSourceDirection_Left;
-        if((ballOriginPoint.y - player.y) / ((player.x -ballOriginPoint.x) || 1)< -0.2) return BallSourceDirection_Right;
+        const ratio = dy / (-dx || 1); // flip X so positive = towards net
+        if(ratio > 0.2) return BallSourceDirection_Left;
+        if(ratio < -0.2) return BallSourceDirection_Right;
     }
     return BallSourceDirection_Front;
 }
@@ -269,13 +285,10 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     let calcPreviousTouchIdx = previousTouchIdx;
     if(!calcPreviousTouchIdx) {
         calcPreviousTouchIdx = getPreviousTouchIndex(game, currentTouchIdx)
-        //console.log("calculating prev index")
     }
 
-    //console.log("prev index ",calcPreviousTouchIdx)
     if(calcPreviousTouchIdx && calcPreviousTouchIdx.pointIdx === currentTouchIdx.pointIdx) {
         previousTouch = game.points[calcPreviousTouchIdx.pointIdx].teamTouches[calcPreviousTouchIdx.teamTouchesIdx].touch[calcPreviousTouchIdx.touchIdx];
-        //console.log("prev touch ",previousTouch)
     }
 
     let nextTouch = null;
@@ -289,41 +302,74 @@ export const updateTouchStats = (game:Game,currentTouchIdx:TouchIndex,previousTo
     }
 
     currentTouch.player = getClosestPlayer(currentTeam.players.map(onePlayer => onePlayer.id), currentTouch.ballX || 0, currentTouch.ballY || 0, game, currentTouchIdx);
-    //console.log("updateTouchStats "+currentTouch.player.id,currentTouchIdx);
-    const currentPlayerPosition = getPlayerPosition(currentTouch.player.id, currentTouch, previousTouch) as CalculatedPlayer
+    const currentPlayerPosition = getPlayerPosition(currentTouch.player.id, currentTouch, previousTouch) as CalculatedPlayer;
     const otherPlayer = getOtherPlayer(currentTeam, currentTouch.player.id);
-    const otherPlayerPosition = getPlayerPosition(otherPlayer.id, currentTouch, previousTouch) as CalculatedPlayer
-    currentTouch.subStateName; // 'block', 'retouch afterblock', 'joust', spike, cut, pokie, rainbow, handset, bumpset, etc
-    currentTouch.startingSide; // 0 left, 1 right
-    currentTouch.endingSide; // 0 left, 1 right
-    currentTouch.isPlayerOnRightArmSide = // position of the player relative to the team. 0 left hand, 1 right hand side, from team
-        isPlayerOnRightArmSide(currentPlayerPosition, otherPlayerPosition, fieldConstants.width, fieldConstants.height) ? 1 : 0;
-    /* if(currentTouch.isPlayerOnRightArmSide) {
-        console.log(currentTouch.player.id+" is on right arm side")
-    } else {
-        console.log(currentTouch.player.id+" is on left arm side")
-    } */
-    if(previousTouch && currentTouchIdx.teamTouchesIdx>0) {
+    const otherPlayerPosition = getPlayerPosition(otherPlayer.id, currentTouch, previousTouch) as CalculatedPlayer;
+
+    // --- startingSide ---
+    // Which side of the court the ball is on when this touch starts.
+    // Convention: ballX >= width/2 → 0, ballX < width/2 → 1 (matches render functions).
+    currentTouch.startingSide = (currentTouch.ballX || 0) >= fieldConstants.width / 2 ? 0 : 1;
+
+    // --- endingSide ---
+    // Which side the ball goes to after this touch (determined by the next touch's ball position).
+    if(nextTouch && typeof nextTouch.ballX !== "undefined") {
+        currentTouch.endingSide = nextTouch.ballX >= fieldConstants.width / 2 ? 0 : 1;
+    }
+
+    // --- isPlayerOnRightArmSide ---
+    if(currentPlayerPosition && otherPlayerPosition) {
+        currentTouch.isPlayerOnRightArmSide =
+            isPlayerOnRightArmSide(currentPlayerPosition, otherPlayerPosition, fieldConstants.width, fieldConstants.height) ? 1 : 0;
+    }
+
+    // --- ballSourceDirection / fromAcross ---
+    // Only compute when the ball actually crosses the net (previous touch is from a different team).
+    const isCrossNet = calcPreviousTouchIdx &&
+        calcPreviousTouchIdx.pointIdx === currentTouchIdx.pointIdx &&
+        calcPreviousTouchIdx.teamTouchesIdx !== currentTouchIdx.teamTouchesIdx;
+
+    if(previousTouch && isCrossNet && currentPlayerPosition &&
+        typeof previousTouch.ballX !== "undefined" && typeof previousTouch.ballY !== "undefined") {
         currentTouch.ballSourceDirection = getBallSourceDirection(
             currentPlayerPosition,
             {id:"-1", x:previousTouch.ballX, y:previousTouch.ballY} as CalculatedPlayer,
             fieldConstants.width,
             fieldConstants.height,
-        ); // BallSourceDirection_Front - BallSourceDirection_...
-        console.log("STATS: ball coming from ",currentTouch.ballSourceDirection)
-        currentTouch.fromAcross = (currentTouch.ballSourceDirection === BallSourceDirection_Right || currentTouch.ballSourceDirection === BallSourceDirection_Left) // 0 no, 1 if ball comes from a diagonal angle
+        );
+        currentTouch.fromAcross = (currentTouch.ballSourceDirection === BallSourceDirection_Right || currentTouch.ballSourceDirection === BallSourceDirection_Left);
         previousTouch.toAcross = currentTouch.fromAcross;
     }
 
-    currentTouch.toAcross; // 0 no, 1 if ball goes to a diagonal angle
-    //currentTouch.isScoring; // 0 no, 1 yes
-    //currentTouch.isFail; // 0 no, 1 yes
-    if(nextTouch && calcNextTouchIdx && typeof nextTouch.ballY !== "undefined" && currentTouchIdx.teamTouchesIdx === calcNextTouchIdx.teamTouchesIdx) {
-        currentTouch.isSentOutOfSystem = nextTouch.ballY > currentPlayerPosition.y && nextTouch.ballY > otherPlayerPosition.y ||
-            nextTouch.ballY < currentPlayerPosition.y && nextTouch.ballY < otherPlayerPosition.y; // 0 no, 1 yes
+    // --- toAcross ---
+    // If there is a next touch from a different team (ball crosses the net), compute
+    // whether the ball travels diagonally by checking the ball-source direction at the
+    // next player's position.
+    const isNextCrossNet = calcNextTouchIdx &&
+        calcNextTouchIdx.pointIdx === currentTouchIdx.pointIdx &&
+        calcNextTouchIdx.teamTouchesIdx !== currentTouchIdx.teamTouchesIdx;
+
+    if(nextTouch && isNextCrossNet &&
+        typeof currentTouch.ballX !== "undefined" && typeof currentTouch.ballY !== "undefined" &&
+        typeof nextTouch.ballX !== "undefined" && typeof nextTouch.ballY !== "undefined") {
+        // Use the next touch's ball position as a proxy for where the next player receives
+        const nextPlayerPos: CalculatedPlayer = {id: nextTouch.player?.id || "-1", x: nextTouch.ballX, y: nextTouch.ballY};
+        const nextBallSourceDir = getBallSourceDirection(
+            nextPlayerPos,
+            {id:"-1", x:currentTouch.ballX, y:currentTouch.ballY} as CalculatedPlayer,
+            fieldConstants.width,
+            fieldConstants.height,
+        );
+        currentTouch.toAcross = (nextBallSourceDir === BallSourceDirection_Right || nextBallSourceDir === BallSourceDirection_Left);
     }
 
-    //console.log("updatedStats :",JSON.stringify(currentTouch))
+    // --- isSentOutOfSystem ---
+    if(nextTouch && calcNextTouchIdx && typeof nextTouch.ballY !== "undefined" &&
+        currentTouchIdx.teamTouchesIdx === calcNextTouchIdx.teamTouchesIdx &&
+        currentPlayerPosition && otherPlayerPosition) {
+        currentTouch.isSentOutOfSystem = (nextTouch.ballY > currentPlayerPosition.y && nextTouch.ballY > otherPlayerPosition.y) ||
+            (nextTouch.ballY < currentPlayerPosition.y && nextTouch.ballY < otherPlayerPosition.y);
+    }
 }
 
 export const getPlayerPosition = (playerId:string, currentTouch:Touch, previousTouch:Touch | null) : CalculatedPlayer | null => {
@@ -770,8 +816,11 @@ export const getPlayerById = (game:Game, playerId:string) :Player =>{
 export const getClosestPlayer = (playerIds:string[], ballX :number, ballY :number, game:Game, touchIndex:TouchIndex) :Player =>{
     let result;
     let playerDist = 10000000;
+    const currentTouch = getTouch(game, touchIndex);
+    const prevTouch = getTouch(game, getPreviousTouchIndex(game, touchIndex));
     playerIds.forEach(onePlayerId => {
-        const playerPosition = getPlayerPosition(onePlayerId, getTouch(game, touchIndex) as Touch, getTouch(game, getPreviousTouchIndex(game, touchIndex)));
+        if(!currentTouch) return;
+        const playerPosition = getPlayerPosition(onePlayerId, currentTouch, prevTouch);
         if(!playerPosition) return;
 
         const dist = getDistance(ballX, ballY, playerPosition.x, playerPosition.y);
