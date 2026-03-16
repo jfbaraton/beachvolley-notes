@@ -22,7 +22,7 @@ import {
     renderSettingPosition,
     renderAttackPosition,
     Player,
-    Score, Game,
+    Score, Game, SerializedGame,
     getOtherTeam,
     FieldGraphicConstants,
     TouchIndex,
@@ -195,7 +195,7 @@ export default function TabTwoScreen() {
         ballX,
         ballY,
         teams
-    ,presetGame as Game
+    ,presetGame
     ));
     //logToUI("BallFront ", JSON.stringify(BallFront))
 
@@ -470,7 +470,7 @@ export default function TabTwoScreen() {
                 jsonString = await FileSystem.readAsStringAsync(file.uri);
             }
 
-            const loadedGame = JSON.parse(jsonString) as Game;
+            const loadedGame = JSON.parse(jsonString) as SerializedGame;
             // Update player IDs and team metadata from imported data,
             // but keep the existing SharedValues for playerX/playerY
             const importedTeams = loadedGame.teams;

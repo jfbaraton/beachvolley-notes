@@ -50,7 +50,7 @@ export interface Team {
     id:string;
     players: Player[];
     startingSide: number; // 0 matches idx, 1 opposite of idx. team 0 is defaulting to left
-    prefersBlockId: string; // null no opinion, Player.id
+    prefersBlockId: string | null; // null no opinion, Player.id
 }
 
 export const initTeams = (
@@ -119,6 +119,62 @@ export interface Game {
     plannedBallMoveYSeq ?: number[];
 }
 
+/** JSON-safe serialized versions of the Game types (plain numbers instead of SharedValues) */
+export interface SerializedPlayer {
+    id: string;
+    playerX: number;
+    playerY: number;
+}
+
+export interface SerializedTeam {
+    id: string;
+    players: SerializedPlayer[];
+    startingSide: number;
+    prefersBlockId: string | null;
+}
+
+export interface SerializedTouch {
+    player: SerializedPlayer;
+    ballX?: number;
+    ballY?: number;
+    stateName: string;
+    subStateName?: string;
+    startingSide?: number;
+    endingSide?: number;
+    isPlayerOnRightArmSide?: number;
+    ballSourceDirection?: number;
+    fromAcross?: boolean;
+    toAcross?: boolean;
+    isScoring?: boolean;
+    isFail?: boolean;
+    isSentOutOfSystem?: boolean;
+    playerExplicitMoves: CalculatedPlayer[];
+    playerCalculatedMoves: CalculatedPlayer[];
+    setCall?: string;
+}
+
+export interface SerializedTeamTouches {
+    team: SerializedTeam;
+    touch: SerializedTouch[];
+}
+
+export interface SerializedPoint {
+    teamTouches: SerializedTeamTouches[];
+    set: number;
+    wonBy?: SerializedTeam;
+    isInvertSideSwap?: boolean;
+}
+
+export interface SerializedGame {
+    ballX: number;
+    ballY: number;
+    gameTitle: string;
+    teams: SerializedTeam[];
+    windStrength?: number;
+    windAngle?: number;
+    points: SerializedPoint[];
+}
+
 export interface Score {
     scoreTeam : number[];
     setsTeam : number[];
@@ -130,34 +186,32 @@ export interface TouchIndex {
     touchIdx: number;       // Game.points.teamTouches.touch index
 }
 
-export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[] , loadedGame : Game|null) : Game => {
+export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[] , loadedGame : SerializedGame|null) : Game => {
     "worklet";
+    const points: Point[] = [];
     if(loadedGame) {
         loadedGame.points.forEach(onePoint => {
-            if(onePoint.wonBy){
-                onePoint.wonBy= teams.find(oneTeam => oneTeam.id === (onePoint.wonBy && onePoint.wonBy.id))
-            }
-            onePoint.teamTouches.forEach(oneTeamTouches => {
-                if(oneTeamTouches.team){
-                    oneTeamTouches.team= teams.find(oneTeam => oneTeam.id === oneTeamTouches.team.id) as Team
-                }
-
-                oneTeamTouches.touch.forEach(oneTouch => {
-                    if(oneTouch.player){
-                        oneTouch.player= teams.flatMap(oneTeam=>oneTeam.players).find(onePlayer => onePlayer.id === oneTouch.player.id) as Player
-                    }
-                })
-            })
+            const point: Point = {
+                set: onePoint.set,
+                wonBy: onePoint.wonBy ? teams.find(oneTeam => oneTeam.id === onePoint.wonBy!.id) : undefined,
+                isInvertSideSwap: onePoint.isInvertSideSwap,
+                teamTouches: onePoint.teamTouches.map(oneTeamTouches => ({
+                    team: teams.find(oneTeam => oneTeam.id === oneTeamTouches.team.id) as Team,
+                    touch: oneTeamTouches.touch.map(oneTouch => ({
+                        ...oneTouch,
+                        player: teams.flatMap(oneTeam => oneTeam.players).find(onePlayer => onePlayer.id === oneTouch.player.id) as Player,
+                    } as Touch))
+                }))
+            };
+            points.push(point);
         })
     }
     return {
-        ballX: ballX, // reference to the shared value ballX.value
-        ballY: ballY, // reference to the shared value ballX.value
+        ballX: ballX,
+        ballY: ballY,
         gameTitle: (loadedGame && loadedGame.gameTitle) || 'Olympics 2024 round of 16 FRA vs SUI',
         teams: teams,
-        //windStrength: number, // m/s
-        //windAngle: number, // 0 is left to right, 90 is upwards, 180 is right to left, 270 is downwards
-        points: loadedGame && loadedGame.points || [] as Point[]
+        points: points
     } as Game;
 }
 
