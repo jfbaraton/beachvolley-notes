@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ButtonGroup, CheckBox, Text} from '@rneui/themed'
 
-import { StyleSheet, View, Platform, TouchableOpacity  } from 'react-native';
+import { StyleSheet, View, Platform, TouchableOpacity, TextInput  } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -528,6 +528,11 @@ export default function TabTwoScreen() {
 
     const newGame = () => {
         game.points = [];
+        // Set default game title with current month/year
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        game.gameTitle = `tournament ${month} ${year} game 1`;
         // Reset team/player IDs to defaults on both local teams and game.teams
         game.teams[0].id = 'Team1';
         game.teams[0].players[0].id = 'Jeff';
@@ -1025,6 +1030,15 @@ export default function TabTwoScreen() {
     //console.log("RENDER------------------------------------------------",currentTouchIdx)
     return (
         <View style={styles.container}>
+            <TextInput
+                style={styles.gameTitleInput}
+                value={game.gameTitle}
+                onChangeText={(text) => {
+                    game.gameTitle = text;
+                    setGame({...game});
+                }}
+                placeholder="Game title"
+            />
             <div style={styles.flaggedScore}>
                 <Canvas style={{ height:30, width:50 }} >
                     <Image
@@ -1192,6 +1206,17 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    gameTitleInput: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        paddingVertical: 2,
+        paddingHorizontal: 8,
+        marginBottom: 0,
+        minWidth: 250,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
     },
     flaggedScore: {
         display: 'flex',
