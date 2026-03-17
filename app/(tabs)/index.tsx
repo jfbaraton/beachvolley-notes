@@ -210,6 +210,8 @@ export default function TabTwoScreen() {
         setsTeam : [0,0]
     } as Score)
     const [ isInvertSideSwap, setIsInvertSideSwap ] = useState(false)
+    const [ isInvertServingTeam, setIsInvertServingTeam ] = useState(false)
+    const [ isInvertServingPlayer, setIsInvertServingPlayer ] = useState(false)
 
     const { setGame: setSharedGame } = useGameContext();
     useEffect(() => {
@@ -303,6 +305,8 @@ export default function TabTwoScreen() {
             const point = game.points[newTouchIdx.pointIdx];
             if (point) {
                 setIsInvertSideSwap(!!point.isInvertSideSwap);
+                setIsInvertServingTeam(!!point.isInvertServingTeam);
+                setIsInvertServingPlayer(!!point.isInvertServingPlayer);
             }
         }
     }
@@ -396,18 +400,21 @@ export default function TabTwoScreen() {
         game.points.push({
             set: newScore.setsTeam[0]+newScore.setsTeam[1],
             teamTouches: [],
-            isInvertSideSwap: isInvertSideSwap
+            isInvertSideSwap: isInvertSideSwap,
+            isInvertServingTeam: isInvertServingTeam,
+            isInvertServingPlayer: isInvertServingPlayer
         } as Point);
         setScore(newScore);
         console.log("Score = transition to ", newTouchIdx)
         setCurrentTouchIdx(newTouchIdx);
-        const newServingTeam = scoringTeam; // logic might be added , like between sets
+        const newServingTeam = isInvertServingTeam ? getOtherTeam(game.teams, scoringTeam) : scoringTeam;
         renderServingPosition(
             newServingTeam,
             isSideSwapped(game, newTouchIdx),
             game,
             newScore.setsTeam[0]+newScore.setsTeam[1],
-            fieldGraphicConstants);
+            fieldGraphicConstants,
+            isInvertServingPlayer);
 
         setLastServingTeam(team);
         console.log("save",JSON.stringify(game))
@@ -503,6 +510,8 @@ export default function TabTwoScreen() {
 
             setIsEditMode(!newGame.points.length);
             setIsInvertSideSwap(newGame.points.length > 0 ? !!newGame.points[0].isInvertSideSwap : false);
+            setIsInvertServingTeam(newGame.points.length > 0 ? !!newGame.points[0].isInvertServingTeam : false);
+            setIsInvertServingPlayer(newGame.points.length > 0 ? !!newGame.points[0].isInvertServingPlayer : false);
             logToUI('Game imported: ' + (loadedGame.gameTitle || file.name));
         } catch (e: any) {
             logToUI('Import error: ' + (e.message || e));
@@ -520,6 +529,8 @@ export default function TabTwoScreen() {
         setScore({ scoreTeam: [0, 0], setsTeam: [0, 0] } as Score);
         setIsEditMode(true);
         setIsInvertSideSwap(false);
+        setIsInvertServingTeam(false);
+        setIsInvertServingPlayer(false);
         setLastServingTeam(0);
         renderServingPosition(teams[0], false, game, 0, fieldGraphicConstants);
         logToUI('New game started');
@@ -544,7 +555,55 @@ export default function TabTwoScreen() {
                 isSideSwapped(game, currentTouchIdx),
                 game,
                 score.setsTeam[0] + score.setsTeam[1],
-                fieldGraphicConstants
+                fieldGraphicConstants,
+                isInvertServingPlayer
+            );
+        }
+    };
+
+    const onSwapServingTeamToggle = () => {
+        const newValue = !isInvertServingTeam;
+        setIsInvertServingTeam(newValue);
+
+        if (game.points.length > 0) {
+            game.points[game.points.length - 1].isInvertServingTeam = newValue;
+        }
+
+        const currentPoint = game.points[game.points.length - 1];
+        const currentServTeam = currentPoint?.teamTouches[0]?.team;
+        if (currentServTeam) {
+            const newServTeam = getOtherTeam(game.teams, currentServTeam);
+            currentPoint.teamTouches = [];
+            renderServingPosition(
+                newServTeam,
+                isSideSwapped(game, currentTouchIdx),
+                game,
+                score.setsTeam[0] + score.setsTeam[1],
+                fieldGraphicConstants,
+                isInvertServingPlayer
+            );
+        }
+    };
+
+    const onSwapServingPlayerToggle = () => {
+        const newValue = !isInvertServingPlayer;
+        setIsInvertServingPlayer(newValue);
+
+        if (game.points.length > 0) {
+            game.points[game.points.length - 1].isInvertServingPlayer = newValue;
+        }
+
+        const currentPoint = game.points[game.points.length - 1];
+        const servingTeam = currentPoint?.teamTouches[0]?.team;
+        if (servingTeam) {
+            currentPoint.teamTouches = [];
+            renderServingPosition(
+                servingTeam,
+                isSideSwapped(game, currentTouchIdx),
+                game,
+                score.setsTeam[0] + score.setsTeam[1],
+                fieldGraphicConstants,
+                newValue
             );
         }
     };
@@ -844,13 +903,29 @@ export default function TabTwoScreen() {
                 textStyle={styles.smallTextButton}
             />
             {isEditMode && currentTouchIdx.teamTouchesIdx === 0 && currentTouchIdx.touchIdx === 0 && (
-                <CheckBox
-                    title="Swap sides"
-                    checked={isInvertSideSwap}
-                    onPress={onSwapSidesToggle}
-                    containerStyle={{ marginBottom: 0, marginTop: 0, paddingVertical: 2, backgroundColor: 'transparent' }}
-                    textStyle={styles.smallTextButton}
-                />
+                <View style={styles.swapCheckboxes}>
+                    <CheckBox
+                        title="Swap sides"
+                        checked={isInvertSideSwap}
+                        onPress={onSwapSidesToggle}
+                        containerStyle={{ marginBottom: 0, marginTop: 0, paddingVertical: 2, backgroundColor: 'transparent' }}
+                        textStyle={styles.smallTextButton}
+                    />
+                    <CheckBox
+                        title="Swap serving team"
+                        checked={isInvertServingTeam}
+                        onPress={onSwapServingTeamToggle}
+                        containerStyle={{ marginBottom: 0, marginTop: 0, paddingVertical: 2, backgroundColor: 'transparent' }}
+                        textStyle={styles.smallTextButton}
+                    />
+                    <CheckBox
+                        title="Swap serving player"
+                        checked={isInvertServingPlayer}
+                        onPress={onSwapServingPlayerToggle}
+                        containerStyle={{ marginBottom: 0, marginTop: 0, paddingVertical: 2, backgroundColor: 'transparent' }}
+                        textStyle={styles.smallTextButton}
+                    />
+                </View>
             )}
             <ButtonGroup
                 buttons={['OUT', 'Touched', 'IN', 'Net fault', 'Net fault','IN', 'Touched', 'OUT']}
@@ -984,6 +1059,12 @@ const styles = StyleSheet.create({
     },
     buttonStyle: {
         minWidth: 70,
+    },
+    swapCheckboxes: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     ioButtons: {
         flexDirection: 'row',

@@ -122,6 +122,8 @@ export interface Point {
     set:number;
     wonBy ?: Team; // team id
     isInvertSideSwap?: boolean; // true if the user manually swapped sides for this point
+    isInvertServingTeam?: boolean; // true if the user manually swapped serving team for this point
+    isInvertServingPlayer?: boolean; // true if the user manually swapped serving player for this point
 }
 export interface Game {
     ballX: SharedValue<number>; // reference to the shared value ballX.value
@@ -179,6 +181,8 @@ export interface SerializedPoint {
     set: number;
     wonBy?: SerializedTeam;
     isInvertSideSwap?: boolean;
+    isInvertServingTeam?: boolean;
+    isInvertServingPlayer?: boolean;
 }
 
 export interface SerializedGame {
@@ -671,7 +675,7 @@ export const calculateScore = (game:Game, currentTouchIndex:TouchIndex) : Score 
     return result;
 }
 
-export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number, fieldConstants:FieldGraphicConstants) => {
+export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number, fieldConstants:FieldGraphicConstants, isInvertServingPlayer?:boolean) => {
     //console.log("renderServingPosition ("+game.points.length+")", currentServingTeam.id, isSideSwapped, "--------------------------------------")
     /*const isFirstTouch =
         !game.points ||
@@ -717,8 +721,8 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
             playerId: point.teamTouches[0].touch.length ? point.teamTouches[0].touch[0].player.id : -1
         };});
     //console.log("teamsNewServes ",JSON.stringify(teamsNewServes));
-    const servingPlayer : number = 1-(teamsNewServes.length%2);
-    console.log("servingPlayer ",servingPlayer)
+    const servingPlayer : number = isInvertServingPlayer ? (teamsNewServes.length%2) : 1-(teamsNewServes.length%2);
+    console.log("servingPlayer ",servingPlayer, "isInvertServingPlayer", isInvertServingPlayer)
     if(!currentTouchArr.length) {
         currentTouchArr.push({
             player: currentServingTeam.players[servingPlayer],
@@ -746,7 +750,14 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     } as TouchIndex;
 
     let currentTouch = currentTouchArr[currentTouchArr.length-1];
-    const firstServingTeam = game.points.filter(onePoint => onePoint.set === currentSet)[0].teamTouches[0].team;
+    const firstPointOfSet = game.points.filter(onePoint => onePoint.set === currentSet)[0];
+    let firstServingTeam = firstPointOfSet.teamTouches[0].team;
+    // If the first point of the set had its serving team manually swapped,
+    // the "original" first serving team is the other team
+    if (firstPointOfSet.isInvertServingTeam) {
+        const otherTeam = game.teams.find(t => t.id !== firstServingTeam.id);
+        if (otherTeam) firstServingTeam = otherTeam;
+    }
     //const currentServingTeam = currentTouches[0].team;
     const servingTeam : boolean = firstServingTeam.id !== currentServingTeam.id; // true if the current serving team is not the first serving team
 
