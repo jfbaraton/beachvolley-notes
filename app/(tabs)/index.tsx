@@ -24,6 +24,7 @@ import {
     Player,
     Score, Game, SerializedGame,
     getOtherTeam,
+    getOtherPlayer,
     FieldGraphicConstants,
     TouchIndex,
     isLastTouchIndex,
@@ -54,6 +55,8 @@ import DomnaFront from '@/assets/sprites/Domna.jpg';
 import AnaPatriciaFront from '@/assets/sprites/AnaPatricia.png';
 // @ts-ignore
 import DudaFront from '@/assets/sprites/Duda.jpg';
+// @ts-ignore
+import MaleFront from '@/assets/sprites/male.png';
 // @ts-ignore
 import finlandFlagFront from '@/assets/sprites/finland_flag.png';
 // @ts-ignore
@@ -156,6 +159,11 @@ export default function TabTwoScreen() {
         }
     );
     const domna = useImage(DomnaFront.uri,
+        (error :Error)=> {
+            console.error('Loading failed:', error.message);
+        }
+    );
+    const male = useImage(MaleFront.uri,
         (error :Error)=> {
             console.error('Loading failed:', error.message);
         }
@@ -520,6 +528,23 @@ export default function TabTwoScreen() {
 
     const newGame = () => {
         game.points = [];
+        // Reset team/player IDs to defaults on both local teams and game.teams
+        game.teams[0].id = 'Team1';
+        game.teams[0].players[0].id = 'Jeff';
+        game.teams[0].players[1].id = 'Domna';
+        game.teams[0].prefersBlockId = 'Domna';
+        game.teams[1].id = 'Team2';
+        game.teams[1].players[0].id = 'male';
+        game.teams[1].players[1].id = 'AnaPatricia';
+        game.teams[1].prefersBlockId = null;
+        teams[0].id = game.teams[0].id;
+        teams[0].players[0].id = game.teams[0].players[0].id;
+        teams[0].players[1].id = game.teams[0].players[1].id;
+        teams[0].prefersBlockId = game.teams[0].prefersBlockId;
+        teams[1].id = game.teams[1].id;
+        teams[1].players[0].id = game.teams[1].players[0].id;
+        teams[1].players[1].id = game.teams[1].players[1].id;
+        teams[1].prefersBlockId = game.teams[1].prefersBlockId;
         const newTouchIdx = {
             pointIdx: 0,
             teamTouchesIdx: 0,
@@ -532,8 +557,116 @@ export default function TabTwoScreen() {
         setIsInvertServingTeam(false);
         setIsInvertServingPlayer(false);
         setLastServingTeam(0);
-        renderServingPosition(teams[0], false, game, 0, fieldGraphicConstants);
+        renderServingPosition(game.teams[0], false, game, 0, fieldGraphicConstants);
+        setGame({...game});
         logToUI('New game started');
+    };
+
+    const deleteCurrentTouch = () => {
+        if (!game.points.length) {
+            logToUI('Nothing to delete');
+            return;
+        }
+
+        const lastPointIdx = game.points.length - 1;
+        const lastPoint = game.points[lastPointIdx];
+
+        // If the point was already scored (a new empty point was pushed after it),
+        // remove that next empty point and clear the score result + stats
+        if (lastPoint.teamTouches.length === 0) {
+            // The last point is the empty "next" point — the scored point is the one before
+            game.points.pop(); // remove the empty next point
+            if (!game.points.length) {
+                logToUI('Nothing to delete');
+                return;
+            }
+            const scoredPoint = game.points[game.points.length - 1];
+            scoredPoint.wonBy = undefined;
+            // Clear isScoring/isFail on all touches of the point
+            for (const tt of scoredPoint.teamTouches) {
+                for (const t of tt.touch) {
+                    t.isScoring = undefined;
+                    t.isFail = undefined;
+                }
+            }
+        }
+
+        const pointIdx = game.points.length - 1;
+        const point = game.points[pointIdx];
+
+        if (!point.teamTouches.length) {
+            logToUI('Nothing to delete');
+            return;
+        }
+
+        const lastTT = point.teamTouches[point.teamTouches.length - 1];
+
+        if (lastTT.touch.length > 0) {
+            lastTT.touch.pop();
+        }
+
+        // If the teamTouches entry is now empty, remove it
+        if (lastTT.touch.length === 0) {
+            point.teamTouches.pop();
+        }
+
+        // Determine the new current touch index
+        if (point.teamTouches.length === 0) {
+            // The service touch itself was deleted
+            if (pointIdx === 0) {
+                // Very first point — re-init serving position
+                const newTouchIdx = { pointIdx: 0, teamTouchesIdx: 0, touchIdx: 0 } as TouchIndex;
+                setCurrentTouchIdx(newTouchIdx);
+                const newScore = { scoreTeam: [0, 0], setsTeam: [0, 0] } as Score;
+                setScore(newScore);
+                point.teamTouches = [];
+                renderServingPosition(teams[0], false, game, 0, fieldGraphicConstants, isInvertServingPlayer);
+                setIsEditMode(true);
+                logToUI('Deleted service touch, back to start');
+                return;
+            } else {
+                // Remove the now-empty point and go back to the previous point's last touch
+                game.points.pop();
+                const prevPointIdx = game.points.length - 1;
+                const prevPoint = game.points[prevPointIdx];
+                // Clear wonBy on the previous point so it can be re-scored
+                prevPoint.wonBy = undefined;
+                // Clear isScoring/isFail on all touches
+                for (const tt of prevPoint.teamTouches) {
+                    for (const t of tt.touch) {
+                        t.isScoring = undefined;
+                        t.isFail = undefined;
+                    }
+                }
+                const prevLastTT = prevPoint.teamTouches[prevPoint.teamTouches.length - 1];
+                const newTouchIdx = {
+                    pointIdx: prevPointIdx,
+                    teamTouchesIdx: prevPoint.teamTouches.length - 1,
+                    touchIdx: prevLastTT.touch.length - 1
+                } as TouchIndex;
+                setCurrentTouchIdx(newTouchIdx);
+                const newScore = calculateScore(game, newTouchIdx);
+                setScore(newScore);
+                setIsEditMode(true);
+                renderTouchIndex(game, newTouchIdx);
+                logToUI('Deleted touch, back to previous point');
+                return;
+            }
+        }
+
+        // Normal case: still have touches in this point
+        const newLastTT = point.teamTouches[point.teamTouches.length - 1];
+        const newTouchIdx = {
+            pointIdx: pointIdx,
+            teamTouchesIdx: point.teamTouches.length - 1,
+            touchIdx: newLastTT.touch.length - 1
+        } as TouchIndex;
+        setCurrentTouchIdx(newTouchIdx);
+        const newScore = calculateScore(game, newTouchIdx);
+        setScore(newScore);
+        setIsEditMode(true);
+        renderTouchIndex(game, newTouchIdx);
+        logToUI('Deleted last touch');
     };
 
     const onSwapSidesToggle = () => {
@@ -606,6 +739,30 @@ export default function TabTwoScreen() {
                 newValue
             );
         }
+    };
+
+    const onSwapReceiver = () => {
+        const currentPoint = game.points[game.points.length - 1];
+        if (!currentPoint) return;
+        const currentTT = currentPoint.teamTouches[currentTouchIdx.teamTouchesIdx];
+        if (!currentTT || !currentTT.touch.length) return;
+        const currentTouch = currentTT.touch[0];
+        const receivingTeam = currentTT.team;
+        const otherPlayer = getOtherPlayer(receivingTeam, currentTouch.player.id);
+
+        // Get the previous touchIdx (the last touch before the ball crossed the net)
+        const prevTouchIdx = getPreviousTouchIndex(game, currentTouchIdx);
+
+        renderReceivingPosition(
+            currentTouch.ballX || game.ballX.value,
+            currentTouch.ballY || game.ballY.value,
+            game,
+            prevTouchIdx || currentTouchIdx,
+            currentPoint.set,
+            fieldGraphicConstants,
+            otherPlayer.id
+        );
+        logToUI('Swapped receiver to ' + otherPlayer.id);
     };
 
     const onFieldTouch = (event : GestureStateChangeEvent<TapGestureHandlerEventPayload>) => {
@@ -845,6 +1002,7 @@ export default function TabTwoScreen() {
         'Domna': domna,
         'AnaPatricia': anaPatricia,
         'Duda': duda,
+        'male': male,
     };
 
     // Resolve sprite images for each player slot based on current player IDs
@@ -927,6 +1085,11 @@ export default function TabTwoScreen() {
                     />
                 </View>
             )}
+            {isEditMode && currentTouchIdx.teamTouchesIdx > 0 && currentTouchIdx.touchIdx === 0 && (
+                <TouchableOpacity style={styles.swapReceiverButton} onPress={onSwapReceiver}>
+                    <Text style={styles.ioButtonText}>🔄 Swap Receiver</Text>
+                </TouchableOpacity>
+            )}
             <ButtonGroup
                 buttons={['OUT', 'Touched', 'IN', 'Net fault', 'Net fault','IN', 'Touched', 'OUT']}
                 selectedIndex={100}
@@ -1000,6 +1163,11 @@ export default function TabTwoScreen() {
                 textStyle={styles.textButton}
                 onPress={gotoMove}
             />
+            {isEditMode && isLastTouchIndex(game, currentTouchIdx) && (
+                <TouchableOpacity style={styles.deleteButton} onPress={deleteCurrentTouch}>
+                    <Text style={styles.ioButtonText}>🗑️ Delete Last Touch</Text>
+                </TouchableOpacity>
+            )}
             <View style={styles.ioButtons}>
                 <TouchableOpacity style={styles.ioButton} onPress={newGame}>
                     <Text style={styles.ioButtonText}>🆕 New Game</Text>
@@ -1066,6 +1234,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    swapReceiverButton: {
+        backgroundColor: '#e67e22',
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 6,
+        marginBottom: 2,
+    },
     ioButtons: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -1078,6 +1253,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 6,
+    },
+    deleteButton: {
+        backgroundColor: '#cc3333',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 6,
+        marginBottom: 4,
     },
     ioButtonText: {
         color: '#fff',

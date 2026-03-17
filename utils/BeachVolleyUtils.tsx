@@ -883,7 +883,7 @@ export const getClosestPlayer = (playerIds:string[], ballX :number, ballY :numbe
     return result || getPlayerById(game, playerIds[0]);
 }
 
-export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,prevTouchIdx:TouchIndex, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
+export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,prevTouchIdx:TouchIndex, currentSet:number,  fieldConstants:FieldGraphicConstants, forceReceiverId?:string) => {
     //console.log("renderReceivingPosition ("+game.points.length+")", "--------------------------------------")
 
     const currentPoint = game.points[game.points.length - 1];
@@ -897,7 +897,15 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,p
 
     const receivingTeam = game.teams[game.teams[0].players[0].playerX.value <= fieldConstants.width/2 === ballX <= fieldConstants.width/2 ? 0:1] ;
     //console.log("receivingTeam ",receivingTeam.id);
-    const receivingPlayer = getClosestPlayer(receivingTeam.players.map(onePlayer => onePlayer.id), ballX, ballY, game, prevTouchIdx);
+    let receivingPlayer: Player;
+    if (forceReceiverId) {
+        receivingPlayer = getTeamPlayerById(receivingTeam, forceReceiverId);
+    } else if (currentTouchArr.length > 0) {
+        // Touch already exists — use its stored player
+        receivingPlayer = currentTouchArr[0].player;
+    } else {
+        receivingPlayer = getClosestPlayer(receivingTeam.players.map(onePlayer => onePlayer.id), ballX, ballY, game, prevTouchIdx);
+    }
     const receiverMatePlayer = getOtherPlayer(receivingTeam, receivingPlayer.id);
     //console.log("receivingPlayer ",receivingPlayer.id)
     let attackTouch = currentTeamTouches[currentTeamTouches.length-2].touch[currentTeamTouches[currentTeamTouches.length-2].touch.length-1];
@@ -923,6 +931,9 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,p
             playerExplicitMoves: [],
             playerCalculatedMoves: []
         });
+    } else if (forceReceiverId) {
+        // Update existing touch's player when swapping receiver
+        currentTouchArr[0].player = receivingPlayer;
     }
 
     const currentTouchIdx = {
