@@ -208,15 +208,48 @@ export interface TouchIndex {
 
 export const initGame = (ballX: SharedValue<number>, ballY: SharedValue<number>, teams:Team[] , loadedGame : SerializedGame|null) : Game => {
     "worklet";
+
+    // Resolve a serialized team reference to a live Team object.
+    // First try matching by team ID, then fall back to matching by player IDs
+    // (handles legacy exports where wonBy stored stale team IDs).
+    const resolveTeam = (serialized: { id: string; players?: { id: string }[] } | undefined): Team | undefined => {
+        if (!serialized) return undefined;
+        const byId = teams.find(t => t.id === serialized.id);
+        if (byId) return byId;
+        // Fall back: match by player IDs
+        if (serialized.players && serialized.players.length) {
+            const playerIds = new Set(serialized.players.map(p => p.id));
+            return teams.find(t => t.players.some(p => playerIds.has(p.id)));
+        }
+        return undefined;
+    };
+
     const points: Point[] = [];
     if(loadedGame) {
         loadedGame.points.forEach(onePoint => {
+            // Resolve wonBy: try by team ID, then by player IDs, then by matching
+            // player positions against the teams already present in teamTouches
+            let resolvedWonBy = resolveTeam(onePoint.wonBy);
+            if (!resolvedWonBy && onePoint.wonBy && onePoint.wonBy.players) {
+                // Last resort: match wonBy's player positions to a teamTouches team
+                const wonByPositions = onePoint.wonBy.players.map(p => `${p.playerX},${p.playerY}`).sort().join('|');
+                for (const tt of onePoint.teamTouches) {
+                    const ttPositions = tt.team.players.map(p => `${p.playerX},${p.playerY}`).sort().join('|');
+                    if (wonByPositions === ttPositions) {
+                        resolvedWonBy = resolveTeam(tt.team);
+                        break;
+                    }
+                }
+            }
+
             const point: Point = {
                 set: onePoint.set,
-                wonBy: onePoint.wonBy ? teams.find(oneTeam => oneTeam.id === onePoint.wonBy!.id) : undefined,
+                wonBy: resolvedWonBy,
                 isInvertSideSwap: onePoint.isInvertSideSwap,
+                isInvertServingTeam: onePoint.isInvertServingTeam,
+                isInvertServingPlayer: onePoint.isInvertServingPlayer,
                 teamTouches: onePoint.teamTouches.map(oneTeamTouches => ({
-                    team: teams.find(oneTeam => oneTeam.id === oneTeamTouches.team.id) as Team,
+                    team: (resolveTeam(oneTeamTouches.team) || teams[0]) as Team,
                     touch: oneTeamTouches.touch.map(oneTouch => ({
                         ...oneTouch,
                         player: teams.flatMap(oneTeam => oneTeam.players).find(onePlayer => onePlayer.id === oneTouch.player.id) as Player,

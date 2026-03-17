@@ -205,18 +205,34 @@ export default function TabTwoScreen() {
         teams
     ,presetGame
     ));
+
+    // Keep local teams in sync with game.teams (which may have been updated by import/newGame)
+    if (game.teams) {
+        teams[0].id = game.teams[0].id;
+        teams[0].players[0].id = game.teams[0].players[0].id;
+        teams[0].players[1].id = game.teams[0].players[1].id;
+        teams[0].startingSide = game.teams[0].startingSide;
+        teams[0].prefersBlockId = game.teams[0].prefersBlockId;
+        teams[1].id = game.teams[1].id;
+        teams[1].players[0].id = game.teams[1].players[0].id;
+        teams[1].players[1].id = game.teams[1].players[1].id;
+        teams[1].startingSide = game.teams[1].startingSide;
+        teams[1].prefersBlockId = game.teams[1].prefersBlockId;
+    }
     //logToUI("BallFront ", JSON.stringify(BallFront))
 
+    const initialTouchIdx = {
+        pointIdx: game.points.length ? game.points.length - 1 : 0,
+        teamTouchesIdx: 0,
+        touchIdx: 0
+    } as TouchIndex;
     const [ isEditMode, setIsEditMode ] = useState(!game.points.length)
-    const [ currentTouchIdx, setCurrentTouchIdx ] = useState({
-        pointIdx: 0,       // Game.points index
-        teamTouchesIdx: 0, // Game.points.teamTouches index
-        touchIdx: 0        // Game.points.teamTouches.touch index
-    } as TouchIndex);
-    const [ score, setScore ] = useState({
-        scoreTeam : [0,0],
-        setsTeam : [0,0]
-    } as Score)
+    const [ currentTouchIdx, setCurrentTouchIdx ] = useState(initialTouchIdx);
+    const [ score, setScore ] = useState(
+        game.points.length
+            ? calculateScore(game, initialTouchIdx)
+            : { scoreTeam: [0,0], setsTeam: [0,0] } as Score
+    )
     const [ isInvertSideSwap, setIsInvertSideSwap ] = useState(false)
     const [ isInvertServingTeam, setIsInvertServingTeam ] = useState(false)
     const [ isInvertServingPlayer, setIsInvertServingPlayer ] = useState(false)
@@ -319,7 +335,7 @@ export default function TabTwoScreen() {
         }
     }
     const teamScores = (team : number) => {
-        const scoringTeam = teams[0].startingSide === 0 ? teams[team] : teams[1-team];
+        const scoringTeam = game.teams[0].startingSide === 0 ? game.teams[team] : game.teams[1-team];
         if(game.points.length) {
             game.points[game.points.length-1].wonBy = scoringTeam
         }
@@ -405,17 +421,23 @@ export default function TabTwoScreen() {
         //logToUI("score... team, lastserv team, score[team]", team, lastServingTeam, scoreTeam[team])
         //logToUI("team "+team+" scores... ", ''+scoreTeam[0], ''+scoreTeam[1])
 
+        // If the receiving team scored (side-out), reset "swap serving team"
+        const servingTeamThisPoint = game.points[game.points.length - 1]?.teamTouches[0]?.team;
+        if (servingTeamThisPoint && scoringTeam.id !== servingTeamThisPoint.id) {
+            setIsInvertServingTeam(false);
+        }
+
         game.points.push({
             set: newScore.setsTeam[0]+newScore.setsTeam[1],
             teamTouches: [],
             isInvertSideSwap: isInvertSideSwap,
-            isInvertServingTeam: isInvertServingTeam,
+            isInvertServingTeam: servingTeamThisPoint && scoringTeam.id !== servingTeamThisPoint.id ? false : isInvertServingTeam,
             isInvertServingPlayer: isInvertServingPlayer
         } as Point);
         setScore(newScore);
         console.log("Score = transition to ", newTouchIdx)
         setCurrentTouchIdx(newTouchIdx);
-        const newServingTeam = isInvertServingTeam ? getOtherTeam(game.teams, scoringTeam) : scoringTeam;
+        const newServingTeam = scoringTeam; // scoring team always serves next
         renderServingPosition(
             newServingTeam,
             isSideSwapped(game, newTouchIdx),
@@ -505,7 +527,7 @@ export default function TabTwoScreen() {
             setGame(newGame);
 
             const newTouchIdx = {
-                pointIdx: 0,
+                pointIdx: newGame.points.length ? newGame.points.length - 1 : 0,
                 teamTouchesIdx: 0,
                 touchIdx: 0,
             } as TouchIndex;
@@ -516,10 +538,11 @@ export default function TabTwoScreen() {
                 : { scoreTeam: [0, 0], setsTeam: [0, 0] } as Score;
             setScore(newScore);
 
-            setIsEditMode(!newGame.points.length);
-            setIsInvertSideSwap(newGame.points.length > 0 ? !!newGame.points[0].isInvertSideSwap : false);
-            setIsInvertServingTeam(newGame.points.length > 0 ? !!newGame.points[0].isInvertServingTeam : false);
-            setIsInvertServingPlayer(newGame.points.length > 0 ? !!newGame.points[0].isInvertServingPlayer : false);
+            setIsEditMode(!newGame.points.length || isLastTouchIndex(newGame, newTouchIdx));
+            const lastPoint = newGame.points.length > 0 ? newGame.points[newTouchIdx.pointIdx] : null;
+            setIsInvertSideSwap(lastPoint ? !!lastPoint.isInvertSideSwap : false);
+            setIsInvertServingTeam(lastPoint ? !!lastPoint.isInvertServingTeam : false);
+            setIsInvertServingPlayer(lastPoint ? !!lastPoint.isInvertServingPlayer : false);
             logToUI('Game imported: ' + (loadedGame.gameTitle || file.name));
         } catch (e: any) {
             logToUI('Import error: ' + (e.message || e));
