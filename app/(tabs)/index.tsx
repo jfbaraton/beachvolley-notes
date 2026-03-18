@@ -58,6 +58,8 @@ import DudaFront from '@/assets/sprites/Duda.jpg';
 // @ts-ignore
 import MaleFront from '@/assets/sprites/male.png';
 // @ts-ignore
+import BennettFront from '@/assets/sprites/Bennett.jpeg';
+// @ts-ignore
 import finlandFlagFront from '@/assets/sprites/finland_flag.png';
 // @ts-ignore
 import brazilFlagFront from '@/assets/sprites/brazil_flag.png';
@@ -163,7 +165,7 @@ export default function TabTwoScreen() {
             console.error('Loading failed:', error.message);
         }
     );
-    const male = useImage(MaleFront.uri,
+    const male = useImage(BennettFront.uri,
         (error :Error)=> {
             console.error('Loading failed:', error.message);
         }
@@ -1031,6 +1033,7 @@ export default function TabTwoScreen() {
         'AnaPatricia': anaPatricia,
         'Duda': duda,
         'male': male,
+        'Bennett': male,
     };
 
     // Resolve sprite images for each player slot based on current player IDs
