@@ -734,6 +734,56 @@ const findLastServiceExplicitMoves = (game: Game, servingPlayerId: string, servi
     return [];
 };
 
+/**
+ * Return a quarter index (0-3) for a ball position on the field.
+ * 0 = left-top, 1 = left-bottom, 2 = right-top, 3 = right-bottom.
+ */
+const getFieldQuarter = (ballX: number, ballY: number, fieldWidth: number, fieldHeight: number): number => {
+    const isRight = ballX >= fieldWidth / 2 ? 1 : 0;
+    const isBottom = ballY >= fieldHeight / 2 ? 1 : 0;
+    return isRight * 2 + isBottom;
+};
+
+/**
+ * Search backward through previous touches (non-service) to find the last time
+ * the same player touched the ball from the same field quarter.
+ * Returns only the opponent team's playerExplicitMoves from that touch,
+ * or an empty array if none found.
+ */
+const findLastTouchExplicitMovesForOpponent = (
+    game: Game,
+    touchingPlayerId: string,
+    ballX: number,
+    ballY: number,
+    opponentPlayerIds: string[],
+    fieldConstants: FieldGraphicConstants
+): CalculatedPlayer[] => {
+    const quarter = getFieldQuarter(ballX, ballY, fieldConstants.width, fieldConstants.height);
+
+    // Search backward through all points and touches
+    for (let pIdx = game.points.length - 1; pIdx >= 0; pIdx--) {
+        const point = game.points[pIdx];
+        if (!point.teamTouches) continue;
+        for (let ttIdx = point.teamTouches.length - 1; ttIdx >= 0; ttIdx--) {
+            const teamTouch = point.teamTouches[ttIdx];
+            if (!teamTouch.touch) continue;
+            for (let tIdx = teamTouch.touch.length - 1; tIdx >= 0; tIdx--) {
+                const touch = teamTouch.touch[tIdx];
+                if (touch.stateName === 'service') continue;
+                if (touch.player.id !== touchingPlayerId) continue;
+                if (typeof touch.ballX === 'undefined' || typeof touch.ballY === 'undefined') continue;
+                const touchQuarter = getFieldQuarter(touch.ballX, touch.ballY, fieldConstants.width, fieldConstants.height);
+                if (touchQuarter !== quarter) continue;
+                const opponentMoves = touch.playerExplicitMoves.filter(m => opponentPlayerIds.includes(m.id));
+                if (opponentMoves.length > 0) {
+                    return opponentMoves.map(m => ({ ...m }));
+                }
+            }
+        }
+    }
+    return [];
+};
+
 export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number, fieldConstants:FieldGraphicConstants, isInvertServingPlayer?:boolean) => {
     //console.log("renderServingPosition ("+game.points.length+")", currentServingTeam.id, isSideSwapped, "--------------------------------------")
     /*const isFirstTouch =
@@ -888,9 +938,9 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
         p1id = p2id;
         p2id = tmpId;
     }
-    const p1xTarget = fieldConstants.validatePlayerX(servingTeam !== isSideSwapped? fieldConstants.width - fieldConstants.servingPosX :fieldConstants.servingPosX);
+    let p1xTarget = fieldConstants.validatePlayerX(servingTeam !== isSideSwapped? fieldConstants.width - fieldConstants.servingPosX :fieldConstants.servingPosX);
     p1X.value = withTiming(p1xTarget,{ duration : 500});
-    const p1yTarget = fieldConstants.validatePlayerY(fieldConstants.servingPosY);
+    let p1yTarget = fieldConstants.validatePlayerY(fieldConstants.servingPosY);
     p1Y.value = withTiming(p1yTarget,{ duration : 500});
     const p2xTarget = fieldConstants.validatePlayerX(servingTeam !== isSideSwapped ? fieldConstants.width - fieldConstants.serverMateX:fieldConstants.serverMateX);
     p2X.value = withTiming(p2xTarget,{ duration : 500});
@@ -905,9 +955,21 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     p4X.value = withTiming(p4xTarget,{ duration : 500});
     const p4yTarget = fieldConstants.validatePlayerY(fieldConstants.height - fieldConstants.receiverY);
     p4Y.value = withTiming(p4yTarget,{ duration : 500});
-    const ballxTarget = fieldConstants.validateBallX(servingTeam !== isSideSwapped ? fieldConstants.width - (fieldConstants.servingPosX+fieldConstants.ballsize):(fieldConstants.servingPosX+fieldConstants.ballsize));
+
+    // If the serving player has a reused explicit move, override their position
+    // and place the ball in front of them at that Y
+    const serveTouchExplicit = currentTouchArr[currentTouchArr.length - 1];
+    const serverExplicitMove = serveTouchExplicit.playerExplicitMoves.find(m => m.id === p1id);
+    if (serverExplicitMove) {
+        p1xTarget = serverExplicitMove.x;
+        p1yTarget = serverExplicitMove.y;
+        p1X.value = withTiming(p1xTarget, { duration: 500 });
+        p1Y.value = withTiming(p1yTarget, { duration: 500 });
+    }
+
+    const ballxTarget = fieldConstants.validateBallX(servingTeam !== isSideSwapped ? fieldConstants.width - (fieldConstants.servingPosX+fieldConstants.ballsize*3/2):(fieldConstants.servingPosX+fieldConstants.ballsize*3/2));
     game.ballX.value = withTiming(ballxTarget,{ duration : 50});
-    const ballyTarget = fieldConstants.validateBallY(fieldConstants.servingPosY);
+    const ballyTarget = p1yTarget; // ball Y matches serving player Y
     game.ballY.value = withTiming(ballyTarget,{ duration : 50});
     savePositions(game,currentTouchIdx,
         ballxTarget, ballyTarget,
@@ -918,10 +980,11 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
             {id:p4id, x:p4xTarget, y:p4yTarget}
         ],fieldConstants);
 
-    // Apply reused explicit moves visually
+    // Apply reused explicit moves visually (for non-server players)
     const serveTouchForExplicit = currentTouchArr[currentTouchArr.length - 1];
     if (serveTouchForExplicit.playerExplicitMoves.length > 0) {
         serveTouchForExplicit.playerExplicitMoves.forEach(move => {
+            if (move.id === p1id) return; // server already handled above
             const player = getPlayerById(game, move.id);
             if (player) {
                 player.playerX.value = withTiming(move.x, { duration: 500 });
@@ -997,6 +1060,9 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,p
     const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
     attackTouch.endingSide = isBallOnRightSide ? 0:1;
     if(!currentTouchArr.length) {
+        const opponentTeam = currentTeamTouches[currentTeamTouches.length-2].team;
+        const opponentPlayerIds = opponentTeam.players.map(p => p.id);
+        const reusedOpponentMoves = findLastTouchExplicitMovesForOpponent(game, receivingPlayer.id, ballX, ballY, opponentPlayerIds, fieldConstants);
         currentTouchArr.push({
             player: receivingPlayer,
             ballX: ballX,
@@ -1012,7 +1078,7 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,p
             //isFail: boolean, // 0 no, 1 yes
             //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
             //setCall: string, // 'up', 'middle', 'antenna', 'back'
-            playerExplicitMoves: [],
+            playerExplicitMoves: reusedOpponentMoves,
             playerCalculatedMoves: []
         });
     } else if (forceReceiverId) {
@@ -1083,6 +1149,18 @@ export const renderReceivingPosition = (ballX:number, ballY:number, game: Game,p
             {id:receivingPlayer.id, x:receivingPlayerxTarget, y:receivingPlayeryTarget},
             {id:receiverMatePlayer.id, x:receiverMatePlayerxTarget, y:receiverMatePlayeryTarget}
         ],fieldConstants);
+
+    // Apply reused explicit moves visually
+    const passTouchForExplicit = currentTouchArr[currentTouchArr.length - 1];
+    if (passTouchForExplicit.playerExplicitMoves.length > 0) {
+        passTouchForExplicit.playerExplicitMoves.forEach(move => {
+            const player = getPlayerById(game, move.id);
+            if (player) {
+                player.playerX.value = withTiming(move.x, { duration: 500 });
+                player.playerY.value = withTiming(move.y, { duration: 500 });
+            }
+        });
+    }
 }
 
 export const renderSettingPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -1107,6 +1185,9 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
     passTouch.isFail = false;
     const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
     passTouch.endingSide = isBallOnRightSide ? 0:1;
+    const opponentTeamForSet = currentTeamTouches[currentTeamTouches.length-2].team;
+    const opponentPlayerIdsForSet = opponentTeamForSet.players.map(p => p.id);
+    const reusedOpponentMovesForSet = findLastTouchExplicitMovesForOpponent(game, settingPlayer.id, ballX, ballY, opponentPlayerIdsForSet, fieldConstants);
     currentTouchArr.push({
         player: settingPlayer,
         ballX: ballX,
@@ -1122,7 +1203,7 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
         //isFail: boolean, // 0 no, 1 yes
         //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
         //setCall: string, // 'up', 'middle', 'antenna', 'back'
-        playerExplicitMoves: [],
+        playerExplicitMoves: reusedOpponentMovesForSet,
         playerCalculatedMoves: []
     });
 
@@ -1203,6 +1284,18 @@ export const renderSettingPosition = (ballX:number, ballY:number, game: Game, cu
             {id:passingPlayer.id, x:passingPlayerxTarget, y:passingPlayeryTarget},
             {id:settingPlayer.id, x:settingPlayerxTarget, y:settingPlayeryTarget}
         ],fieldConstants);
+
+    // Apply reused explicit moves visually
+    const setTouchForExplicit = currentTouchArr[currentTouchArr.length - 1];
+    if (setTouchForExplicit.playerExplicitMoves.length > 0) {
+        setTouchForExplicit.playerExplicitMoves.forEach(move => {
+            const player = getPlayerById(game, move.id);
+            if (player) {
+                player.playerX.value = withTiming(move.x, { duration: 500 });
+                player.playerY.value = withTiming(move.y, { duration: 500 });
+            }
+        });
+    }
 }
 
 export const renderAttackPosition = (ballX:number, ballY:number, game: Game, currentSet:number,  fieldConstants:FieldGraphicConstants) => {
@@ -1227,6 +1320,9 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
     passTouch.isFail = false;
     const isBallOnRightSide = ballX >= fieldConstants.width/2; // from UI perspective, the passer's side
     passTouch.endingSide = isBallOnRightSide ? 0:1;
+    const opponentTeamForAttack = currentTeamTouches[currentTeamTouches.length-2].team;
+    const opponentPlayerIdsForAttack = opponentTeamForAttack.players.map(p => p.id);
+    const reusedOpponentMovesForAttack = findLastTouchExplicitMovesForOpponent(game, attackingPlayer.id, ballX, ballY, opponentPlayerIdsForAttack, fieldConstants);
     currentTouchArr.push({
         player: attackingPlayer,
         ballX: ballX,
@@ -1242,7 +1338,7 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
         //isFail: boolean, // 0 no, 1 yes
         //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
         //setCall: string, // 'up', 'middle', 'antenna', 'back'
-        playerExplicitMoves: [],
+        playerExplicitMoves: reusedOpponentMovesForAttack,
         playerCalculatedMoves: []
     });
 
@@ -1309,6 +1405,18 @@ export const renderAttackPosition = (ballX:number, ballY:number, game: Game, cur
             {id:attackingPlayer.id, x:attackingPlayerxTarget, y:attackingPlayeryTarget},
             {id:settingPlayer.id, x:settingPlayerxTarget, y:settingPlayeryTarget}
         ],fieldConstants);
+
+    // Apply reused explicit moves visually
+    const attackTouchForExplicit = currentTouchArr[currentTouchArr.length - 1];
+    if (attackTouchForExplicit.playerExplicitMoves.length > 0) {
+        attackTouchForExplicit.playerExplicitMoves.forEach(move => {
+            const player = getPlayerById(game, move.id);
+            if (player) {
+                player.playerX.value = withTiming(move.x, { duration: 500 });
+                player.playerY.value = withTiming(move.y, { duration: 500 });
+            }
+        });
+    }
 }
 
 export const isSideSwapped = (game: Game, currentTouchIdx:TouchIndex) => {

@@ -1200,12 +1200,12 @@ export default function TabTwoScreen() {
                 textStyle={styles.textButton}
                 onPress={gotoMove}
             />
-            {isEditMode && isLastTouchIndex(game, currentTouchIdx) && (
-                <TouchableOpacity style={styles.deleteButton} onPress={deleteCurrentTouch}>
-                    <Text style={styles.ioButtonText}>🗑️ Delete Last Touch</Text>
-                </TouchableOpacity>
-            )}
             <View style={styles.ioButtons}>
+                {isEditMode && isLastTouchIndex(game, currentTouchIdx) && (
+                    <TouchableOpacity style={styles.deleteButton} onPress={deleteCurrentTouch}>
+                        <Text style={styles.ioButtonText}>🗑️ Delete Last Touch</Text>
+                    </TouchableOpacity>
+                )}
                 <TouchableOpacity style={styles.ioButton} onPress={newGame}>
                     <Text style={styles.ioButtonText}>🆕 New Game</Text>
                 </TouchableOpacity>
