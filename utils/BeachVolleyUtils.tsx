@@ -708,6 +708,32 @@ export const calculateScore = (game:Game, currentTouchIndex:TouchIndex) : Score 
     return result;
 }
 
+/**
+ * Search backward through previous points to find the last service touch
+ * where the same player served from the same side of the net.
+ * Returns the playerExplicitMoves from that touch, or an empty array if none found.
+ */
+const findLastServiceExplicitMoves = (game: Game, servingPlayerId: string, servingSide: number): CalculatedPlayer[] => {
+    // Iterate points in reverse to find the most recent match
+    for (let pIdx = game.points.length - 1; pIdx >= 0; pIdx--) {
+        const point = game.points[pIdx];
+        if (!point.teamTouches || point.teamTouches.length === 0) continue;
+        const firstTeamTouch = point.teamTouches[0];
+        if (!firstTeamTouch.touch || firstTeamTouch.touch.length === 0) continue;
+        const serviceTouch = firstTeamTouch.touch[0];
+        if (serviceTouch.stateName !== 'service') continue;
+        // Skip the current (latest) point if its service touch has no explicit moves yet
+        if (pIdx === game.points.length - 1 && serviceTouch.playerExplicitMoves.length === 0) continue;
+        if (serviceTouch.player.id === servingPlayerId &&
+            serviceTouch.startingSide === servingSide &&
+            serviceTouch.playerExplicitMoves.length > 0) {
+            // Deep-copy so mutations don't affect the original
+            return serviceTouch.playerExplicitMoves.map(m => ({ ...m }));
+        }
+    }
+    return [];
+};
+
 export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :boolean, game: Game, currentSet:number, fieldConstants:FieldGraphicConstants, isInvertServingPlayer?:boolean) => {
     //console.log("renderServingPosition ("+game.points.length+")", currentServingTeam.id, isSideSwapped, "--------------------------------------")
     /*const isFirstTouch =
@@ -756,7 +782,20 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
     //console.log("teamsNewServes ",JSON.stringify(teamsNewServes));
     const servingPlayer : number = isInvertServingPlayer ? (teamsNewServes.length%2) : 1-(teamsNewServes.length%2);
     console.log("servingPlayer ",servingPlayer, "isInvertServingPlayer", isInvertServingPlayer)
+
+    // Compute the serving side early so we can look up last explicit moves
+    const firstPointOfSetEarly = game.points.filter(onePoint => onePoint.set === currentSet)[0];
+    let firstServingTeamEarly = firstPointOfSetEarly?.teamTouches?.[0]?.team;
+    if (firstPointOfSetEarly?.isInvertServingTeam && firstServingTeamEarly) {
+        const otherTeamEarly = game.teams.find(t => t.id !== firstServingTeamEarly!.id);
+        if (otherTeamEarly) firstServingTeamEarly = otherTeamEarly;
+    }
+    const servingTeamEarly : boolean = firstServingTeamEarly ? firstServingTeamEarly.id !== currentServingTeam.id : false;
+    // servingTeamEarly !== isSideSwapped → ball on right → startingSide=0, otherwise startingSide=1
+    const servingSide = servingTeamEarly !== isSideSwapped ? 0 : 1;
+
     if(!currentTouchArr.length) {
+        const reusedExplicitMoves = findLastServiceExplicitMoves(game, currentServingTeam.players[servingPlayer].id, servingSide);
         currentTouchArr.push({
             player: currentServingTeam.players[servingPlayer],
             ballX: game.ballX.value,
@@ -772,7 +811,7 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
             //isFail: boolean, // 0 no, 1 yes
             //playerExplicitMoves: object[], // array of player ids, X, Y, reason (block, drop, call, etc) when set by the User
             //setCall: string, // 'up', 'middle', 'antenna', 'back'
-            playerExplicitMoves: [],
+            playerExplicitMoves: reusedExplicitMoves,
             playerCalculatedMoves: []
         });
     }
@@ -878,6 +917,18 @@ export const renderServingPosition = (currentServingTeam:Team, isSideSwapped :bo
             {id:p3id, x:p3xTarget, y:p3yTarget},
             {id:p4id, x:p4xTarget, y:p4yTarget}
         ],fieldConstants);
+
+    // Apply reused explicit moves visually
+    const serveTouchForExplicit = currentTouchArr[currentTouchArr.length - 1];
+    if (serveTouchForExplicit.playerExplicitMoves.length > 0) {
+        serveTouchForExplicit.playerExplicitMoves.forEach(move => {
+            const player = getPlayerById(game, move.id);
+            if (player) {
+                player.playerX.value = withTiming(move.x, { duration: 500 });
+                player.playerY.value = withTiming(move.y, { duration: 500 });
+            }
+        });
+    }
 }
 
 export const getDistance = (p1x:number,p1Y:number,p2x:number,p2Y:number): number => {
