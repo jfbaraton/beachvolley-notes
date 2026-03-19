@@ -61,7 +61,7 @@ const FC: FieldConstants = {
   serverMateX: 3 * W / 8, serverMateY: H / 2,
   blockingX: 3 * W / 8,
   defenderX: W / 7, defenderY: 3 * H / 4,
-  receiverX: 6 * W / 7, receiverY: H / 4,
+  receiverX: W / 7, receiverY: H / 4,
   approachX: W / 3,
 };
 
@@ -545,21 +545,6 @@ export default function GameScreen() {
         <Text style={s.infoTxt}>Pt {currentIdx.pointIdx + 1} • {touchLabel}</Text>
       </View>
 
-      {/* ─── Swap controls (only when editing a serve) ─── */}
-      {isEdit && isServing && (
-        <View style={s.swapRow}>
-          <Pill label="⇄ Sides" active={invertSideSwap} onPress={onSwapSides} />
-          <Pill label="⇄ Team" active={invertServingTeam} onPress={onSwapServingTeam} />
-          <Pill label="⇄ Player" active={invertServingPlayer} onPress={onSwapServingPlayer} />
-        </View>
-      )}
-
-      {/* ─── Swap receiver (when editing a receive) ─── */}
-      {isEdit && currentIdx.rallyIdx > 0 && currentIdx.touchIdx === 0 && (
-        <View style={s.swapRow}>
-          <Pill label="🔄 Swap Receiver" active={false} onPress={onSwapReceiver} />
-        </View>
-      )}
 
       {/* ─── Navigation ─── */}
       <View style={s.navRow}>
@@ -587,6 +572,22 @@ export default function GameScreen() {
       <View style={s.logBox}>
         {log.map((l, i) => <Text key={i} style={s.logTxt}>{l}</Text>)}
       </View>
+
+        {/* ─── Swap controls (only when editing a serve) ─── */}
+        {isEdit && isServing && (
+            <View style={s.swapRow}>
+                <Pill label="⇄ Sides" active={invertSideSwap} onPress={onSwapSides} />
+                <Pill label="⇄ Team" active={invertServingTeam} onPress={onSwapServingTeam} />
+                <Pill label="⇄ Player" active={invertServingPlayer} onPress={onSwapServingPlayer} />
+            </View>
+        )}
+
+        {/* ─── Swap receiver (when editing a receive) ─── */}
+        {isEdit && currentIdx.rallyIdx > 0 && currentIdx.touchIdx === 0 && (
+            <View style={s.swapRow}>
+                <Pill label="🔄 Swap Receiver" active={false} onPress={onSwapReceiver} />
+            </View>
+        )}
     </ScrollView>
   );
 }

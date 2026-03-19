@@ -114,9 +114,8 @@ export const setupServe = (
   const [oppId1, oppId2] = oppTeam.playerIds;
 
   // Determine sides
-  const servIsOnRight = (servTeam === game.teams[0]) !== swapped;
-  // If team[0] is serving and not swapped → serve from left (x=0)
-  // servIsOnRight means serving team is on right side of screen
+  // team[0] defaults to LEFT, team[1] defaults to RIGHT; swap flips it
+  const servIsOnRight = (servTeam !== game.teams[0]) !== swapped;
 
   const servSide = servIsOnRight ? 1 : 0; // 0=serve from left, 1=serve from right
   const mul = servIsOnRight ? -1 : 1; // multiplier for positioning
