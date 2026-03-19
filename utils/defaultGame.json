@@ -1,0 +1,1684 @@
+{
+  "title": "tournament 03 2026 game 1",
+  "teams": [
+    {
+      "id": "Team1",
+      "playerIds": [
+        "Jeff",
+        "Domna"
+      ],
+      "prefersBlockId": "Jeff"
+    },
+    {
+      "id": "Team2",
+      "playerIds": [
+        "male",
+        "AnaPatricia"
+      ],
+      "prefersBlockId": null
+    }
+  ],
+  "players": [
+    {
+      "id": "Jeff"
+    },
+    {
+      "id": "Domna"
+    },
+    {
+      "id": "male"
+    },
+    {
+      "id": "AnaPatricia"
+    }
+  ],
+  "points": [
+    {
+      "set": 0,
+      "rallies": [
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 36,
+              "ballY": 56.5,
+              "type": "serve",
+              "explicitPositions": [
+                {
+                  "id": "Jeff",
+                  "x": 565.6875,
+                  "y": 221.5234375
+                },
+                {
+                  "id": "Domna",
+                  "x": 568.4453125,
+                  "y": 64.5390625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 0,
+                  "y": 56.5
+                },
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 149
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 56.5
+                },
+                {
+                  "id": "Domna",
+                  "x": 581.1428571428571,
+                  "y": 241.5
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 0,
+              "isFail": true,
+              "isPlayerOnRightArm": false
+            }
+          ]
+        },
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Domna",
+              "ballX": 467.9296875,
+              "ballY": 38.5234375,
+              "type": "pass",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 49.57109375
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 66.85714285714286,
+                  "y": 226.33359374999998
+                },
+                {
+                  "id": "Domna",
+                  "x": 503.9296875,
+                  "y": 38.5234375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 414,
+                  "y": 112.5234375
+                }
+              ],
+              "startingSide": 1,
+              "isPlayerOnRightArm": true,
+              "ballSourceDirection": 0
+            }
+          ]
+        }
+      ],
+      "wonByTeamId": "Team1",
+      "invertSideSwap": true,
+      "invertServingTeam": true,
+      "invertServingPlayer": true
+    },
+    {
+      "set": 0,
+      "rallies": [
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Domna",
+              "ballX": 612,
+              "ballY": 56.5,
+              "type": "serve",
+              "explicitPositions": [
+                {
+                  "id": "male",
+                  "x": 67.09765625,
+                  "y": 227.63671875
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 62.46875,
+                  "y": 59.21484375
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 648,
+                  "y": 56.5
+                },
+                {
+                  "id": "Jeff",
+                  "x": 414,
+                  "y": 149
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714289,
+                  "y": 56.5
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 66.85714285714289,
+                  "y": 241.5
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 1,
+              "isFail": true,
+              "isPlayerOnRightArm": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 62.00390625,
+              "ballY": 56.2421875,
+              "type": "pass",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 65.51796875
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 213.93046875
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 26.00390625,
+                  "y": 56.2421875
+                },
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 130.2421875
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 0,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": true
+            },
+            {
+              "playerId": "male",
+              "ballX": 89.74609375,
+              "ballY": 131.8359375,
+              "type": "set",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 133.55234375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 213.93046875
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 204,
+                  "y": 70.16927083333334
+                },
+                {
+                  "id": "male",
+                  "x": 89.74609375,
+                  "y": 167.8359375
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": true,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": true
+            },
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 212.28515625,
+              "ballY": 36.984375,
+              "type": "attack",
+              "explicitPositions": [
+                {
+                  "id": "Jeff",
+                  "x": 436.02734375,
+                  "y": 202.921875
+                },
+                {
+                  "id": "Domna",
+                  "x": 499.28125,
+                  "y": 51.796875
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 36.984375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 249.81406249999998
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 176.28515625,
+                  "y": 36.984375
+                },
+                {
+                  "id": "male",
+                  "x": 89.74609375,
+                  "y": 167.8359375
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 0,
+              "isPlayerOnRightArm": false,
+              "fromAcross": false,
+              "toAcross": false
+            }
+          ]
+        },
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Domna",
+              "ballX": 485.453125,
+              "ballY": 48.7109375,
+              "type": "pass",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 58.739843750000006
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 219.20234375
+                },
+                {
+                  "id": "Domna",
+                  "x": 521.453125,
+                  "y": 48.7109375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 414,
+                  "y": 122.7109375
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 0,
+              "isPlayerOnRightArm": true,
+              "ballSourceDirection": 0,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": true
+            },
+            {
+              "playerId": "Jeff",
+              "ballX": 397.21875,
+              "ballY": 212.0703125,
+              "type": "set",
+              "explicitPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 96.8359375,
+                  "y": 62.69921875
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 205.76328125
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 219.20234375
+                },
+                {
+                  "id": "Domna",
+                  "x": 444,
+                  "y": 150.40364583333334
+                },
+                {
+                  "id": "Jeff",
+                  "x": 397.21875,
+                  "y": 248.0703125
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 0,
+              "isPlayerOnRightArm": false,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": true
+            },
+            {
+              "playerId": "Domna",
+              "ballX": 372.60546875,
+              "ballY": 103.015625,
+              "type": "attack",
+              "explicitPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 113.97265625,
+                  "y": 64.25390625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 103.015625
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 190.3859375
+                },
+                {
+                  "id": "Domna",
+                  "x": 408.60546875,
+                  "y": 103.015625
+                },
+                {
+                  "id": "Jeff",
+                  "x": 397.21875,
+                  "y": 248.0703125
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 1,
+              "isPlayerOnRightArm": true,
+              "fromAcross": true,
+              "toAcross": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 174.97265625,
+              "ballY": 77.546875,
+              "type": "pass",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 84.6921875
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 199.0171875
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 138.97265625,
+                  "y": 77.546875
+                },
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 151.546875
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 0,
+              "fromAcross": true,
+              "toAcross": true,
+              "isSentOutOfSystem": true
+            },
+            {
+              "playerId": "male",
+              "ballX": 219.68359375,
+              "ballY": 167.77734375,
+              "type": "set",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 499.28125,
+                  "y": 68.25390625
+                },
+                {
+                  "id": "Jeff",
+                  "x": 431.40625,
+                  "y": 194.6484375
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 165.899609375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 199.0171875
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 204,
+                  "y": 106.11067708333334
+                },
+                {
+                  "id": "male",
+                  "x": 219.68359375,
+                  "y": 203.77734375
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": true,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 155.81640625,
+              "ballY": 124.63671875,
+              "type": "attack",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 490.5,
+                  "y": 85
+                },
+                {
+                  "id": "Jeff",
+                  "x": 491.5,
+                  "y": 212
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 124.63671875
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 170.926953125
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 119.81640625,
+                  "y": 124.63671875
+                },
+                {
+                  "id": "male",
+                  "x": 219.68359375,
+                  "y": 203.77734375
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 0,
+              "isPlayerOnRightArm": false,
+              "fromAcross": true,
+              "toAcross": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Jeff",
+              "ballX": 438.8203125,
+              "ballY": 298,
+              "type": "pass",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 298
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 30.760156250000023
+                },
+                {
+                  "id": "Jeff",
+                  "x": 474.8203125,
+                  "y": 298
+                },
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 243.9140625
+                }
+              ],
+              "startingSide": 0,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 2
+            }
+          ]
+        }
+      ],
+      "wonByTeamId": "Team1",
+      "invertSideSwap": true,
+      "invertServingTeam": true,
+      "invertServingPlayer": true
+    },
+    {
+      "set": 0,
+      "rallies": [
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Domna",
+              "ballX": 612,
+              "ballY": 56.5,
+              "type": "serve",
+              "explicitPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 70.5,
+                  "y": 62
+                },
+                {
+                  "id": "male",
+                  "x": 68.5,
+                  "y": 224
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 648,
+                  "y": 56.5
+                },
+                {
+                  "id": "Jeff",
+                  "x": 414,
+                  "y": 149
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714289,
+                  "y": 56.5
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 66.85714285714289,
+                  "y": 241.5
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 1,
+              "isPlayerOnRightArm": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 71.875,
+              "ballY": 24.51171875,
+              "type": "pass",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 500.4453125,
+                  "y": 61.5078125
+                },
+                {
+                  "id": "Jeff",
+                  "x": 392.18359375,
+                  "y": 141.05859375
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 36.960546875000006
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 236.141796875
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 35.875,
+                  "y": 24.51171875
+                },
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 98.51171875
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 0,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": true
+            },
+            {
+              "playerId": "male",
+              "ballX": 175.9296875,
+              "ballY": 119.73046875,
+              "type": "set",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 533.7265625,
+                  "y": 66.484375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 469.69140625,
+                  "y": 221.4140625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 122.65742187500001
+                },
+                {
+                  "id": "Jeff",
+                  "x": 392.18359375,
+                  "y": 141.05859375
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 204,
+                  "y": 58.06380208333334
+                },
+                {
+                  "id": "male",
+                  "x": 175.9296875,
+                  "y": 155.73046875
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": true,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 290.24609375,
+              "ballY": 74.78515625,
+              "type": "attack",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 505.20703125,
+                  "y": 69.55859375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 476.44140625,
+                  "y": 204.85546875
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 74.78515625
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 215.793359375
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 254.24609375,
+                  "y": 74.78515625
+                },
+                {
+                  "id": "male",
+                  "x": 175.9296875,
+                  "y": 155.73046875
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 0,
+              "isPlayerOnRightArm": false,
+              "fromAcross": true,
+              "toAcross": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Jeff",
+              "ballX": 373.1328125,
+              "ballY": 215.77734375,
+              "type": "pass",
+              "explicitPositions": [
+                {
+                  "id": "male",
+                  "x": 104.08984375,
+                  "y": 180.09765625
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 218.78125,
+                  "y": 78.82421875
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 209.099609375
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 102.255859375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 409.1328125,
+                  "y": 215.77734375
+                },
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 141.77734375
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 0,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 2,
+              "fromAcross": true,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "Domna",
+              "ballX": 389.30078125,
+              "ballY": 155.43359375,
+              "type": "set",
+              "explicitPositions": [
+                {
+                  "id": "Jeff",
+                  "x": 438.20703125,
+                  "y": 295.1953125
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 112.73828125,
+                  "y": 51.4609375
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 154.790234375
+                },
+                {
+                  "id": "male",
+                  "x": 104.08984375,
+                  "y": 180.09765625
+                },
+                {
+                  "id": "Jeff",
+                  "x": 444,
+                  "y": 217.10026041666666
+                },
+                {
+                  "id": "Domna",
+                  "x": 389.30078125,
+                  "y": 119.43359375
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 0,
+              "isPlayerOnRightArm": true,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "Jeff",
+              "ballX": 368.2890625,
+              "ballY": 259.55078125,
+              "type": "attack",
+              "explicitPositions": [
+                {
+                  "id": "male",
+                  "x": 119.8125,
+                  "y": 181.9453125
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 138.4453125,
+                  "y": 60.69140625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 259.55078125
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 49.50429687500002
+                },
+                {
+                  "id": "Jeff",
+                  "x": 404.2890625,
+                  "y": 259.55078125
+                },
+                {
+                  "id": "Domna",
+                  "x": 389.30078125,
+                  "y": 119.43359375
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 1,
+              "isPlayerOnRightArm": false,
+              "fromAcross": true,
+              "toAcross": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "male",
+              "ballX": 0,
+              "ballY": 268,
+              "type": "pass",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 256.1
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 65.69999999999999
+                },
+                {
+                  "id": "male",
+                  "x": 0,
+                  "y": 268
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 194
+                }
+              ],
+              "startingSide": 1,
+              "isScoring": true,
+              "isPlayerOnRightArm": true,
+              "ballSourceDirection": 0
+            }
+          ]
+        }
+      ],
+      "wonByTeamId": "Team2",
+      "invertSideSwap": true,
+      "invertServingTeam": true,
+      "invertServingPlayer": true
+    },
+    {
+      "set": 0,
+      "rallies": [
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "male",
+              "ballX": 51.5,
+              "ballY": 235,
+              "type": "serve",
+              "explicitPositions": [
+                {
+                  "id": "Jeff",
+                  "x": 561.5,
+                  "y": 174
+                },
+                {
+                  "id": "Domna",
+                  "x": 552.5,
+                  "y": 64
+                },
+                {
+                  "id": "male",
+                  "x": 0,
+                  "y": 235
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "male",
+                  "x": 0,
+                  "y": 56.5
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 149
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 56.5
+                },
+                {
+                  "id": "Domna",
+                  "x": 581.1428571428571,
+                  "y": 241.5
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 0,
+              "isPlayerOnRightArm": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Jeff",
+              "ballX": 532.5,
+              "ballY": 218,
+              "type": "pass",
+              "explicitPositions": [
+                {
+                  "id": "male",
+                  "x": 119.8125,
+                  "y": 181.9453125
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 138.4453125,
+                  "y": 60.69140625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 211.1
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 100.69999999999999
+                },
+                {
+                  "id": "Jeff",
+                  "x": 568.5,
+                  "y": 218
+                },
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 144
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 0,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 0,
+              "fromAcross": true,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "Domna",
+              "ballX": 476.5,
+              "ballY": 162.5,
+              "type": "set",
+              "explicitPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 117.5,
+                  "y": 71
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 161.15
+                },
+                {
+                  "id": "male",
+                  "x": 119.8125,
+                  "y": 181.9453125
+                },
+                {
+                  "id": "Jeff",
+                  "x": 444,
+                  "y": 224.16666666666669
+                },
+                {
+                  "id": "Domna",
+                  "x": 476.5,
+                  "y": 126.5
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 0,
+              "isPlayerOnRightArm": true,
+              "fromAcross": true,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "Jeff",
+              "ballX": 414.5,
+              "ballY": 220,
+              "type": "attack",
+              "explicitPositions": [
+                {
+                  "id": "male",
+                  "x": 119.8125,
+                  "y": 181.9453125
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 138.4453125,
+                  "y": 60.69140625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 220
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 85.1
+                },
+                {
+                  "id": "Jeff",
+                  "x": 450.5,
+                  "y": 220
+                },
+                {
+                  "id": "Domna",
+                  "x": 476.5,
+                  "y": 126.5
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 1,
+              "isScoring": true,
+              "isPlayerOnRightArm": false,
+              "fromAcross": false,
+              "toAcross": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 14.5,
+              "ballY": 32,
+              "type": "pass",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 505.20703125,
+                  "y": 69.55859375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 476.44140625,
+                  "y": 204.85546875
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 43.7
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 230.89999999999998
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 0,
+                  "y": 32
+                },
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 106
+                }
+              ],
+              "startingSide": 1,
+              "isFail": true,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 2
+            }
+          ]
+        }
+      ],
+      "wonByTeamId": "Team1",
+      "invertSideSwap": true,
+      "invertServingPlayer": true
+    },
+    {
+      "set": 0,
+      "rallies": [
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Jeff",
+              "ballX": 594.5,
+              "ballY": 242,
+              "type": "serve",
+              "explicitPositions": [
+                {
+                  "id": "male",
+                  "x": 100.5,
+                  "y": 209
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 83.5,
+                  "y": 66
+                },
+                {
+                  "id": "Domna",
+                  "x": 417.5,
+                  "y": 95
+                },
+                {
+                  "id": "Jeff",
+                  "x": 648,
+                  "y": 243
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Jeff",
+                  "x": 648,
+                  "y": 56.5
+                },
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 149
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714289,
+                  "y": 56.5
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 66.85714285714289,
+                  "y": 241.5
+                }
+              ],
+              "startingSide": 0,
+              "endingSide": 1,
+              "isPlayerOnRightArm": false
+            }
+          ]
+        },
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 210.5,
+              "ballY": 79,
+              "type": "pass",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 505.20703125,
+                  "y": 69.55859375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 476.44140625,
+                  "y": 204.85546875
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 86
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 198
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 174.5,
+                  "y": 79
+                },
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 153
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 2,
+              "fromAcross": true,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "male",
+              "ballX": 224.5,
+              "ballY": 144.5,
+              "type": "set",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 533.7265625,
+                  "y": 66.484375
+                },
+                {
+                  "id": "Jeff",
+                  "x": 469.69140625,
+                  "y": 221.4140625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 144.95
+                },
+                {
+                  "id": "Jeff",
+                  "x": 476.44140625,
+                  "y": 204.85546875
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 204,
+                  "y": 82.83333333333334
+                },
+                {
+                  "id": "male",
+                  "x": 224.5,
+                  "y": 180.5
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": true,
+              "fromAcross": false,
+              "toAcross": false
+            }
+          ]
+        },
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Jeff",
+              "ballX": 358.5,
+              "ballY": 279,
+              "type": "pass",
+              "explicitPositions": [
+                {
+                  "id": "male",
+                  "x": 119.8125,
+                  "y": 181.9453125
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 138.4453125,
+                  "y": 60.69140625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 266
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 66.85714285714286,
+                  "y": 58
+                },
+                {
+                  "id": "Jeff",
+                  "x": 394.5,
+                  "y": 279
+                },
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 205
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": false,
+              "ballSourceDirection": 2,
+              "fromAcross": true,
+              "toAcross": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "male",
+              "ballX": 358.5,
+              "ballY": 261.5,
+              "type": "pass",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "Domna",
+                  "x": 234,
+                  "y": 250.25
+                },
+                {
+                  "id": "Jeff",
+                  "x": 66.85714285714286,
+                  "y": 70.25
+                },
+                {
+                  "id": "Jeff",
+                  "x": 394.5,
+                  "y": 261.5
+                },
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 187.5
+                }
+              ],
+              "startingSide": 1,
+              "isScoring": true,
+              "isPlayerOnRightArm": true,
+              "ballSourceDirection": 2
+            }
+          ]
+        }
+      ],
+      "wonByTeamId": "Team2",
+      "invertSideSwap": true,
+      "invertServingPlayer": true
+    },
+    {
+      "set": 0,
+      "rallies": [
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "AnaPatricia",
+              "ballX": 72,
+              "ballY": 56.5,
+              "type": "serve",
+              "explicitPositions": [
+                {
+                  "id": "Jeff",
+                  "x": 565.6875,
+                  "y": 221.5234375
+                },
+                {
+                  "id": "Domna",
+                  "x": 568.4453125,
+                  "y": 64.5390625
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 0,
+                  "y": 56.5
+                },
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 149
+                },
+                {
+                  "id": "Jeff",
+                  "x": 581.1428571428571,
+                  "y": 56.5
+                },
+                {
+                  "id": "Domna",
+                  "x": 581.1428571428571,
+                  "y": 241.5
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 0,
+              "isPlayerOnRightArm": false
+            }
+          ]
+        },
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Domna",
+              "ballX": 537.5,
+              "ballY": 93,
+              "type": "pass",
+              "explicitPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 117.5,
+                  "y": 71
+                },
+                {
+                  "id": "male",
+                  "x": 190.5,
+                  "y": 196.5
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 98.6
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 66.85714285714286,
+                  "y": 188.2
+                },
+                {
+                  "id": "Domna",
+                  "x": 573.5,
+                  "y": 93
+                },
+                {
+                  "id": "Jeff",
+                  "x": 414,
+                  "y": 167
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": true,
+              "ballSourceDirection": 0,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "Jeff",
+              "ballX": 520.5,
+              "ballY": 166.5,
+              "type": "set",
+              "explicitPositions": [
+                {
+                  "id": "Domna",
+                  "x": 499.5,
+                  "y": 88
+                },
+                {
+                  "id": "male",
+                  "x": 137.5,
+                  "y": 178
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 109.5,
+                  "y": 65
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 164.75
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 117.5,
+                  "y": 71
+                },
+                {
+                  "id": "Domna",
+                  "x": 444,
+                  "y": 104.83333333333334
+                },
+                {
+                  "id": "Jeff",
+                  "x": 520.5,
+                  "y": 202.5
+                }
+              ],
+              "startingSide": 1,
+              "endingSide": 1,
+              "isPlayerOnRightArm": false,
+              "fromAcross": false,
+              "toAcross": true,
+              "isSentOutOfSystem": false
+            },
+            {
+              "playerId": "Domna",
+              "ballX": 357.5,
+              "ballY": 112,
+              "type": "attack",
+              "explicitPositions": [
+                {
+                  "id": "AnaPatricia",
+                  "x": 117.5,
+                  "y": 71
+                },
+                {
+                  "id": "male",
+                  "x": 190.5,
+                  "y": 196.5
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "male",
+                  "x": 234,
+                  "y": 112
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 66.85714285714286,
+                  "y": 182.3
+                },
+                {
+                  "id": "Domna",
+                  "x": 393.5,
+                  "y": 112
+                },
+                {
+                  "id": "Jeff",
+                  "x": 520.5,
+                  "y": 202.5
+                }
+              ],
+              "startingSide": 1,
+              "isPlayerOnRightArm": true
+            }
+          ]
+        }
+      ],
+      "invertSideSwap": true,
+      "invertServingPlayer": true
+    }
+  ]
+}

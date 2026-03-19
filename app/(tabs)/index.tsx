@@ -19,7 +19,7 @@ import {
 import {
   setupServe, setupReceive, setupSet, setupAttack, setupGroundHit, animateTouch,
 } from '@/utils/rendering';
-import { sampleGame } from '@/utils/sampleGame';
+import { sampleGame, newGame } from '@/utils/sampleGame';
 import { useGameContext } from '@/utils/GameContext';
 
 // @ts-ignore
@@ -86,24 +86,29 @@ export default function GameScreen() {
   const ballX = useSharedValue(clampBallX(W / 7, FC));
   const ballY = useSharedValue(clampBallY(H / 2, FC));
 
-  const niinaX = useSharedValue(clampPlayerX(0, FC));
-  const niinaY = useSharedValue(clampPlayerY(H / 4, FC));
-  const taruX = useSharedValue(clampPlayerX(3 * W / 8, FC));
-  const taruY = useSharedValue(clampPlayerY(H / 2, FC));
-  const anaPatriciaX = useSharedValue(clampPlayerX(6 * W / 7, FC));
-  const anaPatriciaY = useSharedValue(clampPlayerY(H / 4, FC));
-  const dudaX = useSharedValue(clampPlayerX(6 * W / 7, FC));
-  const dudaY = useSharedValue(clampPlayerY(3 * H / 4, FC));
-
-  const refs: AnimRefs = {
-    ballX, ballY,
-    players: {
-      Niina: { x: niinaX, y: niinaY },
-      Taru: { x: taruX, y: taruY },
-      AnaPatricia: { x: anaPatriciaX, y: anaPatriciaY },
-      Duda: { x: dudaX, y: dudaY },
-    },
+  // One pair of SharedValues per known player sprite
+  const allPlayerSVs: Record<string, { x: ReturnType<typeof useSharedValue<number>>; y: ReturnType<typeof useSharedValue<number>> }> = {
+    Jeff:        { x: useSharedValue(clampPlayerX(0, FC)),         y: useSharedValue(clampPlayerY(H / 4, FC)) },
+    Domna:       { x: useSharedValue(clampPlayerX(3 * W / 8, FC)),y: useSharedValue(clampPlayerY(H / 2, FC)) },
+    male:        { x: useSharedValue(clampPlayerX(W / 7, FC)),    y: useSharedValue(clampPlayerY(H / 4, FC)) },
+    AnaPatricia: { x: useSharedValue(clampPlayerX(W / 7, FC)),    y: useSharedValue(clampPlayerY(H / 4, FC)) },
+    Niina:       { x: useSharedValue(clampPlayerX(0, FC)),         y: useSharedValue(clampPlayerY(H / 4, FC)) },
+    Taru:        { x: useSharedValue(clampPlayerX(3 * W / 8, FC)),y: useSharedValue(clampPlayerY(H / 2, FC)) },
+    Duda:        { x: useSharedValue(clampPlayerX(W / 7, FC)),    y: useSharedValue(clampPlayerY(3 * H / 4, FC)) },
+    Bennett:     { x: useSharedValue(clampPlayerX(W / 7, FC)),    y: useSharedValue(clampPlayerY(3 * H / 4, FC)) },
   };
+
+  // Build AnimRefs from the game's actual 4 players
+  const buildRefs = (g: Game): AnimRefs => {
+    const playerIds = g.teams.flatMap((t: { playerIds: string[] }) => t.playerIds);
+    const players: Record<string, { x: ReturnType<typeof useSharedValue<number>>; y: ReturnType<typeof useSharedValue<number>> }> = {};
+    for (const id of playerIds) {
+      players[id] = allPlayerSVs[id] || allPlayerSVs['male']; // fallback
+    }
+    return { ballX, ballY, players };
+  };
+
+  const [refs, setRefs] = useState<AnimRefs>(() => buildRefs(JSON.parse(JSON.stringify(sampleGame))));
 
   // ─── Game state ─────────────────────────────────────────
   const [game, setGameLocal] = useState<Game>(() => JSON.parse(JSON.stringify(sampleGame)));
@@ -296,17 +301,26 @@ export default function GameScreen() {
   };
 
   const doNewGame = () => {
-    const g = createGame();
-    // Re-key the AnimRefs for default players
+    const g: Game = JSON.parse(JSON.stringify(newGame));
+    const newRefs = buildRefs(g);
+    setRefs(newRefs);
     setGameLocal(g);
-    setScore({ scoreTeam: [0, 0], setsTeam: [0, 0] });
-    setIsEdit(true);
+    const hasPoints = g.points.length > 0;
+    const idx: TouchIndex = hasPoints
+      ? { pointIdx: g.points.length - 1, rallyIdx: 0, touchIdx: 0 }
+      : { pointIdx: 0, rallyIdx: 0, touchIdx: 0 };
+    setCurrentIdx(idx);
+    setScore(hasPoints ? calculateScore(g, idx.pointIdx) : { scoreTeam: [0, 0], setsTeam: [0, 0] });
+    setIsEdit(!hasPoints || isLastTouchIndex(g, idx));
     setInvertSideSwap(false);
     setInvertServingTeam(false);
     setInvertServingPlayer(false);
-    const idx = setupServe(refs, g, 0, FC);
-    setCurrentIdx(idx);
-    addLog('New game started');
+    if (hasPoints) {
+      animateTouch(newRefs, g, idx, FC);
+    } else {
+      setupServe(newRefs, g, 0, FC);
+    }
+    addLog('New game: ' + g.title);
   };
 
   const doExport = async () => {
@@ -337,12 +351,14 @@ export default function GameScreen() {
         jsonStr = await FileSystem.readAsStringAsync(res.assets[0].uri);
       }
       const loaded = JSON.parse(jsonStr) as Game;
+      const newRefs = buildRefs(loaded);
+      setRefs(newRefs);
       setGameLocal(loaded);
       const idx: TouchIndex = { pointIdx: Math.max(0, loaded.points.length - 1), rallyIdx: 0, touchIdx: 0 };
       setCurrentIdx(idx);
       setScore(calculateScore(loaded, idx.pointIdx));
       setIsEdit(isLastTouchIndex(loaded, idx));
-      if (loaded.points.length) animateTouch(refs, loaded, idx, FC);
+      if (loaded.points.length) animateTouch(newRefs, loaded, idx, FC);
       addLog('Imported ' + (loaded.title || 'game'));
     } catch (e: any) {
       addLog('Import error: ' + (e.message || e));

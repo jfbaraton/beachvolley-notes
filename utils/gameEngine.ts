@@ -60,11 +60,11 @@ export const createGame = (title?: string): Game => {
   return {
     title: title || `tournament ${mm} ${now.getFullYear()} game 1`,
     teams: [
-      { id: 'Finland', playerIds: ['Niina', 'Taru'], prefersBlockId: 'Taru' },
-      { id: 'Brazil', playerIds: ['AnaPatricia', 'Duda'], prefersBlockId: null },
+      { id: 'Team1', playerIds: ['Jeff', 'Domna'], prefersBlockId: 'Jeff' },
+      { id: 'Team2', playerIds: ['male', 'AnaPatricia'], prefersBlockId: null },
     ],
     players: [
-      { id: 'Niina' }, { id: 'Taru' }, { id: 'AnaPatricia' }, { id: 'Duda' },
+      { id: 'Jeff' }, { id: 'Domna' }, { id: 'male' }, { id: 'AnaPatricia' },
     ],
     points: [],
   };
