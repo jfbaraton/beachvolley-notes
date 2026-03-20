@@ -655,7 +655,7 @@ const s = StyleSheet.create({
     marginBottom: 4,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
-    minWidth: 260,
+    minWidth: 460,
     backgroundColor: '#fff',
     borderRadius: 6,
   },
