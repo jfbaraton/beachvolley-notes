@@ -209,6 +209,9 @@ export default function GameScreen() {
       const receivingTeamIdx = game.teams[0].id === attackingTeamId ? 1 : 0;
       const attackingTeamIdx = 1 - receivingTeamIdx;
 
+      // Store line call on the point
+      point.lineCall = result;
+
       if (result === 'OUT') {
         // Ball went OUT — just a ground touch, no player touch
         if (isAfterServeOrAttack && crossesNet) {
@@ -347,7 +350,9 @@ export default function GameScreen() {
     if (t) {
       const suffix = `${t.isFail ? ' (failed)' : ''}${t.isScoring ? ' (scores)' : ''}`;
       const groundInfo = t.type === 'ground' && t.groundResult ? ` (${t.groundResult})` : '';
-      addLog(`${t.type}${groundInfo}${t.playerId ? ' by ' + t.playerId : t.type === 'ground' ? '' : ' (ground)'}${suffix}`);
+      const pt = game.points[newIdx.pointIdx];
+      const callInfo = pt?.lineCall ? ` [${pt.lineCall}${pt.lineCallPlayerId ? ' by ' + pt.lineCallPlayerId : ''}]` : '';
+      addLog(`${t.type}${groundInfo}${t.playerId ? ' by ' + t.playerId : t.type === 'ground' ? '' : ' (ground)'}${suffix}${callInfo}`);
     }
   };
 
@@ -448,6 +453,52 @@ export default function GameScreen() {
   const onLineEvent = (isLeft: boolean, event: string) => {
     const scoringTeamId = addLineEvent(game, currentIdx, isLeft, event, FC);
     const ti = game.teams[0].id === scoringTeamId ? 0 : 1;
+    // Store line call on the current point
+    const point = game.points[currentIdx.pointIdx];
+    if (point) {
+      const call = event === 'OUT touched' ? 'TOUCHED' : event === 'IN' ? 'IN' : event === 'OUT' ? 'OUT' : undefined;
+      if (call) point.lineCall = call;
+    }
+    addLog(`${event} → ${scoringTeamId} scores`);
+    doScore(ti);
+  };
+
+  const onNetFault = (isLeft: boolean) => {
+    const point = game.points[currentIdx.pointIdx];
+    if (!point) return;
+    // Find which team is on the pressed button's side
+    const swapped = isSideSwapped(game, currentIdx.pointIdx);
+    // team[0] defaults to LEFT; swap flips it
+    const teamOnLeft = swapped ? game.teams[1] : game.teams[0];
+    const teamOnRight = swapped ? game.teams[0] : game.teams[1];
+    const faultTeam = isLeft ? teamOnLeft : teamOnRight;
+    const scoringTeam = isLeft ? teamOnRight : teamOnLeft;
+
+    // Find the player closest to the net (x closest to W/2) on the fault team
+    let closestId = faultTeam.playerIds[0];
+    let closestDist = Infinity;
+    for (const pid of faultTeam.playerIds) {
+      const sv = refs.players[pid];
+      if (sv) {
+        const playerCenterX = sv.x.value + PLAYER / 2;
+        const d = Math.abs(playerCenterX - W / 2);
+        if (d < closestDist) { closestDist = d; closestId = pid; }
+      }
+    }
+
+    // Mark the last touch of the faulty player (or the last touch in the rally) as isFail
+    const lastRally = point.rallies[point.rallies.length - 1];
+    if (lastRally) {
+      const lastTouch = lastRally.touches[lastRally.touches.length - 1];
+      if (lastTouch) lastTouch.isFail = true;
+    }
+
+    // Store line call metadata
+    point.lineCall = 'NET';
+    point.lineCallPlayerId = closestId;
+
+    const ti = game.teams[0].id === scoringTeam.id ? 0 : 1;
+    addLog(`Net fault by ${closestId} → ${scoringTeam.id} scores`);
     doScore(ti);
   };
 
@@ -690,8 +741,12 @@ export default function GameScreen() {
 
   // ─── Current touch info ─────────────────────────────────
   const curTouch = getTouch(game, currentIdx);
+  const curPoint = game.points[currentIdx.pointIdx];
+  const lineCallInfo = curPoint?.lineCall
+    ? ` [${curPoint.lineCall}${curPoint.lineCallPlayerId ? ' by ' + curPoint.lineCallPlayerId : ''}]`
+    : '';
   const touchLabel = curTouch
-    ? `${curTouch.type}${curTouch.type === 'ground' && curTouch.groundResult ? ' (' + curTouch.groundResult + ')' : ''}${curTouch.playerId ? ' by ' + curTouch.playerId : curTouch.type !== 'ground' ? ' (ground)' : ''}${curTouch.isFail ? ' (failed)' : ''}${curTouch.isScoring ? ' (scores)' : ''}`
+    ? `${curTouch.type}${curTouch.type === 'ground' && curTouch.groundResult ? ' (' + curTouch.groundResult + ')' : ''}${curTouch.playerId ? ' by ' + curTouch.playerId : curTouch.type !== 'ground' ? ' (ground)' : ''}${curTouch.isFail ? ' (failed)' : ''}${curTouch.isScoring ? ' (scores)' : ''}${lineCallInfo}`
     : 'No touch';
   const isServing = currentIdx.rallyIdx === 0 && currentIdx.touchIdx === 0;
 
@@ -725,19 +780,31 @@ export default function GameScreen() {
 
       {/* ─── Line events ─── */}
       <View style={s.lineRow}>
-        {(['OUT', 'Touch', 'IN', 'Net'].map((label, i) => (
-          <TouchableOpacity key={'l' + i} style={[s.lineBtn, { backgroundColor: i < 2 ? '#e74c3c' : '#27ae60' }]}
-            onPress={() => onLineEvent(true, label === 'Touch' ? 'OUT touched' : label === 'Net' ? 'Net fault' : label)}>
-            <Text style={s.lineTxt}>{label}</Text>
-          </TouchableOpacity>
-        )))}
+        {(['OUT', 'Touch', 'IN', 'Net'].map((label, i) => {
+          const isNet = label === 'Net';
+          const color = isNet || i < 2 ? '#e74c3c' : '#27ae60';
+          return (
+            <TouchableOpacity key={'l' + i} style={[s.lineBtn, { backgroundColor: color }]}
+              onPress={() => isNet
+                ? onNetFault(true)
+                : onLineEvent(true, label === 'Touch' ? 'OUT touched' : label)}>
+              <Text style={s.lineTxt}>{label}</Text>
+            </TouchableOpacity>
+          );
+        }))}
         <View style={s.lineSep} />
-        {(['Net', 'IN', 'Touch', 'OUT'].map((label, i) => (
-          <TouchableOpacity key={'r' + i} style={[s.lineBtn, { backgroundColor: i > 1 ? '#e74c3c' : '#27ae60' }]}
-            onPress={() => onLineEvent(false, label === 'Touch' ? 'OUT touched' : label === 'Net' ? 'Net fault' : label)}>
-            <Text style={s.lineTxt}>{label}</Text>
-          </TouchableOpacity>
-        )))}
+        {(['Net', 'IN', 'Touch', 'OUT'].map((label, i) => {
+          const isNet = label === 'Net';
+          const color = isNet || i > 1 ? '#e74c3c' : '#27ae60';
+          return (
+            <TouchableOpacity key={'r' + i} style={[s.lineBtn, { backgroundColor: color }]}
+              onPress={() => isNet
+                ? onNetFault(false)
+                : onLineEvent(false, label === 'Touch' ? 'OUT touched' : label)}>
+              <Text style={s.lineTxt}>{label}</Text>
+            </TouchableOpacity>
+          );
+        }))}
       </View>
 
       {/* ─── Canvas ─── */}

@@ -58,6 +58,10 @@ export interface Point {
   set: number;
   rallies: Rally[];
   wonByTeamId?: string;
+  /** How the point was called: IN / OUT / TOUCHED / NET */
+  lineCall?: 'IN' | 'OUT' | 'TOUCHED' | 'NET';
+  /** Player who caused the line call (e.g. net fault) */
+  lineCallPlayerId?: string;
   invertSideSwap?: boolean;
   invertServingTeam?: boolean;
   invertServingPlayer?: boolean;
