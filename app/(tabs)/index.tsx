@@ -121,9 +121,21 @@ export default function GameScreen() {
     return calculateScore(g, Math.max(0, g.points.length - 1));
   });
   const [isEdit, setIsEdit] = useState(false);
-  const [invertSideSwap, setInvertSideSwap] = useState(false);
-  const [invertServingTeam, setInvertServingTeam] = useState(false);
-  const [invertServingPlayer, setInvertServingPlayer] = useState(false);
+  const [invertSideSwap, setInvertSideSwap] = useState(() => {
+    const g = JSON.parse(JSON.stringify(sampleGame)) as Game;
+    const lastPt = g.points[g.points.length - 1];
+    return lastPt?.invertSideSwap ?? false;
+  });
+  const [invertServingTeam, setInvertServingTeam] = useState(() => {
+    const g = JSON.parse(JSON.stringify(sampleGame)) as Game;
+    const lastPt = g.points[g.points.length - 1];
+    return lastPt?.invertServingTeam ?? false;
+  });
+  const [invertServingPlayer, setInvertServingPlayer] = useState(() => {
+    const g = JSON.parse(JSON.stringify(sampleGame)) as Game;
+    const lastPt = g.points[g.points.length - 1];
+    return lastPt?.invertServingPlayer ?? false;
+  });
   const [groundHitMode, setGroundHitMode] = useState(false);
   const [log, setLog] = useState<string[]>(['Ready']);
 
@@ -203,8 +215,11 @@ export default function GameScreen() {
     const lastTouch = rally.touches[rally.touches.length - 1];
     if (!lastTouch) return;
 
-    const ballOnSameSide = (x > W / 2) === (lastTouch.ballX > W / 2);
-    const crossesNet = !ballOnSameSide;
+    // Determine which side the current rally's team is on (from player positions, not ball)
+    const rallyTeam = teamById(game, rally.teamId);
+    const teamPlayerSv = refs.players[rallyTeam.playerIds[0]];
+    const teamIsOnRight = teamPlayerSv ? teamPlayerSv.x.value > W / 2 : lastTouch.ballX > W / 2;
+    const crossesNet = (x > W / 2) !== teamIsOnRight;
 
     switch (lastTouch.type) {
       case 'serve':
@@ -222,7 +237,7 @@ export default function GameScreen() {
         break;
 
       case 'pass':
-        if (ballOnSameSide) {
+        if (!crossesNet) {
           const newIdx = setupSet(refs, game, currentIdx, x, y, FC);
           setCurrentIdx(newIdx);
           addLog('Pass → Set');
@@ -237,7 +252,7 @@ export default function GameScreen() {
         break;
 
       case 'set':
-        if (ballOnSameSide) {
+        if (!crossesNet) {
           const newIdx = setupAttack(refs, game, currentIdx, x, y, FC);
           setCurrentIdx(newIdx);
           addLog('Set → Attack');
@@ -291,10 +306,16 @@ export default function GameScreen() {
     setCurrentIdx(newIdx);
     setScore(calculateScore(game, newIdx.pointIdx));
     setIsEdit(true);
-    if (game.points.length && game.points[newIdx.pointIdx]?.rallies.length) {
+    setGroundHitMode(false);
+    // Sync invert flags from the (possibly different) current point
+    const pt = game.points[newIdx.pointIdx];
+    setInvertSideSwap(pt?.invertSideSwap ?? false);
+    setInvertServingTeam(pt?.invertServingTeam ?? false);
+    setInvertServingPlayer(pt?.invertServingPlayer ?? false);
+    if (game.points.length && pt?.rallies.length) {
       animateTouch(refs, game, newIdx, FC);
     } else {
-      setupServe(refs, game, newIdx.pointIdx, FC, invertServingPlayer);
+      setupServe(refs, game, newIdx.pointIdx, FC, pt?.invertServingPlayer ?? false);
     }
     setGameLocal({ ...game });
     addLog('Deleted last touch');
@@ -312,9 +333,10 @@ export default function GameScreen() {
     setCurrentIdx(idx);
     setScore(hasPoints ? calculateScore(g, idx.pointIdx) : { scoreTeam: [0, 0], setsTeam: [0, 0] });
     setIsEdit(!hasPoints || isLastTouchIndex(g, idx));
-    setInvertSideSwap(false);
-    setInvertServingTeam(false);
-    setInvertServingPlayer(false);
+    const lastPt = hasPoints ? g.points[g.points.length - 1] : undefined;
+    setInvertSideSwap(lastPt?.invertSideSwap ?? false);
+    setInvertServingTeam(lastPt?.invertServingTeam ?? false);
+    setInvertServingPlayer(lastPt?.invertServingPlayer ?? false);
     if (hasPoints) {
       animateTouch(newRefs, g, idx, FC);
     } else {
@@ -358,6 +380,10 @@ export default function GameScreen() {
       setCurrentIdx(idx);
       setScore(calculateScore(loaded, idx.pointIdx));
       setIsEdit(isLastTouchIndex(loaded, idx));
+      const lastPt = loaded.points.length ? loaded.points[loaded.points.length - 1] : undefined;
+      setInvertSideSwap(lastPt?.invertSideSwap ?? false);
+      setInvertServingTeam(lastPt?.invertServingTeam ?? false);
+      setInvertServingPlayer(lastPt?.invertServingPlayer ?? false);
       if (loaded.points.length) animateTouch(newRefs, loaded, idx, FC);
       addLog('Imported ' + (loaded.title || 'game'));
     } catch (e: any) {
