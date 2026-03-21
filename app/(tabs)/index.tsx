@@ -618,8 +618,8 @@ export default function GameScreen() {
 
     // Tangent edge: use the player edge facing the ball
     const tx = ballOnLeft ? px : px + PLAYER;
-    const topY = py;          // top of sprite
-    const botY = py + PLAYER; // bottom of sprite
+    const topY = py + PLAYER / 4;          // quarter from top
+    const botY = py + 3 * PLAYER / 4;      // quarter from bottom
 
     // Extend tangent lines from ball center through the tangent points
     // to the far field boundary on the blocker's side
