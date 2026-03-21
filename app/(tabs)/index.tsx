@@ -121,21 +121,10 @@ export default function GameScreen() {
     return calculateScore(g, Math.max(0, g.points.length - 1));
   });
   const [isEdit, setIsEdit] = useState(false);
-  const [invertSideSwap, setInvertSideSwap] = useState(() => {
-    const g = JSON.parse(JSON.stringify(sampleGame)) as Game;
-    const lastPt = g.points[g.points.length - 1];
-    return lastPt?.invertSideSwap ?? false;
-  });
-  const [invertServingTeam, setInvertServingTeam] = useState(() => {
-    const g = JSON.parse(JSON.stringify(sampleGame)) as Game;
-    const lastPt = g.points[g.points.length - 1];
-    return lastPt?.invertServingTeam ?? false;
-  });
-  const [invertServingPlayer, setInvertServingPlayer] = useState(() => {
-    const g = JSON.parse(JSON.stringify(sampleGame)) as Game;
-    const lastPt = g.points[g.points.length - 1];
-    return lastPt?.invertServingPlayer ?? false;
-  });
+  const _initLastPt = sampleGame.points[sampleGame.points.length - 1];
+  const [invertSideSwap, setInvertSideSwap] = useState(_initLastPt?.invertSideSwap ?? false);
+  const [invertServingTeam, setInvertServingTeam] = useState(_initLastPt?.invertServingTeam ?? false);
+  const [invertServingPlayer, setInvertServingPlayer] = useState(_initLastPt?.invertServingPlayer ?? false);
   const [groundHitMode, setGroundHitMode] = useState(false);
   const [log, setLog] = useState<string[]>(['Ready']);
 
@@ -298,6 +287,13 @@ export default function GameScreen() {
     setCurrentIdx(newIdx);
     setScore(calculateScore(game, newIdx.pointIdx));
     setIsEdit(isLastTouchIndex(game, newIdx));
+    // Sync invert flags when navigating to a different point
+    if (newIdx.pointIdx !== currentIdx.pointIdx) {
+      const pt = game.points[newIdx.pointIdx];
+      setInvertSideSwap(pt?.invertSideSwap ?? false);
+      setInvertServingTeam(pt?.invertServingTeam ?? false);
+      setInvertServingPlayer(pt?.invertServingPlayer ?? false);
+    }
     animateTouch(refs, game, newIdx, FC);
   };
 
@@ -333,6 +329,7 @@ export default function GameScreen() {
     setCurrentIdx(idx);
     setScore(hasPoints ? calculateScore(g, idx.pointIdx) : { scoreTeam: [0, 0], setsTeam: [0, 0] });
     setIsEdit(!hasPoints || isLastTouchIndex(g, idx));
+    setGroundHitMode(false);
     const lastPt = hasPoints ? g.points[g.points.length - 1] : undefined;
     setInvertSideSwap(lastPt?.invertSideSwap ?? false);
     setInvertServingTeam(lastPt?.invertServingTeam ?? false);
@@ -380,6 +377,7 @@ export default function GameScreen() {
       setCurrentIdx(idx);
       setScore(calculateScore(loaded, idx.pointIdx));
       setIsEdit(isLastTouchIndex(loaded, idx));
+      setGroundHitMode(false);
       const lastPt = loaded.points.length ? loaded.points[loaded.points.length - 1] : undefined;
       setInvertSideSwap(lastPt?.invertSideSwap ?? false);
       setInvertServingTeam(lastPt?.invertServingTeam ?? false);

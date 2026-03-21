@@ -117,7 +117,7 @@ export const setupServe = (
   // team[0] defaults to LEFT, team[1] defaults to RIGHT; swap flips it
   const servIsOnRight = (servTeam !== game.teams[0]) !== swapped;
 
-  const servSide = servIsOnRight ? 1 : 0; // 0=serve from left, 1=serve from right
+  const servSide = servIsOnRight ? 0 : 1; // matches startingSide convention: 0=right, 1=left
   const mul = servIsOnRight ? -1 : 1; // multiplier for positioning
   const base = servIsOnRight ? fc.width : 0;
 
