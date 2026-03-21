@@ -228,13 +228,12 @@ export default function GameScreen() {
         doScore(receivingTeamIdx);
         return;
       } else if (result === 'IN') {
-        // Ball went IN — create a failing pass from closest receiver
+        // Ball went IN — just record a ground hit, no failed touch
         if (isAfterServeOrAttack && crossesNet) {
           const recvTeamId = otherTeam(game, rally.teamId).id;
           point.rallies.push({ teamId: recvTeamId, touches: [] });
-          const recvIdx = setupReceive(refs, game, currentIdx, x, y, FC);
-          const passTouch = getTouch(game, recvIdx);
-          if (passTouch) passTouch.isFail = true;
+          const tempIdx: TouchIndex = { pointIdx: currentIdx.pointIdx, rallyIdx: point.rallies.length - 1, touchIdx: 0 };
+          setupGroundHit(refs, game, tempIdx, x, y, FC, 'IN');
         } else {
           setupGroundHit(refs, game, currentIdx, x, y, FC, 'IN');
         }
@@ -291,17 +290,20 @@ export default function GameScreen() {
         }
         break;
 
+      case 'option':
       case 'set':
         if (!crossesNet) {
           const newIdx = setupAttack(refs, game, currentIdx, x, y, FC);
           setCurrentIdx(newIdx);
           addLog('Set → Attack');
         } else {
+          // Rename the set touch to "option" (ball sent over on 2nd contact)
+          lastTouch.type = 'option';
           const recvTeamId = otherTeam(game, rally.teamId).id;
           point.rallies.push({ teamId: recvTeamId, touches: [] });
           const newIdx = setupReceive(refs, game, currentIdx, x, y, FC);
           setCurrentIdx(newIdx);
-          addLog('Set → Pass (cross net)');
+          addLog('Option → Pass (cross net)');
         }
         break;
 

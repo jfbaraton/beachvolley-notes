@@ -121,7 +121,7 @@ export const computeStats = (game: Game) => {
           if (ts) ts.passCount++;
           // Dig = successful pass after an attack
         }
-        if (touch.type === 'set') {
+        if (touch.type === 'set' || touch.type === 'option') {
           if (ps) ps.setCount++;
           if (ts) ts.setCount++;
         }
