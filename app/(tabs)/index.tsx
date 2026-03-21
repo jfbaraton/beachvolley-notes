@@ -628,12 +628,32 @@ export default function GameScreen() {
     if (Math.abs(dx) < 1) return path; // degenerate
 
     const t = (farX - bcx) / dx;
-    const farTopY = Math.max(0, Math.min(H, bcy + t * (topY - bcy)));
-    const farBotY = Math.max(0, Math.min(H, bcy + t * (botY - bcy)));
+    const rawFarTopY = bcy + t * (topY - bcy);
+    const rawFarBotY = bcy + t * (botY - bcy);
 
+    // Build polygon: ball center → upper tangent exit → [field edge] → lower tangent exit → close
     path.moveTo(bcx, bcy);
-    path.lineTo(farX, farTopY);
-    path.lineTo(farX, farBotY);
+
+    // Upper tangent line
+    if (rawFarTopY < 0) {
+      // Exits through top edge (y=0) before reaching far side
+      const tExit = -bcy / (topY - bcy);
+      path.lineTo(bcx + tExit * dx, 0);
+      path.lineTo(farX, 0); // trace along top edge to far corner
+    } else {
+      path.lineTo(farX, rawFarTopY);
+    }
+
+    // Lower tangent line (traced in reverse back toward ball)
+    if (rawFarBotY > H) {
+      // Exits through bottom edge (y=H) before reaching far side
+      path.lineTo(farX, H); // far corner at bottom
+      const tExit = (H - bcy) / (botY - bcy);
+      path.lineTo(bcx + tExit * dx, H);
+    } else {
+      path.lineTo(farX, rawFarBotY);
+    }
+
     path.close();
     return path;
   });
