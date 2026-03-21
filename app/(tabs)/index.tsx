@@ -3,8 +3,8 @@ import { StyleSheet, View, Platform, TouchableOpacity, TextInput, ScrollView, Te
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { Canvas, useImage, Image } from '@shopify/react-native-skia';
-import { configureReanimatedLogger, ReanimatedLogLevel, useSharedValue } from 'react-native-reanimated';
+import { Canvas, useImage, Image, Circle, Group, Skia } from '@shopify/react-native-skia';
+import { configureReanimatedLogger, ReanimatedLogLevel, useSharedValue, useDerivedValue } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 
 import type { Game, TouchIndex, Score, FieldConstants, AnimRefs } from '@/utils/types';
@@ -502,6 +502,9 @@ export default function GameScreen() {
   // ─── Gestures ───────────────────────────────────────────
   const isDnDId = useSharedValue('-2');
   const isLeftSide = useSharedValue(true);
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+  const dragOpacity = useSharedValue(0);
 
   const tapGesture = Gesture.Tap().onStart((e) => onFieldTap(e.x, e.y));
 
@@ -520,9 +523,13 @@ export default function GameScreen() {
         if (MIN_D > bDist && closestDist > bDist) {
           isLeftSide.value = ballX.value < W / 2;
           isDnDId.value = '-1';
+          dragOpacity.value = 0;
         } else if (MIN_D > closestDist && bDist > closestDist) {
           isLeftSide.value = refs.players[closestId].x.value < W / 2;
           isDnDId.value = closestId;
+          dragX.value = refs.players[closestId].x.value + PLAYER / 2;
+          dragY.value = refs.players[closestId].y.value + PLAYER / 2;
+          dragOpacity.value = 1;
         }
       } else if (isLeftSide.value === (e.x < W / 2)) {
         if (isDnDId.value === '-1') {
@@ -533,11 +540,14 @@ export default function GameScreen() {
           if (sv) {
             sv.x.value = clampPlayerX(e.x, FC);
             sv.y.value = clampPlayerY(e.y, FC);
+            dragX.value = clampPlayerX(e.x, FC) + PLAYER / 2;
+            dragY.value = clampPlayerY(e.y, FC) + PLAYER / 2;
           }
         }
       }
     })
     .onEnd((e) => {
+      dragOpacity.value = 0;
       const touch = getTouch(game, currentIdx);
       if (touch && isDnDId.value === '-1') {
         touch.ballX = clampBallX(e.x, FC);
@@ -556,6 +566,16 @@ export default function GameScreen() {
     });
 
   const gesture = Gesture.Race(tapGesture, panGesture);
+
+  // ─── Drag disc (clipped to player's side of net) ──────
+  const DISC_R = H / 4;
+  const clipRect = useDerivedValue(() => {
+    const cx = isLeftSide.value ? 0 : W / 2;
+    return Skia.XYWHRect(cx, 0, W / 2, H);
+  });
+  const discColor = useDerivedValue(() =>
+    `rgba(0,180,0,${dragOpacity.value * 0.5})`
+  );
 
   // ─── Resolve player images ──────────────────────────────
   const pImg = (id: string) => spriteMap[id] || spriteMap['male'];
@@ -633,6 +653,10 @@ export default function GameScreen() {
           <Image image={pImg(p0[1])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p0[1]].x} y={refs.players[p0[1]].y} />
           <Image image={pImg(p1[0])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p1[0]].x} y={refs.players[p1[0]].y} />
           <Image image={pImg(p1[1])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p1[1]].x} y={refs.players[p1[1]].y} />
+          {/* ─── Drag disc (green, 50% opacity, clipped to side) ─── */}
+          <Group clip={clipRect}>
+            <Circle cx={dragX} cy={dragY} r={DISC_R} color={discColor} />
+          </Group>
         </Canvas>
       </GestureDetector>
 
