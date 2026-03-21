@@ -24,18 +24,18 @@ export const emptyStats = (): PlayerStats => ({
   digs: 0, passCount: 0, setCount: 0, groundHits: 0, pointsWon: 0, pointsLost: 0,
 });
 
-export const STAT_LABELS: { key: keyof PlayerStats; label: string }[] = [
-  { key: 'aces', label: 'Aces' },
-  { key: 'failedServes', label: 'Failed Serves' },
-  { key: 'aced', label: 'Aced' },
-  { key: 'kills', label: 'Kills' },
-  { key: 'attackErrors', label: 'Attack Errors' },
-  { key: 'digs', label: 'Digs' },
-  { key: 'passCount', label: 'Passes' },
-  { key: 'setCount', label: 'Sets' },
-  { key: 'groundHits', label: 'Ground Hits' },
-  { key: 'pointsWon', label: 'Points Won' },
-  { key: 'pointsLost', label: 'Points Lost' },
+export const STAT_LABELS: { key: keyof PlayerStats; label: string; polarity: 'positive' | 'negative' | 'neutral' }[] = [
+  { key: 'aces', label: 'Aces', polarity: 'positive' },
+  { key: 'failedServes', label: 'Failed Serves', polarity: 'negative' },
+  { key: 'aced', label: 'Aced', polarity: 'negative' },
+  { key: 'kills', label: 'Kills', polarity: 'positive' },
+  { key: 'attackErrors', label: 'Attack Errors', polarity: 'negative' },
+  { key: 'digs', label: 'Digs', polarity: 'positive' },
+  { key: 'passCount', label: 'Passes', polarity: 'neutral' },
+  { key: 'setCount', label: 'Sets', polarity: 'neutral' },
+  { key: 'groundHits', label: 'Ground Hits', polarity: 'neutral' },
+  { key: 'pointsWon', label: 'Points Won', polarity: 'positive' },
+  { key: 'pointsLost', label: 'Points Lost', polarity: 'negative' },
 ];
 
 export const computeStats = (game: Game) => {
@@ -54,18 +54,23 @@ export const computeStats = (game: Game) => {
     const winningTeam = game.teams.find((t: TeamDef) => t.id === winnerId);
     const losingTeam = game.teams.find((t: TeamDef) => t.id !== winnerId);
 
-    // Points won/lost per player
+    // Points won/lost per team
     if (winningTeam) {
-      for (const pid of winningTeam.playerIds) {
-        if (playerStats[pid]) playerStats[pid].pointsWon++;
-      }
       teamStats[winningTeam.id].pointsWon++;
     }
     if (losingTeam) {
-      for (const pid of losingTeam.playerIds) {
-        if (playerStats[pid]) playerStats[pid].pointsLost++;
-      }
       teamStats[losingTeam.id].pointsLost++;
+    }
+
+    // Points won/lost per player (individual contribution via isScoring / isFail)
+    for (const rally of point.rallies) {
+      for (const touch of rally.touches) {
+        if (!touch.playerId) continue;
+        const ps = playerStats[touch.playerId];
+        if (!ps) continue;
+        if (touch.isScoring) ps.pointsWon++;
+        if (touch.isFail) ps.pointsLost++;
+      }
     }
 
     // Service analysis

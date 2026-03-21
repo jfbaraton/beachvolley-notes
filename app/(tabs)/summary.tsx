@@ -21,7 +21,7 @@ export default function SummaryScreen() {
     if (!game) return;
     setSelectedTeams(prev => {
       const next = { ...prev };
-      for (const id of allTeamIds) if (!(id in next)) next[id] = true;
+      for (const id of allTeamIds) if (!(id in next)) next[id] = false;
       return next;
     });
     setSelectedPlayers(prev => {
@@ -53,6 +53,21 @@ export default function SummaryScreen() {
     ...visibleTeamIds.map(id => ({ label: id, stats: teamStats[id] || emptyStats() })),
     ...visiblePlayerIds.map(id => ({ label: id, stats: playerStats[id] || emptyStats() })),
   ];
+
+  // Pre-compute best/worst index per stat row
+  const extremes: Record<string, { maxIdx: number; minIdx: number; maxVal: number; minVal: number }> = {};
+  for (const r of STAT_LABELS) {
+    if (columns.length === 0) continue;
+    let maxIdx = 0, minIdx = 0;
+    let maxVal = columns[0].stats[r.key];
+    let minVal = columns[0].stats[r.key];
+    for (let i = 1; i < columns.length; i++) {
+      const v = columns[i].stats[r.key];
+      if (v > maxVal) { maxVal = v; maxIdx = i; }
+      if (v < minVal) { minVal = v; minIdx = i; }
+    }
+    extremes[r.key] = { maxIdx, minIdx, maxVal, minVal };
+  }
 
   return (
     <ScrollView contentContainerStyle={st.scroll}>
@@ -90,18 +105,36 @@ export default function SummaryScreen() {
               </View>
             ))}
           </View>
-          {STAT_LABELS.map(r => (
-            <View key={r.key} style={st.row}>
-              <View style={[st.cell, st.labelCell]}>
-                <Text style={st.labelTxt}>{r.label}</Text>
-              </View>
-              {columns.map(c => (
-                <View key={c.label + r.key} style={st.cell}>
-                  <Text style={st.cellTxt}>{c.stats[r.key]}</Text>
+          {STAT_LABELS.map(r => {
+            const isNeg = r.polarity === 'negative';
+            const isPos = r.polarity === 'positive';
+            const rowBg = isNeg ? st.negRow : undefined;
+            const ext = extremes[r.key];
+
+            return (
+              <View key={r.key} style={[st.row, rowBg]}>
+                <View style={[st.cell, st.labelCell, rowBg]}>
+                  <Text style={st.labelTxt}>{r.label}</Text>
                 </View>
-              ))}
-            </View>
-          ))}
+                {columns.map((c, ci) => {
+                  let cellBg: object | undefined;
+                  if (ext && ext.maxVal > ext.minVal) {
+                    if (isNeg && ci === ext.maxIdx && ext.maxVal > 0) {
+                      cellBg = st.worstCell;
+                    } else if (isPos && ci === ext.maxIdx && ext.maxVal > 0) {
+                      cellBg = st.bestCell;
+                    }
+                  }
+
+                  return (
+                    <View key={c.label + r.key} style={[st.cell, rowBg, cellBg]}>
+                      <Text style={st.cellTxt}>{c.stats[r.key]}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })}
         </View>
       )}
     </ScrollView>
@@ -125,4 +158,7 @@ const st = StyleSheet.create({
   labelCell: { flex: 1.2, alignItems: 'flex-start' },
   labelTxt: { fontSize: 13, fontWeight: '500' },
   cellTxt: { fontSize: 15, fontWeight: '600' },
+  negRow: { backgroundColor: '#fde8e8' },
+  worstCell: { backgroundColor: '#f5a3a3' },
+  bestCell: { backgroundColor: '#a3f5a3' },
 });
