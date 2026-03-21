@@ -14,7 +14,7 @@ import {
   deleteLastTouch, scorePoint, addLineEvent,
   otherTeam, otherPlayerId, teamOfPlayer, teamById,
   clampBallX, clampBallY, clampPlayerX, clampPlayerY, dist,
-  updateTouchStats,
+  updateTouchStats, recalculateAllStats,
 } from '@/utils/gameEngine';
 import {
   setupServe, setupReceive, setupSet, setupAttack, setupGroundHit, animateTouch,
@@ -144,6 +144,7 @@ export default function GameScreen() {
 
   // Initialize on mount
   useEffect(() => {
+    recalculateAllStats(game, FC);
     if (game.points.length) {
       const idx: TouchIndex = { pointIdx: game.points.length - 1, rallyIdx: 0, touchIdx: 0 };
       setCurrentIdx(idx);
@@ -319,6 +320,7 @@ export default function GameScreen() {
 
   const doNewGame = () => {
     const g: Game = JSON.parse(JSON.stringify(newGame));
+    recalculateAllStats(g, FC);
     const newRefs = buildRefs(g);
     setRefs(newRefs);
     setGameLocal(g);
@@ -370,6 +372,7 @@ export default function GameScreen() {
         jsonStr = await FileSystem.readAsStringAsync(res.assets[0].uri);
       }
       const loaded = JSON.parse(jsonStr) as Game;
+      recalculateAllStats(loaded, FC);
       const newRefs = buildRefs(loaded);
       setRefs(newRefs);
       setGameLocal(loaded);

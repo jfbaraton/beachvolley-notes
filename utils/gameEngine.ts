@@ -359,6 +359,20 @@ export const updateTouchStats = (game: Game, idx: TouchIndex, fc: FieldConstants
   }
 };
 
+// ─── Recalculate all touch stats ────────────────────────
+
+export const recalculateAllStats = (game: Game, fc: FieldConstants) => {
+  for (let pi = 0; pi < game.points.length; pi++) {
+    const point = game.points[pi];
+    for (let ri = 0; ri < point.rallies.length; ri++) {
+      const rally = point.rallies[ri];
+      for (let ti = 0; ti < rally.touches.length; ti++) {
+        updateTouchStats(game, { pointIdx: pi, rallyIdx: ri, touchIdx: ti }, fc);
+      }
+    }
+  }
+};
+
 // ─── Scoring a point ────────────────────────────────────
 
 export const scorePoint = (game: Game, scoringTeamId: string, fc: FieldConstants) => {
