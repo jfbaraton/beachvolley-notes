@@ -3,7 +3,7 @@ import { StyleSheet, View, Platform, TouchableOpacity, TextInput, ScrollView, Te
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { Canvas, useImage, Image, Circle, Group, Skia } from '@shopify/react-native-skia';
+import { Canvas, useImage, Image, Circle, Group, Skia, Path } from '@shopify/react-native-skia';
 import { configureReanimatedLogger, ReanimatedLogLevel, useSharedValue, useDerivedValue } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 
@@ -591,6 +591,53 @@ export default function GameScreen() {
     `rgba(0,180,0,${dragOpacity.value * 0.5})`
   );
 
+  // ─── Blocking area cone ───────────────────────────────
+  const blockingPath = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    // Only while dragging a player
+    if (dragOpacity.value === 0) return path;
+
+    // Ball center
+    const bcx = ballX.value + BALL / 2;
+    const bcy = ballY.value + BALL / 2;
+    // Player center (dragX/dragY track the sprite center)
+    const pcx = dragX.value;
+
+    // Player must be on the opposite side of the net from the ball
+    const ballOnLeft = bcx < W / 2;
+    const playerOnLeft = isLeftSide.value;
+    if (ballOnLeft === playerOnLeft) return path;
+
+    // Player distance from net must be < 1/6 of field width
+    if (Math.abs(pcx - W / 2) >= W / 6) return path;
+
+    const pcy = dragY.value;
+    // Player sprite edges
+    const px = pcx - PLAYER / 2;
+    const py = pcy - PLAYER / 2;
+
+    // Tangent edge: use the player edge facing the ball
+    const tx = ballOnLeft ? px : px + PLAYER;
+    const topY = py;          // top of sprite
+    const botY = py + PLAYER; // bottom of sprite
+
+    // Extend tangent lines from ball center through the tangent points
+    // to the far field boundary on the blocker's side
+    const farX = ballOnLeft ? W : 0;
+    const dx = tx - bcx;
+    if (Math.abs(dx) < 1) return path; // degenerate
+
+    const t = (farX - bcx) / dx;
+    const farTopY = Math.max(0, Math.min(H, bcy + t * (topY - bcy)));
+    const farBotY = Math.max(0, Math.min(H, bcy + t * (botY - bcy)));
+
+    path.moveTo(bcx, bcy);
+    path.lineTo(farX, farTopY);
+    path.lineTo(farX, farBotY);
+    path.close();
+    return path;
+  });
+
   // ─── Resolve player images ──────────────────────────────
   const pImg = (id: string) => spriteMap[id] || spriteMap['male'];
 
@@ -690,6 +737,8 @@ export default function GameScreen() {
           <Group clip={clipP1_1}>
             <Image image={pImg(p1[1])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p1[1]].x} y={refs.players[p1[1]].y} />
           </Group>
+          {/* ─── Blocking area cone (red, 50% opacity) ─── */}
+          <Path path={blockingPath} color="rgba(255,0,0,0.5)" />
           {/* ─── Drag disc (green, 50% opacity, clipped to side) ─── */}
           <Group clip={clipRect}>
             <Circle cx={dragX} cy={dragY} r={DISC_R} color={discColor} />
