@@ -1343,7 +1343,7 @@
               "playerId": "male",
               "ballX": 224.5,
               "ballY": 144.5,
-              "type": "set",
+              "type": "option",
               "explicitPositions": [
                 {
                   "id": "Domna",
