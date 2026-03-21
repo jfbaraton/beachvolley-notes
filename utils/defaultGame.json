@@ -1380,6 +1380,7 @@
               ],
               "startingSide": 1,
               "endingSide": 1,
+              "isScoring": true,
               "isPlayerOnRightArm": true,
               "fromAcross": false,
               "toAcross": false
@@ -1430,48 +1431,11 @@
               ],
               "startingSide": 1,
               "endingSide": 1,
+              "isFail": true,
               "isPlayerOnRightArm": false,
               "ballSourceDirection": 2,
               "fromAcross": true,
               "toAcross": true
-            }
-          ]
-        },
-        {
-          "teamId": "Team2",
-          "touches": [
-            {
-              "playerId": "male",
-              "ballX": 358.5,
-              "ballY": 261.5,
-              "type": "pass",
-              "explicitPositions": [],
-              "calculatedPositions": [
-                {
-                  "id": "Domna",
-                  "x": 234,
-                  "y": 250.25
-                },
-                {
-                  "id": "Jeff",
-                  "x": 66.85714285714286,
-                  "y": 70.25
-                },
-                {
-                  "id": "Jeff",
-                  "x": 394.5,
-                  "y": 261.5
-                },
-                {
-                  "id": "Domna",
-                  "x": 414,
-                  "y": 187.5
-                }
-              ],
-              "startingSide": 1,
-              "isScoring": true,
-              "isPlayerOnRightArm": true,
-              "ballSourceDirection": 2
             }
           ]
         }

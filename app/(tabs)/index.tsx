@@ -296,6 +296,11 @@ export default function GameScreen() {
       setInvertServingPlayer(pt?.invertServingPlayer ?? false);
     }
     animateTouch(refs, game, newIdx, FC);
+    const t = getTouch(game, newIdx);
+    if (t) {
+      const suffix = `${t.isFail ? ' (failed)' : ''}${t.isScoring ? ' (scores)' : ''}`;
+      addLog(`${t.type}${t.playerId ? ' by ' + t.playerId : ' (ground)'}${suffix}`);
+    }
   };
 
   const doDelete = () => {
@@ -522,7 +527,7 @@ export default function GameScreen() {
   // ─── Current touch info ─────────────────────────────────
   const curTouch = getTouch(game, currentIdx);
   const touchLabel = curTouch
-    ? `${curTouch.type}${curTouch.playerId ? ' by ' + curTouch.playerId : ' (ground)'}`
+    ? `${curTouch.type}${curTouch.playerId ? ' by ' + curTouch.playerId : ' (ground)'}${curTouch.isFail ? ' (failed)' : ''}${curTouch.isScoring ? ' (scores)' : ''}`
     : 'No touch';
   const isServing = currentIdx.rallyIdx === 0 && currentIdx.touchIdx === 0;
 
