@@ -819,11 +819,11 @@ const s = StyleSheet.create({
   },
   navBtn: {
     backgroundColor: '#34495e',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  navTxt: { color: '#fff', fontSize: 22 },
+  navTxt: { color: '#fff', fontSize: 16 },
 
   // Actions
   actionRow: {
