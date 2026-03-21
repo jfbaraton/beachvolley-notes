@@ -525,24 +525,32 @@ export default function GameScreen() {
           isDnDId.value = '-1';
           dragOpacity.value = 0;
         } else if (MIN_D > closestDist && bDist > closestDist) {
-          isLeftSide.value = refs.players[closestId].x.value < W / 2;
+          isLeftSide.value = refs.players[closestId].x.value + PLAYER / 2 < W / 2;
           isDnDId.value = closestId;
           dragX.value = refs.players[closestId].x.value + PLAYER / 2;
           dragY.value = refs.players[closestId].y.value + PLAYER / 2;
           dragOpacity.value = 1;
         }
-      } else if (isLeftSide.value === (e.x < W / 2)) {
-        if (isDnDId.value === '-1') {
+      } else if (isDnDId.value === '-1') {
+        // Ball drag — only on same side
+        if (isLeftSide.value === (e.x < W / 2)) {
           ballX.value = clampBallX(e.x, FC);
           ballY.value = clampBallY(e.y, FC);
-        } else {
-          const sv = refs.players[isDnDId.value];
-          if (sv) {
-            sv.x.value = clampPlayerX(e.x, FC);
-            sv.y.value = clampPlayerY(e.y, FC);
-            dragX.value = clampPlayerX(e.x, FC) + PLAYER / 2;
-            dragY.value = clampPlayerY(e.y, FC) + PLAYER / 2;
+        }
+      } else {
+        // Player drag — clamp to their side of the net
+        const sv = refs.players[isDnDId.value];
+        if (sv) {
+          let px = clampPlayerX(e.x, FC);
+          if (isLeftSide.value) {
+            px = Math.min(px, W / 2 - PLAYER);
+          } else {
+            px = Math.max(px, W / 2);
           }
+          sv.x.value = px;
+          sv.y.value = clampPlayerY(e.y, FC);
+          dragX.value = px + PLAYER / 2;
+          dragY.value = clampPlayerY(e.y, FC) + PLAYER / 2;
         }
       }
     })
@@ -553,10 +561,16 @@ export default function GameScreen() {
         touch.ballX = clampBallX(e.x, FC);
         touch.ballY = clampBallY(e.y, FC);
       } else if (touch && isDnDId.value !== '-2') {
+        let px = clampPlayerX(e.x, FC);
+        if (isLeftSide.value) {
+          px = Math.min(px, W / 2 - PLAYER);
+        } else {
+          px = Math.max(px, W / 2);
+        }
         touch.explicitPositions = touch.explicitPositions.filter(p => p.id !== isDnDId.value);
         touch.explicitPositions.push({
           id: isDnDId.value,
-          x: clampPlayerX(e.x, FC),
+          x: px,
           y: clampPlayerY(e.y, FC),
         });
         const prevIdx = getPrevTouch(game, currentIdx);
