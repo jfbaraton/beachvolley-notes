@@ -594,6 +594,21 @@ export default function GameScreen() {
   // ─── Resolve player images ──────────────────────────────
   const pImg = (id: string) => spriteMap[id] || spriteMap['male'];
 
+  // ─── Rounded-rect clips for player sprites ────────────
+  const PLAYER_R = PLAYER / 5; // corner radius
+  const pClip = (id: string) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useDerivedValue(() =>
+      Skia.RRectXY(
+        Skia.XYWHRect(refs.players[id].x.value, refs.players[id].y.value, PLAYER, PLAYER),
+        PLAYER_R, PLAYER_R,
+      )
+    );
+  const clipP0_0 = pClip(game.teams[0].playerIds[0]);
+  const clipP0_1 = pClip(game.teams[0].playerIds[1]);
+  const clipP1_0 = pClip(game.teams[1].playerIds[0]);
+  const clipP1_1 = pClip(game.teams[1].playerIds[1]);
+
   // ─── Loading check ──────────────────────────────────────
   if (!ball || !field || !finlandFlag || !brazilFlag) {
     return <View style={s.center}><Text style={s.loadingText}>Loading...</Text></View>;
@@ -663,10 +678,18 @@ export default function GameScreen() {
         <Canvas style={{ width: W, height: H }}>
           <Image image={field} width={W} height={H} fit="cover" />
           <Image image={ball} width={BALL} height={BALL} fit="cover" x={ballX} y={ballY} />
-          <Image image={pImg(p0[0])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p0[0]].x} y={refs.players[p0[0]].y} />
-          <Image image={pImg(p0[1])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p0[1]].x} y={refs.players[p0[1]].y} />
-          <Image image={pImg(p1[0])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p1[0]].x} y={refs.players[p1[0]].y} />
-          <Image image={pImg(p1[1])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p1[1]].x} y={refs.players[p1[1]].y} />
+          <Group clip={clipP0_0}>
+            <Image image={pImg(p0[0])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p0[0]].x} y={refs.players[p0[0]].y} />
+          </Group>
+          <Group clip={clipP0_1}>
+            <Image image={pImg(p0[1])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p0[1]].x} y={refs.players[p0[1]].y} />
+          </Group>
+          <Group clip={clipP1_0}>
+            <Image image={pImg(p1[0])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p1[0]].x} y={refs.players[p1[0]].y} />
+          </Group>
+          <Group clip={clipP1_1}>
+            <Image image={pImg(p1[1])} width={PLAYER} height={PLAYER} fit="cover" x={refs.players[p1[1]].x} y={refs.players[p1[1]].y} />
+          </Group>
           {/* ─── Drag disc (green, 50% opacity, clipped to side) ─── */}
           <Group clip={clipRect}>
             <Circle cx={dragX} cy={dragY} r={DISC_R} color={discColor} />
