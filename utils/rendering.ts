@@ -218,6 +218,10 @@ export const setupReceive = (
     const currentRally = point.rallies[point.rallies.length - 1];
     if (currentRally.touches.length > 0) {
       receiverId = currentRally.touches[0].playerId || recvTeam.playerIds[0];
+    } else if (lastAttackTouch) {
+      // Use the serve/attack touch from the CURRENT point for position lookups
+      // (prevTouch may cross point boundaries and have stale positions)
+      receiverId = closestPlayerId(recvTeam.playerIds, bx, by, lastAttackTouch, null);
     } else if (prevTouch) {
       receiverId = closestPlayerId(recvTeam.playerIds, bx, by, prevTouch, null);
     } else {
