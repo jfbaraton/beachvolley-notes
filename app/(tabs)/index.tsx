@@ -12,7 +12,7 @@ import {
   createGame, calculateScore, isSideSwapped, getTouch, isLastTouchIndex,
   getPrevTouch, getNextTouch, getPrevPoint, getNextPoint,
   deleteLastTouch, scorePoint, addLineEvent,
-  otherTeam, otherPlayerId, teamOfPlayer, teamById,
+  otherTeam, otherPlayerId, teamOfPlayer, teamById, closestPlayerId,
   clampBallX, clampBallY, clampPlayerX, clampPlayerY, dist,
   updateTouchStats, recalculateAllStats,
 } from '@/utils/gameEngine';
@@ -125,7 +125,7 @@ export default function GameScreen() {
   const [invertSideSwap, setInvertSideSwap] = useState(_initLastPt?.invertSideSwap ?? false);
   const [invertServingTeam, setInvertServingTeam] = useState(_initLastPt?.invertServingTeam ?? false);
   const [invertServingPlayer, setInvertServingPlayer] = useState(_initLastPt?.invertServingPlayer ?? false);
-  const [groundHitMode, setGroundHitMode] = useState(false);
+  const [groundHitMode, setGroundHitMode] = useState<false | 'IN' | 'OUT' | 'TOUCHED'>(false);
   const [log, setLog] = useState<string[]>(['Ready']);
 
   const { setGame: setSharedGame, setScore: setSharedScore, setCurrentIdx: setSharedIdx } = useGameContext();
@@ -189,28 +189,75 @@ export default function GameScreen() {
   const onFieldTap = (x: number, y: number) => {
     if (!isEdit) { addLog('Not in edit mode'); return; }
 
-    // Ground hit mode
-    if (groundHitMode) {
-      const newIdx = setupGroundHit(refs, game, currentIdx, x, y, FC);
-      setCurrentIdx(newIdx);
-      setGameLocal({ ...game });
-      setGroundHitMode(false);
-      addLog('Ground hit recorded');
-      return;
-    }
-
     const point = game.points[currentIdx.pointIdx];
     if (!point || !point.rallies.length) return;
     const rally = point.rallies[point.rallies.length - 1];
     const lastTouch = rally.touches[rally.touches.length - 1];
     if (!lastTouch) return;
 
-    // Determine which side the current rally's team is on (from player positions, not ball)
+    // Determine which side the current rally's team is on
     const rallyTeam = teamById(game, rally.teamId);
     const teamPlayerSv = refs.players[rallyTeam.playerIds[0]];
     const teamIsOnRight = teamPlayerSv ? teamPlayerSv.x.value > W / 2 : lastTouch.ballX > W / 2;
     const crossesNet = (x > W / 2) !== teamIsOnRight;
 
+    // ─── Ground hit mode (IN / OUT / TOUCHED) ───
+    if (groundHitMode) {
+      const result = groundHitMode; // 'IN' | 'OUT' | 'TOUCHED'
+      const isAfterServeOrAttack = lastTouch.type === 'serve' || lastTouch.type === 'attack';
+      const attackingTeamId = rally.teamId;
+      const receivingTeamIdx = game.teams[0].id === attackingTeamId ? 1 : 0;
+      const attackingTeamIdx = 1 - receivingTeamIdx;
+
+      if (result === 'OUT') {
+        // Ball went OUT — just a ground touch, no player touch
+        if (isAfterServeOrAttack && crossesNet) {
+          const recvTeamId = otherTeam(game, rally.teamId).id;
+          point.rallies.push({ teamId: recvTeamId, touches: [] });
+          const tempIdx: TouchIndex = { pointIdx: currentIdx.pointIdx, rallyIdx: point.rallies.length - 1, touchIdx: 0 };
+          setupGroundHit(refs, game, tempIdx, x, y, FC, 'OUT');
+        } else {
+          setupGroundHit(refs, game, currentIdx, x, y, FC, 'OUT');
+        }
+        addLog(`ground (OUT)`);
+        setGroundHitMode(false);
+        // OUT → receiving team scores (attacker made the error)
+        doScore(receivingTeamIdx);
+        return;
+      } else if (result === 'IN') {
+        // Ball went IN — create a failing pass from closest receiver
+        if (isAfterServeOrAttack && crossesNet) {
+          const recvTeamId = otherTeam(game, rally.teamId).id;
+          point.rallies.push({ teamId: recvTeamId, touches: [] });
+          const recvIdx = setupReceive(refs, game, currentIdx, x, y, FC);
+          const passTouch = getTouch(game, recvIdx);
+          if (passTouch) passTouch.isFail = true;
+        } else {
+          setupGroundHit(refs, game, currentIdx, x, y, FC, 'IN');
+        }
+        addLog(`ground (IN)`);
+        setGroundHitMode(false);
+        // IN → attacking team scores (receiver failed)
+        doScore(attackingTeamIdx);
+        return;
+      } else {
+        // TOUCHED — pass from closest receiver (ball was touched but went out)
+        if (isAfterServeOrAttack && crossesNet) {
+          const recvTeamId = otherTeam(game, rally.teamId).id;
+          point.rallies.push({ teamId: recvTeamId, touches: [] });
+          setupReceive(refs, game, currentIdx, x, y, FC);
+        } else {
+          setupGroundHit(refs, game, currentIdx, x, y, FC, 'TOUCHED');
+        }
+        addLog(`ground (TOUCHED)`);
+        setGroundHitMode(false);
+        // TOUCHED → attacking team scores (receiver touched an out ball)
+        doScore(attackingTeamIdx);
+        return;
+      }
+    }
+
+    // ─── Normal touch flow ───
     switch (lastTouch.type) {
       case 'serve':
         if (crossesNet) {
@@ -299,7 +346,8 @@ export default function GameScreen() {
     const t = getTouch(game, newIdx);
     if (t) {
       const suffix = `${t.isFail ? ' (failed)' : ''}${t.isScoring ? ' (scores)' : ''}`;
-      addLog(`${t.type}${t.playerId ? ' by ' + t.playerId : ' (ground)'}${suffix}`);
+      const groundInfo = t.type === 'ground' && t.groundResult ? ` (${t.groundResult})` : '';
+      addLog(`${t.type}${groundInfo}${t.playerId ? ' by ' + t.playerId : t.type === 'ground' ? '' : ' (ground)'}${suffix}`);
     }
   };
 
@@ -527,7 +575,7 @@ export default function GameScreen() {
   // ─── Current touch info ─────────────────────────────────
   const curTouch = getTouch(game, currentIdx);
   const touchLabel = curTouch
-    ? `${curTouch.type}${curTouch.playerId ? ' by ' + curTouch.playerId : ' (ground)'}${curTouch.isFail ? ' (failed)' : ''}${curTouch.isScoring ? ' (scores)' : ''}`
+    ? `${curTouch.type}${curTouch.type === 'ground' && curTouch.groundResult ? ' (' + curTouch.groundResult + ')' : ''}${curTouch.playerId ? ' by ' + curTouch.playerId : curTouch.type !== 'ground' ? ' (ground)' : ''}${curTouch.isFail ? ' (failed)' : ''}${curTouch.isScoring ? ' (scores)' : ''}`
     : 'No touch';
   const isServing = currentIdx.rallyIdx === 0 && currentIdx.touchIdx === 0;
 
@@ -605,8 +653,16 @@ export default function GameScreen() {
       {/* ─── Action buttons ─── */}
       <View style={s.actionRow}>
         {isEdit && (
-          <ActionBtn label="🏐 Ground Hit" color={groundHitMode ? '#e67e22' : '#7f8c8d'}
-            onPress={() => setGroundHitMode(!groundHitMode)} />
+          <ActionBtn label="🏐 IN" color={groundHitMode === 'IN' ? '#e67e22' : '#27ae60'}
+            onPress={() => setGroundHitMode(groundHitMode === 'IN' ? false : 'IN')} />
+        )}
+        {isEdit && (
+          <ActionBtn label="🏐 OUT" color={groundHitMode === 'OUT' ? '#e67e22' : '#e74c3c'}
+            onPress={() => setGroundHitMode(groundHitMode === 'OUT' ? false : 'OUT')} />
+        )}
+        {isEdit && (
+          <ActionBtn label="🏐 TOUCHED" color={groundHitMode === 'TOUCHED' ? '#e67e22' : '#8e44ad'}
+            onPress={() => setGroundHitMode(groundHitMode === 'TOUCHED' ? false : 'TOUCHED')} />
         )}
         {isEdit && isLastTouchIndex(game, currentIdx) && (
           <ActionBtn label="🗑️ Undo" color="#cc3333" onPress={doDelete} />

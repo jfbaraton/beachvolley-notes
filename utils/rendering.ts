@@ -475,7 +475,7 @@ export const setupAttack = (
 
 export const setupGroundHit = (
   refs: AnimRefs, game: Game, idx: TouchIndex, bx: number, by: number,
-  fc: FieldConstants,
+  fc: FieldConstants, groundResult?: 'IN' | 'OUT' | 'TOUCHED',
 ): TouchIndex => {
   const point = game.points[idx.pointIdx];
   const rally = point.rallies[point.rallies.length - 1];
@@ -489,6 +489,7 @@ export const setupGroundHit = (
     type: 'ground',
     explicitPositions: [],
     calculatedPositions: [],
+    groundResult,
   });
 
   const newIdx: TouchIndex = {

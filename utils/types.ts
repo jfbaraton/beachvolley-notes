@@ -35,6 +35,8 @@ export interface Touch {
   explicitPositions: PlayerPos[];
   /** Calculated default positions (auto-filled) */
   calculatedPositions: PlayerPos[];
+  /** Ground hit result: IN / OUT / TOUCHED */
+  groundResult?: 'IN' | 'OUT' | 'TOUCHED';
   // Computed stats (filled on scoring)
   isScoring?: boolean;
   isFail?: boolean;
