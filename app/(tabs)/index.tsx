@@ -42,10 +42,7 @@ import DudaImg from '@/assets/sprites/Duda.jpg';
 import BennettImg from '@/assets/sprites/Bennett.jpeg';
 // @ts-ignore
 import MaleImg from '@/assets/sprites/male.png';
-// @ts-ignore
-import FinlandFlagImg from '@/assets/sprites/finland_flag.png';
-// @ts-ignore
-import BrazilFlagImg from '@/assets/sprites/brazil_flag.png';
+import flagMap from '@/assets/flags/flagMap';
 
 configureReanimatedLogger({ level: ReanimatedLogLevel.warn, strict: false });
 
@@ -79,8 +76,6 @@ export default function GameScreen() {
     male: useImage(MaleImg.uri),
     Bennett: useImage(BennettImg.uri),
   };
-  const finlandFlag = useImage(FinlandFlagImg.uri);
-  const brazilFlag = useImage(BrazilFlagImg.uri);
 
   // ─── Shared animation values ────────────────────────────
   const ballX = useSharedValue(clampBallX(W / 7, FC));
@@ -112,6 +107,8 @@ export default function GameScreen() {
 
   // ─── Game state ─────────────────────────────────────────
   const [game, setGameLocal] = useState<Game>(() => JSON.parse(JSON.stringify(sampleGame)));
+  const flagTeam0 = useImage(flagMap[game.teams[0].id]?.uri ?? null);
+  const flagTeam1 = useImage(flagMap[game.teams[1].id]?.uri ?? null);
   const [currentIdx, setCurrentIdx] = useState<TouchIndex>(() => {
     const g = JSON.parse(JSON.stringify(sampleGame)) as Game;
     return { pointIdx: Math.max(0, g.points.length - 1), rallyIdx: 0, touchIdx: 0 };
@@ -730,7 +727,7 @@ export default function GameScreen() {
   const clipP1_1 = pClip(game.teams[1].playerIds[1]);
 
   // ─── Loading check ──────────────────────────────────────
-  if (!ball || !field || !finlandFlag || !brazilFlag) {
+  if (!ball || !field) {
     return <View style={s.center}><Text style={s.loadingText}>Loading...</Text></View>;
   }
 
@@ -767,7 +764,7 @@ export default function GameScreen() {
 
       {/* ─── Score bar ─── */}
       <View style={s.scoreBar}>
-        <Canvas style={s.flag}><Image image={finlandFlag} width={40} height={24} fit="cover" /></Canvas>
+        {flagTeam0 && <Canvas style={s.flag}><Image image={flagTeam0} width={40} height={24} fit="cover" /></Canvas>}
         <TouchableOpacity style={s.scoreBtn} onPress={() => doScore(0)}>
           <Text style={s.scoreTxt}>{score.scoreTeam[0]}</Text>
         </TouchableOpacity>
@@ -777,7 +774,7 @@ export default function GameScreen() {
         <TouchableOpacity style={s.scoreBtn} onPress={() => doScore(1)}>
           <Text style={s.scoreTxt}>{score.scoreTeam[1]}</Text>
         </TouchableOpacity>
-        <Canvas style={s.flag}><Image image={brazilFlag} width={40} height={24} fit="cover" /></Canvas>
+        {flagTeam1 && <Canvas style={s.flag}><Image image={flagTeam1} width={40} height={24} fit="cover" /></Canvas>}
       </View>
 
       {/* ─── Line events ─── */}
