@@ -836,11 +836,13 @@ export default function GameScreen() {
             {(['OUT', 'Touched', 'IN', 'Net'].map((label, i) => {
               const isNet = label === 'Net';
               const isOut = label === 'OUT';
-              const color = isNet ? '#e74c3c'
+              const activeColor = isNet ? '#e74c3c'
                 : isOut ? (leftOutRed ? '#e74c3c' : '#27ae60')
                 : i < 2 ? '#e74c3c' : '#27ae60';
+              const color = isEdit ? activeColor : '#bdc3c7';
               return (
                 <TouchableOpacity key={'l' + i} style={[s.lineBtn, { backgroundColor: color }]}
+                  disabled={!isEdit}
                   onPress={() => isNet
                     ? onNetFault(true)
                     : onLineEvent(true, label === 'Touched' ? 'OUT touched' : label)}>
@@ -852,11 +854,13 @@ export default function GameScreen() {
             {(['Net', 'IN', 'Touched', 'OUT'].map((label, i) => {
               const isNet = label === 'Net';
               const isOut = label === 'OUT';
-              const color = isNet ? '#e74c3c'
+              const activeColor = isNet ? '#e74c3c'
                 : isOut ? (rightOutRed ? '#e74c3c' : '#27ae60')
                 : i > 1 ? '#e74c3c' : '#27ae60';
+              const color = isEdit ? activeColor : '#bdc3c7';
               return (
                 <TouchableOpacity key={'r' + i} style={[s.lineBtn, { backgroundColor: color }]}
+                  disabled={!isEdit}
                   onPress={() => isNet
                     ? onNetFault(false)
                     : onLineEvent(false, label === 'Touched' ? 'OUT touched' : label)}>
@@ -899,6 +903,14 @@ export default function GameScreen() {
         <Text style={s.infoTxt}>Pt {currentIdx.pointIdx + 1} • {touchLabel}</Text>
       </View>
 
+        {/* ─── Swap receiver / IN no fault (when editing a receive) ─── */}
+        {isEdit && currentIdx.rallyIdx > 0 && currentIdx.touchIdx === 0 && (
+            <View style={s.swapRow}>
+                <Pill label="🔄 Swap Receiver" active={false} onPress={onSwapReceiver} />
+                <Pill label="✅ IN, no receiver fault" active={false} onPress={onInNoReceiverFault} />
+            </View>
+        )}
+
       {/* ─── Action buttons ─── */}
       <View style={s.actionRow}>
         {isEdit && isLastTouchIndex(game, currentIdx) && (
@@ -912,13 +924,6 @@ export default function GameScreen() {
         {log.map((l, i) => <Text key={i} style={s.logTxt}>{l}</Text>)}
       </View>
 
-        {/* ─── Swap receiver / IN no fault (when editing a receive) ─── */}
-        {isEdit && currentIdx.rallyIdx > 0 && currentIdx.touchIdx === 0 && (
-            <View style={s.swapRow}>
-                <Pill label="🔄 Swap Receiver" active={false} onPress={onSwapReceiver} />
-                <Pill label="✅ IN, no receiver fault" active={false} onPress={onInNoReceiverFault} />
-            </View>
-        )}
 
       {/* ─── Game Modal ─── */}
       <Modal
