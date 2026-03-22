@@ -947,11 +947,13 @@ export default function GameScreen() {
 
             {/* ─── Service alternance ─── */}
             <View style={s.modalSection}>
-              <Text style={s.modalSectionTitle}>Service alternance</Text>
+              <Text style={s.modalSectionTitle}>
+                Service alternance{!(isEdit && isServing) ? ' (active when editing a service)' : ''}
+              </Text>
               <View style={s.modalBtnRow}>
-                <Pill label="⇄ Sides" active={invertSideSwap} onPress={onSwapSides} />
-                <Pill label="⇄ Team" active={invertServingTeam} onPress={onSwapServingTeam} />
-                <Pill label="⇄ Player" active={invertServingPlayer} onPress={onSwapServingPlayer} />
+                <Pill label="⇄ Sides" active={invertSideSwap} onPress={onSwapSides} disabled={!(isEdit && isServing)} />
+                <Pill label="⇄ Team" active={invertServingTeam} onPress={onSwapServingTeam} disabled={!(isEdit && isServing)} />
+                <Pill label="⇄ Player" active={invertServingPlayer} onPress={onSwapServingPlayer} disabled={!(isEdit && isServing)} />
               </View>
             </View>
 
@@ -968,10 +970,14 @@ export default function GameScreen() {
 
 // ─── Small components ───────────────────────────────────
 
-function Pill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Pill({ label, active, onPress, disabled }: { label: string; active: boolean; onPress: () => void; disabled?: boolean }) {
   return (
-    <TouchableOpacity style={[s.pill, active && s.pillActive]} onPress={onPress}>
-      <Text style={[s.pillTxt, active && s.pillTxtActive]}>{label}</Text>
+    <TouchableOpacity
+      style={[s.pill, active && !disabled && s.pillActive, disabled && s.pillDisabled]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <Text style={[s.pillTxt, active && !disabled && s.pillTxtActive, disabled && s.pillTxtDisabled]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -1078,8 +1084,10 @@ const s = StyleSheet.create({
     backgroundColor: '#fff',
   },
   pillActive: { backgroundColor: '#3498db', borderColor: '#3498db' },
+  pillDisabled: { backgroundColor: '#ecf0f1', borderColor: '#dcdde1' },
   pillTxt: { fontSize: 12, color: '#555' },
   pillTxtActive: { color: '#fff' },
+  pillTxtDisabled: { color: '#bdc3c7' },
 
   // Navigation
   navRow: {
