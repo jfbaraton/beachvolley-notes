@@ -30,7 +30,7 @@ export interface Touch {
   playerId: string | null;
   ballX: number;
   ballY: number;
-  type: 'serve' | 'pass' | 'set' | 'option' | 'attack' | 'ground';
+  type: 'serve' | 'pass' | 'set' | 'option' | 'attack' | 'block' | 'ground';
   /** User-dragged positions (persisted) */
   explicitPositions: PlayerPos[];
   /** Calculated default positions (auto-filled) */

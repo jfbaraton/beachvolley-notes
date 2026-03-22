@@ -11,6 +11,7 @@ export interface PlayerStats {
   aced: number;
   kills: number;
   attackErrors: number;
+  blockCount: number;
   digs: number;
   passCount: number;
   setCount: number;
@@ -21,7 +22,7 @@ export interface PlayerStats {
 
 export const emptyStats = (): PlayerStats => ({
   aces: 0, failedServes: 0, aced: 0, kills: 0, attackErrors: 0,
-  digs: 0, passCount: 0, setCount: 0, groundHits: 0, pointsWon: 0, pointsLost: 0,
+  blockCount: 0, digs: 0, passCount: 0, setCount: 0, groundHits: 0, pointsWon: 0, pointsLost: 0,
 });
 
 export const STAT_LABELS: { key: keyof PlayerStats; label: string; polarity: 'positive' | 'negative' | 'neutral' }[] = [
@@ -30,6 +31,7 @@ export const STAT_LABELS: { key: keyof PlayerStats; label: string; polarity: 'po
   { key: 'aced', label: 'Aced', polarity: 'negative' },
   { key: 'kills', label: 'Kills', polarity: 'positive' },
   { key: 'attackErrors', label: 'Attack Errors', polarity: 'negative' },
+  { key: 'blockCount', label: 'Blocks', polarity: 'positive' },
   { key: 'digs', label: 'Digs', polarity: 'positive' },
   { key: 'passCount', label: 'Passes', polarity: 'neutral' },
   { key: 'setCount', label: 'Sets', polarity: 'neutral' },
@@ -124,6 +126,10 @@ export const computeStats = (game: Game) => {
         if (touch.type === 'set' || touch.type === 'option') {
           if (ps) ps.setCount++;
           if (ts) ts.setCount++;
+        }
+        if (touch.type === 'block') {
+          if (ps) ps.blockCount++;
+          if (ts) ts.blockCount++;
         }
         if (touch.type === 'ground') {
           if (ps) ps.groundHits++;

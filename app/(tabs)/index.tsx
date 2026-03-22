@@ -305,6 +305,24 @@ export default function GameScreen() {
         }
         break;
 
+      case 'block':
+        if (!crossesNet) {
+          // After block, same side: next touch is a pass by the other player
+          const newIdx = setupSet(refs, game, currentIdx, x, y, FC);
+          const t = getTouch(game, newIdx);
+          if (t) t.type = 'pass';
+          setCurrentIdx(newIdx);
+          addLog('Block → Pass');
+        } else {
+          // Block sends ball back over the net
+          const recvTeamId = otherTeam(game, rally.teamId).id;
+          point.rallies.push({ teamId: recvTeamId, touches: [] });
+          const newIdx = setupReceive(refs, game, currentIdx, x, y, FC);
+          setCurrentIdx(newIdx);
+          addLog('Block → Pass (cross net)');
+        }
+        break;
+
       case 'attack':
         if (crossesNet) {
           const recvTeamId = otherTeam(game, rally.teamId).id;
@@ -548,6 +566,17 @@ export default function GameScreen() {
     const prevIdx = getPrevTouch(game, currentIdx);
     setupReceive(refs, game, currentIdx, rally.touches[0].ballX, rally.touches[0].ballY, FC, newRecvId);
     addLog('Swapped receiver to ' + newRecvId);
+  };
+
+  const onBlock = () => {
+    const point = game.points[currentIdx.pointIdx];
+    if (!point) return;
+    const rally = point.rallies[currentIdx.rallyIdx];
+    if (!rally?.touches.length) return;
+    const touch = rally.touches[0];
+    touch.type = 'block';
+    setGameLocal({ ...game });
+    addLog(`Block by ${touch.playerId}`);
   };
 
   const onInNoReceiverFault = () => {
@@ -903,11 +932,14 @@ export default function GameScreen() {
         <Text style={s.infoTxt}>Pt {currentIdx.pointIdx + 1} • {touchLabel}</Text>
       </View>
 
-        {/* ─── Swap receiver / IN no fault (when editing a receive) ─── */}
+        {/* ─── Swap receiver / IN no fault / Block (when editing a receive) ─── */}
         {isEdit && currentIdx.rallyIdx > 0 && currentIdx.touchIdx === 0 && (
             <View style={s.swapRow}>
                 <Pill label="🔄 Swap Receiver" active={false} onPress={onSwapReceiver} />
                 <Pill label="✅ IN, no receiver fault" active={false} onPress={onInNoReceiverFault} />
+                {currentIdx.rallyIdx > 1 && (
+                    <Pill label="🛡️ Block" active={curTouch?.type === 'block'} onPress={onBlock} />
+                )}
             </View>
         )}
 
