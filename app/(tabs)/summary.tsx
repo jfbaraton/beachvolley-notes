@@ -73,7 +73,7 @@ export default function SummaryScreen() {
     <ScrollView contentContainerStyle={st.scroll}>
       <Text style={st.heading}>Game Summary</Text>
 
-      <Text style={st.filterTitle}>Teams</Text>
+      <Text style={st.filterTitle}>Teams / Players</Text>
       <View style={st.filterRow}>
         {allTeamIds.map(id => (
           <CheckBox key={'t-' + id} title={id}
@@ -81,16 +81,13 @@ export default function SummaryScreen() {
             onPress={() => setSelectedTeams(p => ({ ...p, [id]: !p[id] }))}
             containerStyle={st.cb} textStyle={st.cbTxt} />
         ))}
-      </View>
 
-      <Text style={st.filterTitle}>Players</Text>
-      <View style={st.filterRow}>
-        {allPlayerIds.map(id => (
-          <CheckBox key={'p-' + id} title={id}
-            checked={!!selectedPlayers[id]}
-            onPress={() => setSelectedPlayers(p => ({ ...p, [id]: !p[id] }))}
-            containerStyle={st.cb} textStyle={st.cbTxt} />
-        ))}
+          {allPlayerIds.map(id => (
+              <CheckBox key={'p-' + id} title={id}
+                        checked={!!selectedPlayers[id]}
+                        onPress={() => setSelectedPlayers(p => ({ ...p, [id]: !p[id] }))}
+                        containerStyle={st.cb} textStyle={st.cbTxt} />
+          ))}
       </View>
 
       {columns.length === 0 ? (

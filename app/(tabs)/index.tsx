@@ -777,6 +777,14 @@ export default function GameScreen() {
         {flagTeam1 && <Canvas style={s.flag}><Image image={flagTeam1} width={40} height={24} fit="cover" /></Canvas>}
       </View>
 
+        {/* ─── Navigation ─── */}
+        <View style={s.navRow}>
+            <NavBtn label="⏮" onPress={() => gotoMove('prevPt')} />
+            <NavBtn label="◀" onPress={() => gotoMove('prev')} />
+            <NavBtn label="▶" onPress={() => gotoMove('next')} />
+            <NavBtn label="⏭" onPress={() => gotoMove('nextPt')} />
+        </View>
+
       {/* ─── Line events ─── */}
       <View style={s.lineRow}>
         {(['OUT', 'Touch', 'IN', 'Net'].map((label, i) => {
@@ -835,15 +843,6 @@ export default function GameScreen() {
       {/* ─── Touch info ─── */}
       <View style={s.infoBar}>
         <Text style={s.infoTxt}>Pt {currentIdx.pointIdx + 1} • {touchLabel}</Text>
-      </View>
-
-
-      {/* ─── Navigation ─── */}
-      <View style={s.navRow}>
-        <NavBtn label="⏮" onPress={() => gotoMove('prevPt')} />
-        <NavBtn label="◀" onPress={() => gotoMove('prev')} />
-        <NavBtn label="▶" onPress={() => gotoMove('next')} />
-        <NavBtn label="⏭" onPress={() => gotoMove('nextPt')} />
       </View>
 
       {/* ─── Action buttons ─── */}
