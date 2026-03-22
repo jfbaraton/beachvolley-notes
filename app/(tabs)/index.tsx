@@ -933,11 +933,11 @@ export default function GameScreen() {
       </View>
 
         {/* ─── Swap receiver / IN no fault / Block (when editing a receive) ─── */}
-        {isEdit && currentIdx.rallyIdx > 0 && currentIdx.touchIdx === 0 && (
+        {isEdit && currentIdx.rallyIdx > 0 && (currentIdx.touchIdx === 0 || curTouch?.type === 'pass') && (
             <View style={s.swapRow}>
                 <Pill label="🔄 Swap Receiver" active={false} onPress={onSwapReceiver} />
                 <Pill label="✅ IN, no receiver fault" active={false} onPress={onInNoReceiverFault} />
-                {currentIdx.rallyIdx > 1 && (
+                {currentIdx.rallyIdx > 1 && currentIdx.touchIdx === 0 && (
                     <Pill label="🛡️ Block" active={curTouch?.type === 'block'} onPress={onBlock} />
                 )}
             </View>
