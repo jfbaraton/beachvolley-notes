@@ -550,6 +550,44 @@ export default function GameScreen() {
     addLog('Swapped receiver to ' + newRecvId);
   };
 
+  const onInNoReceiverFault = () => {
+    const point = game.points[currentIdx.pointIdx];
+    if (!point) return;
+    const rally = point.rallies[currentIdx.rallyIdx];
+    if (!rally?.touches.length) return;
+    const touch = rally.touches[0];
+
+    // Transform the pass into a ground IN (no player contact)
+    touch.type = 'ground';
+    touch.playerId = null;
+    touch.groundResult = 'IN';
+    touch.isFail = false;
+
+    // Recalculate positions from previous touch (keep players where they were)
+    const prevIdx = getPrevTouch(game, currentIdx);
+    const prevTouch = getTouch(game, prevIdx);
+    if (prevTouch) {
+      touch.calculatedPositions = prevTouch.calculatedPositions.map(p => ({ ...p }));
+      // Restore player animations to previous positions
+      for (const p of prevTouch.calculatedPositions) {
+        const sv = refs.players[p.id];
+        if (sv) {
+          sv.x.value = p.x;
+          sv.y.value = p.y;
+        }
+      }
+    }
+
+    // The attacking team is from the previous rally; the receiving team is rally.teamId
+    const prevRally = point.rallies[currentIdx.rallyIdx - 1];
+    const attackingTeamId = prevRally?.teamId ?? rally.teamId;
+    const attackingTeamIdx = game.teams[0].id === attackingTeamId ? 0 : 1;
+
+    addLog('IN — no receiver fault');
+    // Attacking team scores (their shot went IN)
+    doScore(attackingTeamIdx);
+  };
+
   // ─── Gestures ───────────────────────────────────────────
   const isDnDId = useSharedValue('-2');
   const isLeftSide = useSharedValue(true);
@@ -787,33 +825,48 @@ export default function GameScreen() {
         </View>
 
       {/* ─── Line events ─── */}
-      <View style={s.lineRow}>
-        {(['OUT', 'Touch', 'IN', 'Net'].map((label, i) => {
-          const isNet = label === 'Net';
-          const color = isNet || i < 2 ? '#e74c3c' : '#27ae60';
-          return (
-            <TouchableOpacity key={'l' + i} style={[s.lineBtn, { backgroundColor: color }]}
-              onPress={() => isNet
-                ? onNetFault(true)
-                : onLineEvent(true, label === 'Touch' ? 'OUT touched' : label)}>
-              <Text style={s.lineTxt}>{label}</Text>
-            </TouchableOpacity>
-          );
-        }))}
-        <View style={s.lineSep} />
-        {(['Net', 'IN', 'Touch', 'OUT'].map((label, i) => {
-          const isNet = label === 'Net';
-          const color = isNet || i > 1 ? '#e74c3c' : '#27ae60';
-          return (
-            <TouchableOpacity key={'r' + i} style={[s.lineBtn, { backgroundColor: color }]}
-              onPress={() => isNet
-                ? onNetFault(false)
-                : onLineEvent(false, label === 'Touch' ? 'OUT touched' : label)}>
-              <Text style={s.lineTxt}>{label}</Text>
-            </TouchableOpacity>
-          );
-        }))}
-      </View>
+      {(() => {
+        const ballOnLeft = (curTouch?.ballX ?? W / 2) < W / 2;
+        const is2ndOr3rd = currentIdx.touchIdx >= 1;
+        // OUT is red when ball is on same side AND 2nd/3rd touch; green otherwise
+        const leftOutRed = ballOnLeft && is2ndOr3rd;
+        const rightOutRed = !ballOnLeft && is2ndOr3rd;
+        return (
+          <View style={s.lineRow}>
+            {(['OUT', 'Touched', 'IN', 'Net'].map((label, i) => {
+              const isNet = label === 'Net';
+              const isOut = label === 'OUT';
+              const color = isNet ? '#e74c3c'
+                : isOut ? (leftOutRed ? '#e74c3c' : '#27ae60')
+                : i < 2 ? '#e74c3c' : '#27ae60';
+              return (
+                <TouchableOpacity key={'l' + i} style={[s.lineBtn, { backgroundColor: color }]}
+                  onPress={() => isNet
+                    ? onNetFault(true)
+                    : onLineEvent(true, label === 'Touched' ? 'OUT touched' : label)}>
+                  <Text style={s.lineTxt}>{label}</Text>
+                </TouchableOpacity>
+              );
+            }))}
+            <View style={s.lineSep} />
+            {(['Net', 'IN', 'Touched', 'OUT'].map((label, i) => {
+              const isNet = label === 'Net';
+              const isOut = label === 'OUT';
+              const color = isNet ? '#e74c3c'
+                : isOut ? (rightOutRed ? '#e74c3c' : '#27ae60')
+                : i > 1 ? '#e74c3c' : '#27ae60';
+              return (
+                <TouchableOpacity key={'r' + i} style={[s.lineBtn, { backgroundColor: color }]}
+                  onPress={() => isNet
+                    ? onNetFault(false)
+                    : onLineEvent(false, label === 'Touched' ? 'OUT touched' : label)}>
+                  <Text style={s.lineTxt}>{label}</Text>
+                </TouchableOpacity>
+              );
+            }))}
+          </View>
+        );
+      })()}
 
       {/* ─── Canvas ─── */}
       <GestureDetector gesture={gesture}>
@@ -848,18 +901,6 @@ export default function GameScreen() {
 
       {/* ─── Action buttons ─── */}
       <View style={s.actionRow}>
-        {isEdit && (
-          <ActionBtn label="🏐 IN" color={groundHitMode === 'IN' ? '#e67e22' : '#27ae60'}
-            onPress={() => setGroundHitMode(groundHitMode === 'IN' ? false : 'IN')} />
-        )}
-        {isEdit && (
-          <ActionBtn label="🏐 OUT" color={groundHitMode === 'OUT' ? '#e67e22' : '#e74c3c'}
-            onPress={() => setGroundHitMode(groundHitMode === 'OUT' ? false : 'OUT')} />
-        )}
-        {isEdit && (
-          <ActionBtn label="🏐 TOUCHED" color={groundHitMode === 'TOUCHED' ? '#e67e22' : '#8e44ad'}
-            onPress={() => setGroundHitMode(groundHitMode === 'TOUCHED' ? false : 'TOUCHED')} />
-        )}
         {isEdit && isLastTouchIndex(game, currentIdx) && (
           <ActionBtn label="🗑️ Undo" color="#cc3333" onPress={doDelete} />
         )}
@@ -871,10 +912,11 @@ export default function GameScreen() {
         {log.map((l, i) => <Text key={i} style={s.logTxt}>{l}</Text>)}
       </View>
 
-        {/* ─── Swap receiver (when editing a receive) ─── */}
+        {/* ─── Swap receiver / IN no fault (when editing a receive) ─── */}
         {isEdit && currentIdx.rallyIdx > 0 && currentIdx.touchIdx === 0 && (
             <View style={s.swapRow}>
                 <Pill label="🔄 Swap Receiver" active={false} onPress={onSwapReceiver} />
+                <Pill label="✅ IN, no receiver fault" active={false} onPress={onInNoReceiverFault} />
             </View>
         )}
 
