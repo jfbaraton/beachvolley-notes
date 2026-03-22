@@ -276,7 +276,37 @@ export const setupReceive = (
       startingSide: ballOnRight ? 0 : 1,
     });
   } else if (forceReceiverId) {
-    currentRally.touches[0].playerId = forceReceiverId;
+    // Swap receiver — keep ball position, recalculate receiver/mate positions
+    const existingTouch = currentRally.touches[0];
+    existingTouch.playerId = forceReceiverId;
+    existingTouch.explicitPositions = reusedOpp;
+
+    const newIdx: TouchIndex = {
+      pointIdx: idx.pointIdx,
+      rallyIdx: point.rallies.length - 1,
+      touchIdx: currentRally.touches.length - 1,
+    };
+
+    // Only animate players — keep ball where it is
+    refs.players[receiverId].x.value = withTiming(receiverX, { duration: DUR_NORMAL });
+    refs.players[receiverId].y.value = withTiming(receiverY, { duration: DUR_NORMAL });
+    refs.players[recvMateId].x.value = withTiming(recvMateX, { duration: DUR_NORMAL });
+    refs.players[recvMateId].y.value = withTiming(recvMateY, { duration: DUR_NORMAL });
+
+    // Apply reused opponent moves
+    for (const m of reusedOpp) {
+      const sv = refs.players[m.id];
+      if (sv) { sv.x.value = withTiming(m.x, { duration: DUR_NORMAL }); sv.y.value = withTiming(m.y, { duration: DUR_NORMAL }); }
+    }
+
+    savePositions(game, newIdx, existingTouch.ballX, existingTouch.ballY, [
+      { id: blockerId, x: blockerX, y: blockerY },
+      { id: defenderId, x: defenderX, y: defenderY },
+      { id: receiverId, x: receiverX, y: receiverY },
+      { id: recvMateId, x: recvMateX, y: recvMateY },
+    ]);
+
+    return newIdx;
   }
 
   const newIdx: TouchIndex = {
