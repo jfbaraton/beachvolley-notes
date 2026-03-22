@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Platform, TouchableOpacity, TextInput, ScrollView, Text } from 'react-native';
+import { StyleSheet, View, Platform, TouchableOpacity, TextInput, ScrollView, Text, Modal } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -123,6 +123,7 @@ export default function GameScreen() {
   const [invertServingTeam, setInvertServingTeam] = useState(_initLastPt?.invertServingTeam ?? false);
   const [invertServingPlayer, setInvertServingPlayer] = useState(_initLastPt?.invertServingPlayer ?? false);
   const [groundHitMode, setGroundHitMode] = useState<false | 'IN' | 'OUT' | 'TOUCHED'>(false);
+  const [showGameModal, setShowGameModal] = useState(false);
   const [log, setLog] = useState<string[]>(['Ready']);
 
   const { setGame: setSharedGame, setScore: setSharedScore, setCurrentIdx: setSharedIdx } = useGameContext();
@@ -862,9 +863,7 @@ export default function GameScreen() {
         {isEdit && isLastTouchIndex(game, currentIdx) && (
           <ActionBtn label="🗑️ Undo" color="#cc3333" onPress={doDelete} />
         )}
-        <ActionBtn label="🆕 New" color="#2089dc" onPress={doNewGame} />
-        <ActionBtn label="📂 Import" color="#2089dc" onPress={doImport} />
-        <ActionBtn label="💾 Export" color="#2089dc" onPress={doExport} />
+        <ActionBtn label="⚙️ Game..." color="#34495e" onPress={() => setShowGameModal(true)} />
       </View>
 
       {/* ─── Log ─── */}
@@ -872,21 +871,50 @@ export default function GameScreen() {
         {log.map((l, i) => <Text key={i} style={s.logTxt}>{l}</Text>)}
       </View>
 
-        {/* ─── Swap controls (only when editing a serve) ─── */}
-        {isEdit && isServing && (
-            <View style={s.swapRow}>
-                <Pill label="⇄ Sides" active={invertSideSwap} onPress={onSwapSides} />
-                <Pill label="⇄ Team" active={invertServingTeam} onPress={onSwapServingTeam} />
-                <Pill label="⇄ Player" active={invertServingPlayer} onPress={onSwapServingPlayer} />
-            </View>
-        )}
-
         {/* ─── Swap receiver (when editing a receive) ─── */}
         {isEdit && currentIdx.rallyIdx > 0 && currentIdx.touchIdx === 0 && (
             <View style={s.swapRow}>
                 <Pill label="🔄 Swap Receiver" active={false} onPress={onSwapReceiver} />
             </View>
         )}
+
+      {/* ─── Game Modal ─── */}
+      <Modal
+        visible={showGameModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGameModal(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitle}>Game</Text>
+
+            {/* ─── File operations ─── */}
+            <View style={s.modalSection}>
+              <View style={s.modalBtnRow}>
+                <ActionBtn label="🆕 New" color="#2089dc" onPress={() => { setShowGameModal(false); doNewGame(); }} />
+                <ActionBtn label="📂 Import" color="#2089dc" onPress={() => { setShowGameModal(false); doImport(); }} />
+                <ActionBtn label="💾 Export" color="#2089dc" onPress={() => { setShowGameModal(false); doExport(); }} />
+              </View>
+            </View>
+
+            {/* ─── Service alternance ─── */}
+            <View style={s.modalSection}>
+              <Text style={s.modalSectionTitle}>Service alternance</Text>
+              <View style={s.modalBtnRow}>
+                <Pill label="⇄ Sides" active={invertSideSwap} onPress={onSwapSides} />
+                <Pill label="⇄ Team" active={invertServingTeam} onPress={onSwapServingTeam} />
+                <Pill label="⇄ Player" active={invertServingPlayer} onPress={onSwapServingPlayer} />
+              </View>
+            </View>
+
+            {/* ─── Close ─── */}
+            <TouchableOpacity style={s.modalCloseBtn} onPress={() => setShowGameModal(false)}>
+              <Text style={s.modalCloseTxt}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -1043,5 +1071,62 @@ const s = StyleSheet.create({
     maxWidth: W,
   },
   logTxt: { fontSize: 11, color: '#7f8c8d', lineHeight: 16 },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    minWidth: 340,
+    maxWidth: 500,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+    color: '#2c3e50',
+  },
+  modalSection: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  modalSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7f8c8d',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  modalCloseBtn: {
+    marginTop: 4,
+    paddingHorizontal: 32,
+    paddingVertical: 10,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 8,
+  },
+  modalCloseTxt: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#34495e',
+  },
 });
 
