@@ -116,9 +116,12 @@
                   "y": 112.5234375
                 }
               ],
-              "startingSide": 1,
+              "startingSide": 0,
               "isPlayerOnRightArm": true,
-              "ballSourceDirection": 0
+              "ballSourceDirection": 0,
+              "endingSide": 0,
+              "toAcross": false,
+              "fromAcross": false
             }
           ]
         }
@@ -175,7 +178,9 @@
               ],
               "startingSide": 0,
               "endingSide": 1,
-              "isPlayerOnRightArm": true
+              "isPlayerOnRightArm": true,
+              "toAcross": true,
+              "fromAcross": false
             }
           ]
         },
@@ -588,7 +593,10 @@
               ],
               "startingSide": 0,
               "isPlayerOnRightArm": false,
-              "ballSourceDirection": 2
+              "ballSourceDirection": 2,
+              "endingSide": 0,
+              "toAcross": true,
+              "fromAcross": false
             }
           ]
         }
@@ -645,7 +653,9 @@
               ],
               "startingSide": 0,
               "endingSide": 1,
-              "isPlayerOnRightArm": true
+              "isPlayerOnRightArm": true,
+              "toAcross": true,
+              "fromAcross": true
             }
           ]
         },
@@ -969,7 +979,10 @@
               "startingSide": 1,
               "isScoring": true,
               "isPlayerOnRightArm": true,
-              "ballSourceDirection": 0
+              "ballSourceDirection": 0,
+              "endingSide": 1,
+              "toAcross": true,
+              "fromAcross": false
             }
           ]
         }
@@ -1031,7 +1044,9 @@
               ],
               "startingSide": 1,
               "endingSide": 0,
-              "isPlayerOnRightArm": true
+              "isPlayerOnRightArm": true,
+              "toAcross": false,
+              "fromAcross": true
             }
           ]
         },
@@ -1219,7 +1234,10 @@
               "startingSide": 1,
               "isFail": true,
               "isPlayerOnRightArm": false,
-              "ballSourceDirection": 2
+              "ballSourceDirection": 2,
+              "endingSide": 0,
+              "toAcross": true,
+              "fromAcross": false
             }
           ]
         }
@@ -1285,7 +1303,9 @@
               ],
               "startingSide": 0,
               "endingSide": 1,
-              "isPlayerOnRightArm": false
+              "isPlayerOnRightArm": false,
+              "toAcross": true,
+              "fromAcross": false
             }
           ]
         },
@@ -1491,7 +1511,9 @@
               ],
               "startingSide": 1,
               "endingSide": 0,
-              "isPlayerOnRightArm": false
+              "isPlayerOnRightArm": false,
+              "toAcross": true,
+              "fromAcross": false
             }
           ]
         },
@@ -1537,8 +1559,8 @@
                   "y": 167
                 }
               ],
-              "startingSide": 1,
-              "endingSide": 1,
+              "startingSide": 0,
+              "endingSide": 0,
               "isPlayerOnRightArm": true,
               "ballSourceDirection": 0,
               "fromAcross": false,
@@ -1589,7 +1611,7 @@
                   "y": 202.5
                 }
               ],
-              "startingSide": 1,
+              "startingSide": 0,
               "endingSide": 1,
               "isPlayerOnRightArm": false,
               "fromAcross": false,
