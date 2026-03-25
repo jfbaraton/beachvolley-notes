@@ -175,7 +175,6 @@
               ],
               "startingSide": 0,
               "endingSide": 1,
-              "isFail": true,
               "isPlayerOnRightArm": true
             }
           ]
@@ -549,6 +548,7 @@
               ],
               "startingSide": 1,
               "endingSide": 0,
+              "isFail": true,
               "isPlayerOnRightArm": false,
               "fromAcross": true,
               "toAcross": true

@@ -52,7 +52,7 @@ export default function RootLayout() {
 
   useEffect(()=>{
     if (Platform.OS === 'web') {
-      LoadSkiaWeb({locateFile: ()=>'/beachvolley/canvaskit.wasm'})
+      LoadSkiaWeb({locateFile: ()=> __DEV__ ? '/canvaskit.wasm' : '/beachvolley/canvaskit.wasm'})
           .then(()=> {
               setSkiaLoaded(true)
           })
