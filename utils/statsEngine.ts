@@ -12,22 +12,22 @@ export interface PlayerStats {
   failedServes: number;
   /** player/team was the victim of an ace (failed to return a serve) */
   aced: number;
+  /** First pass after a serve (serve receive, rally index 1 touch index 0) */
+  receptions: number;
   /** Last touch of a rally that wins the point (excluding serves) */
   kills: number;
   /** Last touch of a rally that loses the point (e.g. attack into the net / out) */
   attackErrors: number;
+  /** Touches that cross the net, excluding serves and passes (last touch of a rally that is not serve/pass) */
+  attacks: number;
   /** Failed passes (isFail) that are NOT receives (excludes first touch after a cross-net hit) */
   passErrors: number;
-  /** Touches of type 'block' (contact at the net after an opponent attack) */
-  blockCount: number;
-  /** First touch after the ball crosses the net (receive / defensive pass, rallyIdx > 0 & touchIdx 0) */
-  digs: number;
   /** All touches of type 'pass' (both receives and in-rally passes) */
   passCount: number;
   /** All touches of type 'set' or 'option' (second contact to set up an attack) */
   setCount: number;
-  /** Ball hitting the ground (no player contact) */
-  groundHits: number;
+  /** Touches of type 'block' (contact at the net after an opponent attack) */
+  blockCount: number;
   /** Points where this player's touch was marked isScoring / team won the point */
   pointsWon: number;
   /** Points where this player's touch was marked isFail / team lost the point */
@@ -35,22 +35,22 @@ export interface PlayerStats {
 }
 
 export const emptyStats = (): PlayerStats => ({
-  aces: 0, failedServes: 0, aced: 0, kills: 0, attackErrors: 0, passErrors: 0,
-  blockCount: 0, digs: 0, passCount: 0, setCount: 0, groundHits: 0, pointsWon: 0, pointsLost: 0,
+  aces: 0, failedServes: 0, aced: 0, receptions: 0, kills: 0, attackErrors: 0, attacks: 0, passErrors: 0,
+  passCount: 0, setCount: 0, blockCount: 0, pointsWon: 0, pointsLost: 0,
 });
 
 export const STAT_LABELS: { key: keyof PlayerStats; label: string; polarity: 'positive' | 'negative' | 'neutral' }[] = [
   { key: 'aces', label: 'Aces', polarity: 'positive' },
   { key: 'failedServes', label: 'Failed Serves', polarity: 'negative' },
   { key: 'aced', label: 'Aced', polarity: 'negative' },
+  { key: 'receptions', label: 'Receptions', polarity: 'neutral' },
   { key: 'kills', label: 'Kills', polarity: 'positive' },
   { key: 'attackErrors', label: 'Attack Errors', polarity: 'negative' },
+  { key: 'attacks', label: 'Attacks', polarity: 'neutral' },
   { key: 'passErrors', label: 'Pass Errors', polarity: 'negative' },
-  { key: 'blockCount', label: 'Blocks', polarity: 'positive' },
-  { key: 'digs', label: 'Digs', polarity: 'positive' },
   { key: 'passCount', label: 'Passes', polarity: 'neutral' },
   { key: 'setCount', label: 'Sets', polarity: 'neutral' },
-  { key: 'groundHits', label: 'Ground Hits', polarity: 'neutral' },
+  { key: 'blockCount', label: 'Blocks', polarity: 'positive' },
   { key: 'pointsWon', label: 'Points Won', polarity: 'positive' },
   { key: 'pointsLost', label: 'Points Lost', polarity: 'negative' },
 ];
@@ -128,17 +128,19 @@ export const computeStats = (game: Game) => {
       const rally = point.rallies[ri];
       for (let ti = 0; ti < rally.touches.length; ti++) {
         const touch = rally.touches[ti];
-        if (!touch.playerId) {
-          // Ground hit
-          if (teamStats[rally.teamId]) teamStats[rally.teamId].groundHits++;
-          continue;
-        }
+        if (!touch.playerId) continue;
         const ps = playerStats[touch.playerId];
         const ts = teamStats[rally.teamId];
         const isReceive = ri > 0 && ti === 0; // first touch after cross-net = receive
+        const isReception = ri === 1 && ti === 0; // first touch after serve specifically
         if (touch.type === 'pass') {
           if (ps) ps.passCount++;
           if (ts) ts.passCount++;
+          // Reception: pass immediately after the serve
+          if (isReception) {
+            if (ps) ps.receptions++;
+            if (ts) ts.receptions++;
+          }
           // Pass error: failed pass that is NOT a receive
           if (touch.isFail && !isReceive) {
             if (ps) ps.passErrors++;
@@ -152,10 +154,6 @@ export const computeStats = (game: Game) => {
         if (touch.type === 'block') {
           if (ps) ps.blockCount++;
           if (ts) ts.blockCount++;
-        }
-        if (touch.type === 'ground') {
-          if (ps) ps.groundHits++;
-          if (ts) ts.groundHits++;
         }
       }
     }
@@ -175,13 +173,16 @@ export const computeStats = (game: Game) => {
       }
     }
 
-    // Digs: count passes after cross-net touches (rally index > 0)
-    for (let ri = 1; ri < point.rallies.length; ri++) {
-      const r = point.rallies[ri];
-      if (r.touches.length > 0 && r.touches[0].type === 'pass' && r.touches[0].playerId) {
-        if (playerStats[r.touches[0].playerId]) playerStats[r.touches[0].playerId].digs++;
-        if (teamStats[r.teamId]) teamStats[r.teamId].digs++;
-      }
+    // Attacks: last touch of each rally that crosses the net, not a serve or pass
+    for (const rally of point.rallies) {
+      if (!rally.touches.length) continue;
+      const last = rally.touches[rally.touches.length - 1];
+      if (!last.playerId) continue;
+      if (last.type === 'serve' || last.type === 'pass') continue;
+      const ps = playerStats[last.playerId];
+      const ts = teamStats[rally.teamId];
+      if (ps) ps.attacks++;
+      if (ts) ts.attacks++;
     }
   }
 
