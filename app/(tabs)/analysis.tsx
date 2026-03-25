@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, ScrollView, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { Canvas, useImage, Image, Path, Skia } from '@shopify/react-native-skia';
+import { CheckBox } from '@rneui/themed';
 import { useGameContext } from '@/utils/GameContext';
-import type { Game, Touch } from '@/utils/types';
+import type { Game, Touch, TeamDef } from '@/utils/types';
 
 // @ts-ignore
 import FieldImg from '@/assets/sprites/field.jpg';
@@ -11,6 +12,8 @@ const W = 720;
 const H = 370;
 const ARROW_HEAD = 10;  // arrowhead size
 const STROKE_W = 2;
+
+const TOUCH_TYPES = ['serve', 'pass', 'set', 'option', 'attack', 'block', 'ground'] as const;
 
 /** Build an arrow path from (x1,y1) → (x2,y2) */
 const arrowPath = (x1: number, y1: number, x2: number, y2: number) => {
@@ -40,7 +43,10 @@ interface Arrow {
   color: string;
 }
 
-const buildArrows = (game: Game, fromIdx: number, toIdx: number): Arrow[] => {
+const buildArrows = (
+  game: Game, fromIdx: number, toIdx: number,
+  playerFilter: Set<string>, typeFilter: Set<string>,
+): Arrow[] => {
   const arrows: Arrow[] = [];
   for (let pi = fromIdx; pi < toIdx; pi++) {
     const point = game.points[pi];
@@ -57,6 +63,10 @@ const buildArrows = (game: Game, fromIdx: number, toIdx: number): Arrow[] => {
     for (let i = 0; i < touches.length - 1; i++) {
       const src = touches[i];
       const dst = touches[i + 1];
+      // Filter: source touch player must be in the player filter
+      if (src.playerId && !playerFilter.has(src.playerId)) continue;
+      // Filter: source touch type must be in the type filter
+      if (!typeFilter.has(src.type)) continue;
       let color = 'rgba(255,255,255,0.5)'; // default: semi-transparent white
       if (src.isScoring) color = 'rgba(0,200,0,0.8)';
       else if (src.isFail) color = 'rgba(220,40,40,0.8)';
@@ -71,8 +81,30 @@ export default function AnalysisScreen() {
   const field = useImage(FieldImg.uri);
 
   const [rangeOpen, setRangeOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [typesOpen, setTypesOpen] = useState(false);
   const [fromPoint, setFromPoint] = useState('1');
   const [toPoint, setToPoint] = useState('');
+
+  const teams: TeamDef[] = game?.teams || [];
+  const allPlayerIds: string[] = teams.flatMap(t => t.playerIds);
+
+  const [selectedPlayers, setSelectedPlayers] = useState<Record<string, boolean>>({});
+  const [selectedTypes, setSelectedTypes] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    for (const t of TOUCH_TYPES) init[t] = true;
+    return init;
+  });
+
+  // Initialize player selection when game changes
+  React.useEffect(() => {
+    if (!game) return;
+    setSelectedPlayers(prev => {
+      const next = { ...prev };
+      for (const id of allPlayerIds) if (!(id in next)) next[id] = true;
+      return next;
+    });
+  }, [game]);
 
   const totalPoints = game?.points?.length ?? 0;
   const fromIdx = Math.max(0, (parseInt(fromPoint, 10) || 1) - 1);
@@ -86,7 +118,9 @@ export default function AnalysisScreen() {
     );
   }
 
-  const arrows = buildArrows(game, fromIdx, toIdx);
+  const playerFilter = new Set(allPlayerIds.filter(id => selectedPlayers[id]));
+  const typeFilter = new Set(TOUCH_TYPES.filter(t => selectedTypes[t]));
+  const arrows = buildArrows(game, fromIdx, toIdx, playerFilter, typeFilter);
 
   // Pre-build Skia paths grouped by color for fewer draw calls
   const byColor: Record<string, typeof arrows> = {};
@@ -122,6 +156,36 @@ export default function AnalysisScreen() {
             selectTextOnFocus
           />
           <Text style={st.rangeHint}>/ {totalPoints}</Text>
+        </View>
+      )}
+
+      {/* ─── Teams / Players filter (foldable) ─── */}
+      <TouchableOpacity onPress={() => setFiltersOpen(v => !v)} style={st.foldHeader}>
+        <Text style={st.filterTitle}>{filtersOpen ? '▼' : '▶'} Players</Text>
+      </TouchableOpacity>
+      {filtersOpen && (
+        <View style={st.filterRow}>
+          {allPlayerIds.map(id => (
+            <CheckBox key={'p-' + id} title={id}
+              checked={selectedPlayers[id]}
+              onPress={() => setSelectedPlayers(p => ({ ...p, [id]: !p[id] }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+          ))}
+        </View>
+      )}
+
+      {/* ─── Touch Type filter (foldable) ─── */}
+      <TouchableOpacity onPress={() => setTypesOpen(v => !v)} style={st.foldHeader}>
+        <Text style={st.filterTitle}>{typesOpen ? '▼' : '▶'} Touch Types</Text>
+      </TouchableOpacity>
+      {typesOpen && (
+        <View style={st.filterRow}>
+          {TOUCH_TYPES.map(t => (
+            <CheckBox key={'tt-' + t} title={t}
+              checked={selectedTypes[t]}
+              onPress={() => setSelectedTypes(p => ({ ...p, [t]: !p[t] }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+          ))}
         </View>
       )}
 
@@ -172,6 +236,8 @@ const st = StyleSheet.create({
   rangeLabel: { fontSize: 14, fontWeight: '500', marginHorizontal: 6 },
   rangeInput: { borderWidth: 1, borderColor: '#aaa', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4, fontSize: 14, width: 56, textAlign: 'center', backgroundColor: '#fff' },
   rangeHint: { fontSize: 13, opacity: 0.5, marginLeft: 6 },
+  cb: { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 4, paddingVertical: 2, marginHorizontal: 0 },
+  cbTxt: { fontSize: 14, fontWeight: '400' },
   legend: { marginTop: 8, fontSize: 14 },
   info: { marginTop: 4, fontSize: 13, opacity: 0.5 },
 });

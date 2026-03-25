@@ -1862,7 +1862,7 @@
               ],
               "startingSide": 1,
               "endingSide": 0,
-              "isFail": false,
+              "isFail": true,
               "isPlayerOnRightArm": true,
               "toAcross": true,
               "fromAcross": false
