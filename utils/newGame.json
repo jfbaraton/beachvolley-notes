@@ -37,7 +37,7 @@
       "set": 0,
       "rallies": [
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -86,7 +86,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -126,7 +126,7 @@
           ]
         }
       ],
-      "wonByTeamId": "Denmark",
+      "wonByTeamId": "Greece",
       "invertSideSwap": true,
       "invertServingTeam": true,
       "invertServingPlayer": false
@@ -135,7 +135,7 @@
       "set": 0,
       "rallies": [
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -185,7 +185,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -306,7 +306,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -428,7 +428,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -561,7 +561,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -601,7 +601,7 @@
           ]
         }
       ],
-      "wonByTeamId": "Denmark",
+      "wonByTeamId": "Greece",
       "invertSideSwap": true,
       "invertServingTeam": true,
       "invertServingPlayer": false
@@ -610,7 +610,7 @@
       "set": 0,
       "rallies": [
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -660,7 +660,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -803,7 +803,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -939,6 +939,7 @@
               ],
               "startingSide": 0,
               "endingSide": 1,
+              "isFail": true,
               "isPlayerOnRightArm": false,
               "fromAcross": true,
               "toAcross": true
@@ -946,7 +947,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "male",
@@ -987,7 +988,7 @@
           ]
         }
       ],
-      "wonByTeamId": "Greece",
+      "wonByTeamId": "Russia",
       "invertSideSwap": true,
       "invertServingTeam": true,
       "invertServingPlayer": false
@@ -996,7 +997,7 @@
       "set": 0,
       "rallies": [
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "male",
@@ -1051,7 +1052,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -1190,7 +1191,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -1242,7 +1243,7 @@
           ]
         }
       ],
-      "wonByTeamId": "Denmark",
+      "wonByTeamId": "Greece",
       "invertSideSwap": true,
       "invertServingPlayer": false
     },
@@ -1250,7 +1251,7 @@
       "set": 0,
       "rallies": [
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -1310,7 +1311,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -1408,7 +1409,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -1460,7 +1461,7 @@
           ]
         }
       ],
-      "wonByTeamId": "Greece",
+      "wonByTeamId": "Russia",
       "invertSideSwap": true,
       "invertServingPlayer": false
     },
@@ -1468,7 +1469,7 @@
       "set": 0,
       "rallies": [
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -1518,7 +1519,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -1668,7 +1669,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "male",
@@ -1712,13 +1713,13 @@
       "invertSideSwap": true,
       "invertServingPlayer": false,
       "lineCall": "IN",
-      "wonByTeamId": "Denmark"
+      "wonByTeamId": "Greece"
     },
     {
       "set": 0,
       "rallies": [
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -1769,7 +1770,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -1868,7 +1869,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -1921,13 +1922,13 @@
       "invertServingTeam": false,
       "invertServingPlayer": false,
       "lineCall": "OUT",
-      "wonByTeamId": "Denmark"
+      "wonByTeamId": "Greece"
     },
     {
       "set": 0,
       "rallies": [
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -1978,7 +1979,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "male",
@@ -2109,7 +2110,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -2162,13 +2163,13 @@
       "invertServingTeam": false,
       "invertServingPlayer": false,
       "lineCall": "TOUCHED",
-      "wonByTeamId": "Greece"
+      "wonByTeamId": "Russia"
     },
     {
       "set": 0,
       "rallies": [
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "male",
@@ -2225,7 +2226,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Domna",
@@ -2324,13 +2325,13 @@
       "invertServingTeam": false,
       "invertServingPlayer": false,
       "lineCall": "OUT",
-      "wonByTeamId": "Greece"
+      "wonByTeamId": "Russia"
     },
     {
       "set": 0,
       "rallies": [
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "male",
@@ -2387,7 +2388,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -2440,13 +2441,13 @@
       "invertServingTeam": false,
       "invertServingPlayer": false,
       "lineCall": "IN",
-      "wonByTeamId": "Greece"
+      "wonByTeamId": "Russia"
     },
     {
       "set": 0,
       "rallies": [
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "male",
@@ -2502,7 +2503,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -2555,13 +2556,13 @@
       "invertServingTeam": false,
       "invertServingPlayer": false,
       "lineCall": "OUT",
-      "wonByTeamId": "Denmark"
+      "wonByTeamId": "Greece"
     },
     {
       "set": 0,
       "rallies": [
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -2622,7 +2623,7 @@
           ]
         },
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",
@@ -2764,7 +2765,7 @@
           ]
         },
         {
-          "teamId": "Denmark",
+          "teamId": "Greece",
           "touches": [
             {
               "playerId": "Jeff",
@@ -2917,13 +2918,13 @@
       "invertServingPlayer": false,
       "lineCall": "NET",
       "lineCallPlayerId": "Jeff",
-      "wonByTeamId": "Greece"
+      "wonByTeamId": "Russia"
     },
     {
       "set": 0,
       "rallies": [
         {
-          "teamId": "Greece",
+          "teamId": "Russia",
           "touches": [
             {
               "playerId": "AnaPatricia",

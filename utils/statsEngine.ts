@@ -55,7 +55,7 @@ export const STAT_LABELS: { key: keyof PlayerStats; label: string; polarity: 'po
   { key: 'pointsLost', label: 'Points Lost', polarity: 'negative' },
 ];
 
-export const computeStats = (game: Game) => {
+export const computeStats = (game: Game, fromPoint?: number, toPoint?: number) => {
   const playerStats: Record<string, PlayerStats> = {};
   const teamStats: Record<string, PlayerStats> = {};
 
@@ -64,7 +64,11 @@ export const computeStats = (game: Game) => {
     for (const pid of t.playerIds) playerStats[pid] = emptyStats();
   }
 
-  for (const point of game.points) {
+  const start = fromPoint ?? 0;
+  const end = toPoint ?? game.points.length;
+
+  for (let pi = start; pi < end; pi++) {
+    const point = game.points[pi];
     if (!point.wonByTeamId || !point.rallies.length) continue;
 
     const winnerId = point.wonByTeamId;
@@ -131,7 +135,6 @@ export const computeStats = (game: Game) => {
         if (!touch.playerId) continue;
         const ps = playerStats[touch.playerId];
         const ts = teamStats[rally.teamId];
-        const isReceive = ri > 0 && ti === 0; // first touch after cross-net = receive
         const isReception = ri === 1 && ti === 0; // first touch after serve specifically
         if (touch.type === 'pass') {
           if (ps) ps.passCount++;
@@ -141,8 +144,8 @@ export const computeStats = (game: Game) => {
             if (ps) ps.receptions++;
             if (ts) ts.receptions++;
           }
-          // Pass error: failed pass that is NOT a receive
-          if (touch.isFail && !isReceive) {
+          // Pass error: failed pass that is NOT a serve reception
+          if (touch.isFail && !isReception) {
             if (ps) ps.passErrors++;
             if (ts) ts.passErrors++;
           }

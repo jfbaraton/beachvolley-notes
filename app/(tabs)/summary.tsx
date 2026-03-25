@@ -1,21 +1,26 @@
-import { StyleSheet, ScrollView } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import React, { useMemo, useState } from 'react';
 import { CheckBox } from '@rneui/themed';
 import { useGameContext } from '@/utils/GameContext';
 import { computeStats, STAT_LABELS, emptyStats } from '@/utils/statsEngine';
 import type { PlayerStats } from '@/utils/statsEngine';
-import type { Game, TeamDef } from '@/utils/types';
+import type { TeamDef } from '@/utils/types';
 
 export default function SummaryScreen() {
   const { game } = useGameContext();
 
   const [selectedTeams, setSelectedTeams] = useState<Record<string, boolean>>({});
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, boolean>>({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const [fromPoint, setFromPoint] = useState('1');
+  const [toPoint, setToPoint] = useState('');
 
   const teams: TeamDef[] = game?.teams || [];
   const allPlayerIds: string[] = teams.flatMap(t => t.playerIds);
   const allTeamIds: string[] = teams.map(t => t.id);
+  const totalPoints = game?.points?.length ?? 0;
 
   React.useEffect(() => {
     if (!game) return;
@@ -29,14 +34,19 @@ export default function SummaryScreen() {
       for (const id of allPlayerIds) if (!(id in next)) next[id] = true;
       return next;
     });
+    setToPoint(String(game.points?.length ?? ''));
   }, [game]);
+
+  // Parse 1-based user inputs into 0-based indices for computeStats
+  const fromIdx = Math.max(0, (parseInt(fromPoint, 10) || 1) - 1);
+  const toIdx = Math.min(totalPoints, parseInt(toPoint, 10) || totalPoints);
 
   const { playerStats, teamStats } = useMemo(() => {
     if (!game || !game.points?.length) {
       return { playerStats: {} as Record<string, PlayerStats>, teamStats: {} as Record<string, PlayerStats> };
     }
-    return computeStats(game);
-  }, [game, game?.points?.length]);
+    return computeStats(game, fromIdx, toIdx);
+  }, [game, game?.points?.length, fromIdx, toIdx]);
 
   if (!game) {
     return (
@@ -73,22 +83,53 @@ export default function SummaryScreen() {
     <ScrollView contentContainerStyle={st.scroll}>
       <Text style={st.heading}>Game Summary</Text>
 
-      <Text style={st.filterTitle}>Teams / Players</Text>
-      <View style={st.filterRow}>
-        {allTeamIds.map(id => (
-          <CheckBox key={'t-' + id} title={id}
-            checked={!!selectedTeams[id]}
-            onPress={() => setSelectedTeams(p => ({ ...p, [id]: !p[id] }))}
-            containerStyle={st.cb} textStyle={st.cbTxt} />
-        ))}
+      {/* ─── Point Range filter (foldable) ─── */}
+      <TouchableOpacity onPress={() => setRangeOpen(v => !v)} style={st.foldHeader}>
+        <Text style={st.filterTitle}>{rangeOpen ? '▼' : '▶'} Point Range</Text>
+      </TouchableOpacity>
+      {rangeOpen && (
+        <View style={st.filterRow}>
+          <Text style={st.rangeLabel}>From</Text>
+          <TextInput
+            style={st.rangeInput}
+            value={fromPoint}
+            onChangeText={setFromPoint}
+            keyboardType="numeric"
+            selectTextOnFocus
+          />
+          <Text style={st.rangeLabel}>To</Text>
+          <TextInput
+            style={st.rangeInput}
+            value={toPoint}
+            onChangeText={setToPoint}
+            keyboardType="numeric"
+            placeholder={String(totalPoints)}
+            selectTextOnFocus
+          />
+          <Text style={st.rangeHint}>/ {totalPoints}</Text>
+        </View>
+      )}
 
-          {allPlayerIds.map(id => (
-              <CheckBox key={'p-' + id} title={id}
-                        checked={!!selectedPlayers[id]}
-                        onPress={() => setSelectedPlayers(p => ({ ...p, [id]: !p[id] }))}
-                        containerStyle={st.cb} textStyle={st.cbTxt} />
+      {/* ─── Teams / Players filter (foldable) ─── */}
+      <TouchableOpacity onPress={() => setFiltersOpen(v => !v)} style={st.foldHeader}>
+        <Text style={st.filterTitle}>{filtersOpen ? '▼' : '▶'} Teams / Players</Text>
+      </TouchableOpacity>
+      {filtersOpen && (
+        <View style={st.filterRow}>
+          {allTeamIds.map(id => (
+            <CheckBox key={'t-' + id} title={id}
+              checked={!!selectedTeams[id]}
+              onPress={() => setSelectedTeams(p => ({ ...p, [id]: !p[id] }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
           ))}
-      </View>
+          {allPlayerIds.map(id => (
+            <CheckBox key={'p-' + id} title={id}
+              checked={!!selectedPlayers[id]}
+              onPress={() => setSelectedPlayers(p => ({ ...p, [id]: !p[id] }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+          ))}
+        </View>
+      )}
 
       {columns.length === 0 ? (
         <Text style={st.empty}>Select at least one team or player.</Text>
@@ -143,10 +184,14 @@ const st = StyleSheet.create({
   scroll: { padding: 12 },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 8 },
   empty: { fontSize: 16, textAlign: 'center', marginTop: 40, opacity: 0.6 },
-  filterTitle: { fontSize: 15, fontWeight: '600', marginTop: 8, marginBottom: 2 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4 },
+  foldHeader: { paddingVertical: 6 },
+  filterTitle: { fontSize: 15, fontWeight: '600' },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4, alignItems: 'center' },
   cb: { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 4, paddingVertical: 2, marginHorizontal: 0 },
   cbTxt: { fontSize: 14, fontWeight: '400' },
+  rangeLabel: { fontSize: 14, fontWeight: '500', marginHorizontal: 6 },
+  rangeInput: { borderWidth: 1, borderColor: '#aaa', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4, fontSize: 14, width: 56, textAlign: 'center', backgroundColor: '#fff' },
+  rangeHint: { fontSize: 13, opacity: 0.5, marginLeft: 6 },
   table: { marginTop: 8, borderWidth: 1, borderColor: '#ccc', borderRadius: 6, overflow: 'hidden' },
   row: { flexDirection: 'row' },
   cell: { flex: 1, minWidth: 70, paddingVertical: 6, paddingHorizontal: 8, borderBottomWidth: 1, borderRightWidth: 1, borderColor: '#ddd', alignItems: 'center', justifyContent: 'center' },
