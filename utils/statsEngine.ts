@@ -14,9 +14,9 @@ export interface PlayerStats {
   aced: number;
   /** First pass after a serve (serve receive, rally index 1 touch index 0) */
   receptions: number;
-  /** Last touch of a rally that wins the point (excluding serves) */
+  /** Last touch of a rally that wins the point (excluding serves; not counted when point was decided by an isFail error) */
   kills: number;
-  /** Last touch of a rally that loses the point (e.g. attack into the net / out) */
+  /** Last touch of a rally that loses the point (excluding serves; not counted when point was decided by an isFail error) */
   attackErrors: number;
   /** Touches that cross the net, excluding serves and passes (last touch of a rally that is not serve/pass) */
   attacks: number;
@@ -94,6 +94,17 @@ export const computeStats = (game: Game, fromPoint?: number, toPoint?: number) =
       }
     }
 
+    // Find the isFail touch position — touches after it are only for ball tracking
+    let failRi = -1, failTi = -1;
+    for (let ri = 0; ri < point.rallies.length && failRi < 0; ri++) {
+      const r = point.rallies[ri];
+      for (let ti = 0; ti < r.touches.length; ti++) {
+        if (r.touches[ti].isFail) { failRi = ri; failTi = ti; break; }
+      }
+    }
+    const isAfterFail = (ri: number, ti: number) =>
+      failRi >= 0 && (ri > failRi || (ri === failRi && ti > failTi));
+
     // Service analysis
     const servRally = point.rallies[0];
     if (!servRally?.touches.length) continue;
@@ -105,13 +116,13 @@ export const computeStats = (game: Game, fromPoint?: number, toPoint?: number) =
     const isServWon = winnerId === servTeamId;
     const recvRally = point.rallies.length > 1 ? point.rallies[1] : null;
 
-    // Ace
+    // Ace (only if the receive rally is not after the fail)
     if (isServWon && point.rallies.length <= 2 && (!recvRally || recvRally.touches.length <= 1)) {
       if (playerStats[servPlayerId]) playerStats[servPlayerId].aces++;
       if (teamStats[servTeamId]) teamStats[servTeamId].aces++;
 
       // Aced
-      if (recvRally?.touches.length) {
+      if (recvRally?.touches.length && !isAfterFail(1, 0)) {
         const recvId = recvRally.touches[0].playerId;
         const recvTeam = recvRally.teamId;
         if (recvId && playerStats[recvId]) playerStats[recvId].aced++;
@@ -127,10 +138,11 @@ export const computeStats = (game: Game, fromPoint?: number, toPoint?: number) =
       if (teamStats[servTeamId]) teamStats[servTeamId].failedServes++;
     }
 
-    // Count touches per type
+    // Count touches per type — skip touches after isFail
     for (let ri = 0; ri < point.rallies.length; ri++) {
       const rally = point.rallies[ri];
       for (let ti = 0; ti < rally.touches.length; ti++) {
+        if (isAfterFail(ri, ti)) continue;
         const touch = rally.touches[ti];
         if (!touch.playerId) continue;
         const ps = playerStats[touch.playerId];
@@ -161,25 +173,52 @@ export const computeStats = (game: Game, fromPoint?: number, toPoint?: number) =
       }
     }
 
-    // Last touch analysis
-    const lastRally = point.rallies[point.rallies.length - 1];
-    const lastTouch = lastRally?.touches[lastRally.touches.length - 1];
-    if (lastTouch?.playerId && lastTouch.type !== 'serve') {
-      const pid = lastTouch.playerId;
-      const tid = lastRally.teamId;
-      if (winnerId === tid) {
-        if (playerStats[pid]) playerStats[pid].kills++;
-        if (teamStats[tid]) teamStats[tid].kills++;
-      } else {
-        if (playerStats[pid]) playerStats[pid].attackErrors++;
-        if (teamStats[tid]) teamStats[tid].attackErrors++;
+    // Last touch analysis — kills / attack errors
+    // If isFail is before the last touch, the error decided the point — skip kills
+    const hasEarlierFail = failRi >= 0 &&
+      (failRi < point.rallies.length - 1 ||
+       failTi < point.rallies[failRi].touches.length - 1);
+
+    if (!hasEarlierFail) {
+      const lastRally = point.rallies[point.rallies.length - 1];
+      const lastTouch = lastRally?.touches[lastRally.touches.length - 1];
+      if (lastTouch?.playerId && lastTouch.type !== 'serve') {
+        const pid = lastTouch.playerId;
+        const tid = lastRally.teamId;
+        if (winnerId === tid) {
+          // Winning team's last touch — straightforward kill
+          if (playerStats[pid]) playerStats[pid].kills++;
+          if (teamStats[tid]) teamStats[tid].kills++;
+        } else {
+          // Losing team's last touch — attack error for the receiver
+          if (playerStats[pid]) playerStats[pid].attackErrors++;
+          if (teamStats[tid]) teamStats[tid].attackErrors++;
+          // Also count a kill for the winning team's attacker (previous rally)
+          for (let ri = point.rallies.length - 2; ri >= 0; ri--) {
+            const r = point.rallies[ri];
+            if (r.teamId === winnerId && r.touches.length > 0) {
+              const killTouch = r.touches[r.touches.length - 1];
+              if (killTouch.playerId && killTouch.type !== 'serve') {
+                if (playerStats[killTouch.playerId]) playerStats[killTouch.playerId].kills++;
+                if (teamStats[r.teamId]) teamStats[r.teamId].kills++;
+              }
+              break;
+            }
+          }
+        }
       }
     }
 
     // Attacks: last touch of each rally that crosses the net, not a serve or pass
-    for (const rally of point.rallies) {
+    // Skip rallies that are entirely after the isFail
+    for (let ri = 0; ri < point.rallies.length; ri++) {
+      const rally = point.rallies[ri];
       if (!rally.touches.length) continue;
-      const last = rally.touches[rally.touches.length - 1];
+      // Find the last non-skipped touch in this rally
+      let lastTi = rally.touches.length - 1;
+      if (failRi >= 0 && ri === failRi && failTi < lastTi) lastTi = failTi;
+      if (failRi >= 0 && ri > failRi) continue; // entire rally is after fail
+      const last = rally.touches[lastTi];
       if (!last.playerId) continue;
       if (last.type === 'serve' || last.type === 'pass') continue;
       const ps = playerStats[last.playerId];

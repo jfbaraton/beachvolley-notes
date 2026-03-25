@@ -127,6 +127,7 @@
         }
       ],
       "wonByTeamId": "Greece",
+      "lineCall": "OUT",
       "invertSideSwap": true,
       "invertServingTeam": true,
       "invertServingPlayer": false
