@@ -146,31 +146,35 @@ export default function SummaryScreen() {
           {STAT_LABELS.map(r => {
             const isNeg = r.polarity === 'negative';
             const isPos = r.polarity === 'positive';
-            const rowBg = isNeg ? st.negRow : undefined;
+            const isNeutral = r.polarity === 'neutral';
+            const rowBg = isNeg ? st.negRow : isPos ? st.posRow : undefined;
             const ext = extremes[r.key];
 
             return (
-              <View key={r.key} style={[st.row, rowBg]}>
-                <View style={[st.cell, st.labelCell, rowBg]}>
-                  <Text style={st.labelTxt}>{r.label}</Text>
-                </View>
-                {columns.map((c, ci) => {
-                  let cellBg: object | undefined;
-                  if (ext && ext.maxVal > ext.minVal) {
-                    if (isNeg && ci === ext.maxIdx && ext.maxVal > 0) {
-                      cellBg = st.worstCell;
-                    } else if (isPos && ci === ext.maxIdx && ext.maxVal > 0) {
-                      cellBg = st.bestCell;
+              <React.Fragment key={r.key}>
+                <View style={[st.row, rowBg]}>
+                  <View style={[st.cell, st.labelCell, rowBg]}>
+                    <Text style={st.labelTxt}>{r.label}</Text>
+                  </View>
+                  {columns.map((c, ci) => {
+                    let cellBg: object | undefined;
+                    if (ext && ext.maxVal > ext.minVal) {
+                      if (isNeg && ci === ext.maxIdx && ext.maxVal > 0) {
+                        cellBg = st.worstCell;
+                      } else if (isPos && ci === ext.maxIdx && ext.maxVal > 0) {
+                        cellBg = st.bestCell;
+                      }
                     }
-                  }
 
-                  return (
-                    <View key={c.label + r.key} style={[st.cell, rowBg, cellBg]}>
-                      <Text style={st.cellTxt}>{c.stats[r.key]}</Text>
-                    </View>
+                    return (
+                      <View key={c.label + r.key} style={[st.cell, rowBg, cellBg]}>
+                        <Text style={st.cellTxt}>{c.stats[r.key]}</Text>
+                      </View>
                   );
                 })}
               </View>
+              {isNeutral && <View style={st.spacerRow} />}
+            </React.Fragment>
             );
           })}
         </View>
@@ -201,6 +205,8 @@ const st = StyleSheet.create({
   labelTxt: { fontSize: 13, fontWeight: '500' },
   cellTxt: { fontSize: 15, fontWeight: '600' },
   negRow: { backgroundColor: '#fde8e8' },
+  posRow: { backgroundColor: '#e8fde8' },
+  spacerRow: { height: 5, backgroundColor: '#000' },
   worstCell: { backgroundColor: '#f5a3a3' },
   bestCell: { backgroundColor: '#a3f5a3' },
 });
