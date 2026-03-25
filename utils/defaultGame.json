@@ -1672,30 +1672,30 @@
           "touches": [
             {
               "playerId": "male",
-              "ballX": 291.76171875,
-              "ballY": 271.78125,
+              "ballX": 287.3203125,
+              "ballY": 267.89453125,
               "type": "pass",
               "explicitPositions": [],
               "calculatedPositions": [
                 {
                   "id": "Jeff",
                   "x": 414,
-                  "y": 259.503125
+                  "y": 256.005078125
                 },
                 {
                   "id": "Domna",
                   "x": 581.1428571428571,
-                  "y": 63.05312500000002
+                  "y": 65.77382812500002
                 },
                 {
                   "id": "male",
-                  "x": 255.76171875,
-                  "y": 271.78125
+                  "x": 251.3203125,
+                  "y": 267.89453125
                 },
                 {
                   "id": "AnaPatricia",
                   "x": 234,
-                  "y": 197.78125
+                  "y": 193.89453125
                 }
               ],
               "startingSide": 1,
@@ -1718,40 +1718,30 @@
           "teamId": "Team1",
           "touches": [
             {
-              "playerId": "Jeff",
+              "playerId": "Domna",
               "ballX": 576,
-              "ballY": 243,
+              "ballY": 56.5,
               "type": "serve",
               "explicitPositions": [
                 {
-                  "id": "male",
-                  "x": 100.5,
-                  "y": 209
-                },
-                {
                   "id": "AnaPatricia",
-                  "x": 83.5,
-                  "y": 66
+                  "x": 70.5,
+                  "y": 62
                 },
                 {
-                  "id": "Domna",
-                  "x": 417.5,
-                  "y": 95
-                },
-                {
-                  "id": "Jeff",
-                  "x": 648,
-                  "y": 243
+                  "id": "male",
+                  "x": 68.5,
+                  "y": 224
                 }
               ],
               "calculatedPositions": [
                 {
-                  "id": "Jeff",
+                  "id": "Domna",
                   "x": 648,
-                  "y": 243
+                  "y": 56.5
                 },
                 {
-                  "id": "Domna",
+                  "id": "Jeff",
                   "x": 414,
                   "y": 149
                 },
