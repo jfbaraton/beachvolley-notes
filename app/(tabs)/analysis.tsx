@@ -153,7 +153,8 @@ const passPosDirFilter = (src: Touch, dst: Touch, pd: PosDir): boolean => {
 
 const buildArrows = (
   game: Game, fromIdx: number, toIdx: number,
-  playerFilter: Set<string>, typeFilter: Set<string>,
+  playerFilter: Set<string>, dstPlayerFilter: Set<string>, toFilterOr: boolean,
+  typeFilter: Set<string>,
   fixedSide: boolean, posDir: PosDir,
 ): Arrow[] => {
   const arrows: Arrow[] = [];
@@ -175,8 +176,16 @@ const buildArrows = (
     for (let i = 0; i < touches.length - 1; i++) {
       const src = touches[i];
       const dst = touches[i + 1];
-      // Filter: source touch player must be in the player filter
-      if (src.playerId && !playerFilter.has(src.playerId)) continue;
+
+      // Player filters: OR mode → pass if src OR dst matches; AND mode → both must match
+      const srcMatch = !src.playerId || playerFilter.has(src.playerId);
+      const dstMatch = !dst.playerId || dstPlayerFilter.has(dst.playerId);
+      if (toFilterOr) {
+        if (!srcMatch && !dstMatch) continue;
+      } else {
+        if (!srcMatch || !dstMatch) continue;
+      }
+
       // Filter: source touch type must be in the type filter
       if (!typeFilter.has(src.type)) continue;
       // Filter: Position/Direction
@@ -237,6 +246,8 @@ export default function AnalysisScreen() {
 
   const [rangeOpen, setRangeOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [toFiltersOpen, setToFiltersOpen] = useState(false);
+  const [toFilterOr, setToFilterOr] = useState(false);
   const [typesOpen, setTypesOpen] = useState(false);
   const [posDirOpen, setPosDirOpen] = useState(false);
   const [fixedSide, setFixedSide] = useState(false);
@@ -252,6 +263,8 @@ export default function AnalysisScreen() {
 
   const [selectedTeams, setSelectedTeams] = useState<Record<string, boolean>>({});
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, boolean>>({});
+  const [selectedToTeams, setSelectedToTeams] = useState<Record<string, boolean>>({});
+  const [selectedToPlayers, setSelectedToPlayers] = useState<Record<string, boolean>>({});
   const [selectedTypes, setSelectedTypes] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     for (const t of TOUCH_TYPES) init[t] = true;
@@ -271,15 +284,38 @@ export default function AnalysisScreen() {
       for (const id of allPlayerIds) if (!(id in next)) next[id] = true;
       return next;
     });
+    setSelectedToTeams(prev => {
+      const next = { ...prev };
+      for (const id of allTeamIds) if (!(id in next)) next[id] = true;
+      return next;
+    });
+    setSelectedToPlayers(prev => {
+      const next = { ...prev };
+      for (const id of allPlayerIds) if (!(id in next)) next[id] = true;
+      return next;
+    });
   }, [game]);
 
-  /** Toggle a team checkbox: flips all its players on/off together */
+  /** Toggle a "from" team checkbox: flips all its players on/off together */
   const toggleTeam = (teamId: string) => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return;
     const newVal = !selectedTeams[teamId];
     setSelectedTeams(p => ({ ...p, [teamId]: newVal }));
     setSelectedPlayers(p => {
+      const next = { ...p };
+      for (const pid of team.playerIds) next[pid] = newVal;
+      return next;
+    });
+  };
+
+  /** Toggle a "to" team checkbox: flips all its players on/off together */
+  const toggleToTeam = (teamId: string) => {
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return;
+    const newVal = !selectedToTeams[teamId];
+    setSelectedToTeams(p => ({ ...p, [teamId]: newVal }));
+    setSelectedToPlayers(p => {
       const next = { ...p };
       for (const pid of team.playerIds) next[pid] = newVal;
       return next;
@@ -299,8 +335,9 @@ export default function AnalysisScreen() {
   }
 
   const playerFilter = new Set(allPlayerIds.filter(id => selectedPlayers[id]));
+  const dstPlayerFilter = new Set(allPlayerIds.filter(id => selectedToPlayers[id]));
   const typeFilter = new Set(TOUCH_TYPES.filter(t => selectedTypes[t]));
-  const arrows = buildArrows(game, fromIdx, toIdx, playerFilter, typeFilter, fixedSide, posDir);
+  const arrows = buildArrows(game, fromIdx, toIdx, playerFilter, dstPlayerFilter, toFilterOr, typeFilter, fixedSide, posDir);
 
   // Pre-build Skia paths grouped by color for fewer draw calls
   const byColor: Record<string, Arrow[]> = {};
@@ -365,9 +402,9 @@ export default function AnalysisScreen() {
         </View>
       )}
 
-      {/* ─── Teams / Players filter (foldable) ─── */}
+      {/* ─── From Teams / Players filter (foldable) ─── */}
       <TouchableOpacity onPress={() => setFiltersOpen(v => !v)} style={st.foldHeader}>
-        <Text style={st.filterTitle}>{filtersOpen ? '▼' : '▶'} Teams / Players</Text>
+        <Text style={st.filterTitle}>{filtersOpen ? '▼' : '▶'} From Teams / Players</Text>
       </TouchableOpacity>
       {filtersOpen && (
         <View style={st.filterRow}>
@@ -381,6 +418,31 @@ export default function AnalysisScreen() {
             <CheckBox key={'p-' + id} title={id}
               checked={selectedPlayers[id]}
               onPress={() => setSelectedPlayers(p => ({ ...p, [id]: !p[id] }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+          ))}
+        </View>
+      )}
+
+      {/* ─── To Teams / Players filter (foldable) ─── */}
+      <TouchableOpacity onPress={() => setToFiltersOpen(v => !v)} style={st.foldHeader}>
+        <Text style={st.filterTitle}>{toFiltersOpen ? '▼' : '▶'} To Teams / Players</Text>
+      </TouchableOpacity>
+      {toFiltersOpen && (
+        <View style={st.filterRow}>
+          <CheckBox title="Or (match From or To)"
+            checked={toFilterOr}
+            onPress={() => setToFilterOr(v => !v)}
+            containerStyle={st.cb} textStyle={[st.cbTxt, { fontStyle: 'italic' }]} />
+          {allTeamIds.map(id => (
+            <CheckBox key={'to-t-' + id} title={id}
+              checked={selectedToTeams[id]}
+              onPress={() => toggleToTeam(id)}
+              containerStyle={st.cb} textStyle={[st.cbTxt, { fontWeight: '700' }]} />
+          ))}
+          {allPlayerIds.map(id => (
+            <CheckBox key={'to-p-' + id} title={id}
+              checked={selectedToPlayers[id]}
+              onPress={() => setSelectedToPlayers(p => ({ ...p, [id]: !p[id] }))}
               containerStyle={st.cb} textStyle={st.cbTxt} />
           ))}
         </View>
