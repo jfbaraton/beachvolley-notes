@@ -313,7 +313,15 @@ export const updateTouchStats = (game: Game, idx: TouchIndex, fc: FieldConstants
   const playerP = getPlayerPos(touch.playerId, touch, prevTouch);
   const otherP = getPlayerPos(otherId, touch, prevTouch);
 
-  touch.startingSide = touch.ballX >= fc.width / 2 ? 0 : 1;
+  // Determine startingSide: when the ball is near the net, use the player's
+  // position to resolve which side the touch belongs to
+  const NET_TOLERANCE = fc.width * 0.02; // ~2% of field width
+  const nearNet = Math.abs(touch.ballX - fc.width / 2) < NET_TOLERANCE;
+  if (nearNet && playerP) {
+    touch.startingSide = playerP.x >= fc.width / 2 ? 0 : 1;
+  } else {
+    touch.startingSide = touch.ballX >= fc.width / 2 ? 0 : 1;
+  }
 
   if (nextTouch) {
     touch.endingSide = nextTouch.ballX >= fc.width / 2 ? 0 : 1;
