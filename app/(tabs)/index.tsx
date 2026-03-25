@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Platform, TouchableOpacity, TextInput, ScrollView, Text, Modal } from 'react-native';
+import { StyleSheet, View, Platform, TouchableOpacity, TextInput, ScrollView, Text, Modal, Image as RNImage } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -107,8 +107,6 @@ export default function GameScreen() {
 
   // ─── Game state ─────────────────────────────────────────
   const [game, setGameLocal] = useState<Game>(() => JSON.parse(JSON.stringify(sampleGame)));
-  const flagTeam0 = useImage(flagMap[game.teams[0].id]?.uri ?? null);
-  const flagTeam1 = useImage(flagMap[game.teams[1].id]?.uri ?? null);
   const [currentIdx, setCurrentIdx] = useState<TouchIndex>(() => {
     const g = JSON.parse(JSON.stringify(sampleGame)) as Game;
     return { pointIdx: Math.max(0, g.points.length - 1), rallyIdx: 0, touchIdx: 0 };
@@ -833,7 +831,7 @@ export default function GameScreen() {
 
       {/* ─── Score bar ─── */}
       <View style={s.scoreBar}>
-        {flagTeam0 && <Canvas style={s.flag}><Image image={flagTeam0} width={40} height={24} fit="cover" /></Canvas>}
+        {flagMap[game.teams[0].id] && <RNImage source={flagMap[game.teams[0].id]} style={s.flag} resizeMode="cover" />}
         <TouchableOpacity style={s.scoreBtn} onPress={() => doScore(0)}>
           <Text style={s.scoreTxt}>{score.scoreTeam[0]}</Text>
         </TouchableOpacity>
@@ -843,7 +841,7 @@ export default function GameScreen() {
         <TouchableOpacity style={s.scoreBtn} onPress={() => doScore(1)}>
           <Text style={s.scoreTxt}>{score.scoreTeam[1]}</Text>
         </TouchableOpacity>
-        {flagTeam1 && <Canvas style={s.flag}><Image image={flagTeam1} width={40} height={24} fit="cover" /></Canvas>}
+        {flagMap[game.teams[1].id] && <RNImage source={flagMap[game.teams[1].id]} style={s.flag} resizeMode="cover" />}
       </View>
 
         {/* ─── Navigation ─── */}

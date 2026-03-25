@@ -22,7 +22,7 @@ const flagMap: Record<string, any> = {
   Finland: require('./Finland.png'),
   France: require('./France.jpeg'),
   Germany: require('./Germany.jpeg'),
-  Greece: require('./Greece.png'),
+  Greece: require('./Greece.jpeg'),
   Hungary: require('./Hungary.png'),
   Israel: require('./Israel.jpeg'),
   Italy: require('./Italy.jpeg'),
