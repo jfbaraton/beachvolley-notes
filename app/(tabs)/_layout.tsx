@@ -71,6 +71,13 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="analysis"
+        options={{
+          title: 'Target Analysis',
+          tabBarIcon: ({ color }) => <TabBarIcon name="crosshairs" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
