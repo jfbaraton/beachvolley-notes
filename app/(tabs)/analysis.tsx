@@ -1,14 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, View, Text, TouchableOpacity, TextInput, Image as RNImage } from 'react-native';
 import { Canvas, useImage, Image, Path, Skia } from '@shopify/react-native-skia';
 import { CheckBox } from '@rneui/themed';
 import { useGameContext } from '@/utils/GameContext';
-import { teamOfPlayer } from '@/utils/gameEngine';
+import { teamOfPlayer, calculateScore } from '@/utils/gameEngine';
 import flagMap from '@/assets/flags/flagMap';
 import type { Game, Touch, TeamDef } from '@/utils/types';
 
 // @ts-ignore
 import FieldImg from '@/assets/sprites/field.jpg';
+// @ts-ignore
+import TaruImg from '@/assets/sprites/Taru.png';
+// @ts-ignore
+import NiinaImg from '@/assets/sprites/Niina.jpg';
+// @ts-ignore
+import JeffImg from '@/assets/sprites/Jeff.jpg';
+// @ts-ignore
+import DomnaImg from '@/assets/sprites/Domna.jpg';
+// @ts-ignore
+import AnaPatriciaImg from '@/assets/sprites/AnaPatricia.png';
+// @ts-ignore
+import DudaImg from '@/assets/sprites/Duda.jpg';
+// @ts-ignore
+import BennettImg from '@/assets/sprites/Bennett.jpeg';
+// @ts-ignore
+import MaleImg from '@/assets/sprites/male.png';
+
+const spriteRequires: Record<string, any> = {
+  Taru: TaruImg, Niina: NiinaImg, Jeff: JeffImg, Domna: DomnaImg,
+  AnaPatricia: AnaPatriciaImg, Duda: DudaImg, Bennett: BennettImg, male: MaleImg,
+};
 
 const W = 720;
 const H = 370;
@@ -75,10 +96,22 @@ const needsMirror = (game: Game, touch: Touch, fixedSide: boolean): boolean => {
   return teamIdx === 0 ? touchOnRight : !touchOnRight;
 };
 
+interface ArrowPlayerPos { id: string; x: number; y: number }
+
 interface Arrow {
   x1: number; y1: number;
   x2: number; y2: number;
   color: string;
+  /** Metadata for tooltip */
+  srcPlayerId: string | null;
+  dstPlayerId: string | null;
+  srcType: string;
+  pointIdx: number;       // 0-based
+  touchIdxInPoint: number; // 0-based flat index within the point
+  set: number;            // 0-based set index
+  score: [number, number]; // score BEFORE this point
+  /** All player positions at the time of this touch */
+  playerPositions: ArrowPlayerPos[];
 }
 
 /**
@@ -128,6 +161,9 @@ const buildArrows = (
     const point = game.points[pi];
     if (!point) continue;
 
+    const score = calculateScore(game, pi);
+    const set = score.setsTeam[0] + score.setsTeam[1];
+
     // Flatten all touches in the point into a single list
     const touches: Touch[] = [];
     for (const rally of point.rallies) {
@@ -149,18 +185,50 @@ const buildArrows = (
       let x1 = src.ballX, y1 = src.ballY;
       let x2 = dst.ballX, y2 = dst.ballY;
 
-      if (needsMirror(game, src, fixedSide)) {
+      const shouldMirror = needsMirror(game, src, fixedSide);
+      if (shouldMirror) {
         [x1, y1] = mirror(x1, y1);
         [x2, y2] = mirror(x2, y2);
       }
 
+      // Collect all player positions (explicit override calculated)
+      const posMap = new Map<string, { x: number; y: number }>();
+      for (const p of src.calculatedPositions || []) posMap.set(p.id, { x: p.x, y: p.y });
+      for (const p of src.explicitPositions || []) posMap.set(p.id, { x: p.x, y: p.y });
+      const playerPositions: ArrowPlayerPos[] = [];
+      posMap.forEach((pos, id) => {
+        let px = pos.x, py = pos.y;
+        if (shouldMirror) [px, py] = mirror(px, py);
+        playerPositions.push({ id, x: px, y: py });
+      });
+
       let color = 'rgba(255,255,255,0.5)'; // default: semi-transparent white
       if (src.isScoring) color = 'rgba(0,200,0,0.8)';
       else if (src.isFail) color = 'rgba(220,40,40,0.8)';
-      arrows.push({ x1, y1, x2, y2, color });
+      arrows.push({
+        x1, y1, x2, y2, color,
+        srcPlayerId: src.playerId,
+        dstPlayerId: dst.playerId,
+        srcType: src.type,
+        pointIdx: pi,
+        touchIdxInPoint: i,
+        set,
+        score: [score.scoreTeam[0], score.scoreTeam[1]],
+        playerPositions,
+      });
     }
   }
   return arrows;
+};
+
+/** Distance from point (px,py) to line segment (ax,ay)-(bx,by) */
+const distToSegment = (px: number, py: number, ax: number, ay: number, bx: number, by: number): number => {
+  const dx = bx - ax, dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq < 1) return Math.sqrt((px - ax) ** 2 + (py - ay) ** 2);
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  const cx = ax + t * dx, cy = ay + t * dy;
+  return Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
 };
 
 export default function AnalysisScreen() {
@@ -175,6 +243,8 @@ export default function AnalysisScreen() {
   const [fromPoint, setFromPoint] = useState('1');
   const [toPoint, setToPoint] = useState('');
   const [posDir, setPosDir] = useState<PosDir>(defaultPosDir);
+  const [hoveredArrow, setHoveredArrow] = useState<Arrow | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   const teams: TeamDef[] = game?.teams || [];
   const allPlayerIds: string[] = teams.flatMap(t => t.playerIds);
@@ -233,10 +303,36 @@ export default function AnalysisScreen() {
   const arrows = buildArrows(game, fromIdx, toIdx, playerFilter, typeFilter, fixedSide, posDir);
 
   // Pre-build Skia paths grouped by color for fewer draw calls
-  const byColor: Record<string, typeof arrows> = {};
+  const byColor: Record<string, Arrow[]> = {};
   for (const a of arrows) {
     (byColor[a.color] ??= []).push(a);
   }
+
+  /** Find the nearest arrow to the cursor within a threshold */
+  const onPointerMove = useCallback((e: any) => {
+    const rect = e.currentTarget.getBoundingClientRect?.();
+    if (!rect) return;
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const THRESHOLD = 12;
+    let best: Arrow | null = null;
+    let bestDist = THRESHOLD;
+    for (const a of arrows) {
+      const d = distToSegment(mx, my, a.x1, a.y1, a.x2, a.y2);
+      if (d < bestDist) { bestDist = d; best = a; }
+    }
+    setHoveredArrow(best);
+    if (best) {
+      // Position tooltip near cursor but clamped inside field
+      setTooltipPos({ x: Math.min(mx + 12, W - 200), y: Math.max(my - 70, 0) });
+    }
+  }, [arrows]);
+
+  const onPointerLeave = useCallback(() => setHoveredArrow(null), []);
+
+  const tooltipText = hoveredArrow
+    ? `Point ${hoveredArrow.pointIdx + 1}, ${ordinal(hoveredArrow.set + 1)} set, score ${hoveredArrow.score[0]}-${hoveredArrow.score[1]}, ${ordinal(hoveredArrow.touchIdxInPoint + 1)} touch of the rally (${hoveredArrow.srcType})`
+    : '';
 
   return (
     <ScrollView contentContainerStyle={st.scroll}>
@@ -350,7 +446,7 @@ export default function AnalysisScreen() {
         textStyle={st.cbTxt}
       />
 
-      {/* ─── Field + arrows ─── */}
+      {/* ─── Field + arrows + hover overlay ─── */}
       <View style={st.fieldContainer}>
         {fixedSide && (
           <View style={st.flagRow}>
@@ -386,9 +482,40 @@ export default function AnalysisScreen() {
                 />
               );
             })}
+            {/* Highlight hovered arrow */}
+            {hoveredArrow && (() => {
+              const hp = arrowPath(hoveredArrow.x1, hoveredArrow.y1, hoveredArrow.x2, hoveredArrow.y2);
+              return <Path path={hp} color="rgba(255,255,0,0.9)" style="stroke" strokeWidth={STROKE_W + 2} strokeCap="round" />;
+            })()}
           </Canvas>
         ) : (
           <View style={st.center}><Text>Loading field…</Text></View>
+        )}
+        {/* Transparent hover overlay */}
+        <View
+          style={st.hoverOverlay}
+          // @ts-ignore – web-only pointer events
+          onPointerMove={onPointerMove}
+          onPointerLeave={onPointerLeave}
+        />
+        {/* Player icons at their positions */}
+        {hoveredArrow && hoveredArrow.playerPositions.map(pp => (
+          <RNImage
+            key={pp.id}
+            source={spriteRequires[pp.id] || spriteRequires['male']}
+            style={[
+              st.fieldIcon,
+              { left: pp.x - 16, top: pp.y - 16 },
+              (pp.id === hoveredArrow.srcPlayerId || pp.id === hoveredArrow.dstPlayerId)
+                ? st.fieldIconHighlight : st.fieldIconDim,
+            ]}
+          />
+        ))}
+        {/* Tooltip */}
+        {hoveredArrow && (
+          <View style={[st.tooltip, { left: tooltipPos.x, top: tooltipPos.y }]}>
+            <Text style={st.tooltipTxt}>{tooltipText}</Text>
+          </View>
         )}
       </View>
 
@@ -403,6 +530,13 @@ export default function AnalysisScreen() {
     </ScrollView>
   );
 }
+
+/** Return "1st", "2nd", "3rd", "4th", etc. */
+const ordinal = (n: number): string => {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
 
 const st = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 },
@@ -427,5 +561,11 @@ const st = StyleSheet.create({
   info: { marginTop: 4, fontSize: 13, opacity: 0.5 },
   posDirContainer: { alignSelf: 'stretch', marginBottom: 4 },
   posDirGroupLabel: { fontSize: 13, fontWeight: '600', opacity: 0.6, marginTop: 4, marginLeft: 4 },
+  hoverOverlay: { position: 'absolute', top: 0, left: 0, width: W, height: H, zIndex: 2 },
+  fieldIcon: { position: 'absolute', width: 32, height: 32, borderRadius: 16, borderWidth: 2, zIndex: 4, pointerEvents: 'none' as const },
+  fieldIconHighlight: { borderColor: '#ffe600', opacity: 1 },
+  fieldIconDim: { borderColor: '#fff', opacity: 0.55 },
+  tooltip: { position: 'absolute', zIndex: 3, backgroundColor: 'rgba(0,0,0,0.85)', borderRadius: 6, padding: 8, maxWidth: 260 },
+  tooltipTxt: { color: '#fff', fontSize: 12 },
 });
 
