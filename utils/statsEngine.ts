@@ -10,6 +10,8 @@ export interface PlayerStats {
   aces: number;
   /** Serves that lose the point without the opponent touching the ball (e.g. into the net / out) */
   failedServes: number;
+  /** Total number of serves */
+  serves: number;
   /** player/team was the victim of an ace (failed to return a serve) */
   aced: number;
   /** First pass after a serve (serve receive, rally index 1 touch index 0) */
@@ -35,13 +37,14 @@ export interface PlayerStats {
 }
 
 export const emptyStats = (): PlayerStats => ({
-  aces: 0, failedServes: 0, aced: 0, receptions: 0, kills: 0, attackErrors: 0, attacks: 0, passErrors: 0,
+  aces: 0, failedServes: 0, serves: 0, aced: 0, receptions: 0, kills: 0, attackErrors: 0, attacks: 0, passErrors: 0,
   passCount: 0, setCount: 0, blockCount: 0, pointsWon: 0, pointsLost: 0,
 });
 
 export const STAT_LABELS: { key: keyof PlayerStats; label: string; polarity: 'positive' | 'negative' | 'neutral' }[] = [
   { key: 'aces', label: 'Aces', polarity: 'positive' },
   { key: 'failedServes', label: 'Failed Serves', polarity: 'negative' },
+  { key: 'serves', label: 'Serves', polarity: 'neutral' },
   { key: 'aced', label: 'Aced', polarity: 'negative' },
   { key: 'receptions', label: 'Receptions', polarity: 'neutral' },
   { key: 'kills', label: 'Kills', polarity: 'positive' },
@@ -115,6 +118,10 @@ export const computeStats = (game: Game, fromPoint?: number, toPoint?: number) =
 
     const isServWon = winnerId === servTeamId;
     const recvRally = point.rallies.length > 1 ? point.rallies[1] : null;
+
+    // Serves count
+    if (playerStats[servPlayerId]) playerStats[servPlayerId].serves++;
+    if (teamStats[servTeamId]) teamStats[servTeamId].serves++;
 
     // Ace (only if the receive rally is not after the fail)
     if (isServWon && point.rallies.length <= 2 && (!recvRally || recvRally.touches.length <= 1)) {
