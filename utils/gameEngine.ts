@@ -119,22 +119,28 @@ export const getServingTeamId = (game: Game, pointIdx: number): string => {
 
 /**
  * Determine which player serves for a given team at a given point.
- * Alternates every time the team gets a new serve.
+ * Alternates every time the team gets a new serve run (sideout).
+ * Within a serve run (team keeps scoring), the same player serves.
  */
 export const getServingPlayerId = (game: Game, teamId: string, pointIdx: number, invertPlayer?: boolean): string => {
   const team = teamById(game, teamId);
-  // Count how many "new serves" this team had (first serve or first serve after opponent served)
-  let newServes = 0;
+  // Count completed serve runs for this team before the current point.
+  // A "serve run" = consecutive points where this team served.
+  // The run index stays the same for continuation serves.
+  let completedRuns = 0;
+  let inRun = false;
   for (let i = 0; i < pointIdx; i++) {
     const p = game.points[i];
     if (!p.rallies.length) continue;
     const servTeam = p.rallies[0].teamId;
-    if (servTeam !== teamId) continue;
-    if (i === 0 || game.points[i - 1].rallies[0]?.teamId !== teamId) {
-      newServes++;
+    if (servTeam === teamId) {
+      if (!inRun) inRun = true;
+    } else {
+      if (inRun) { completedRuns++; inRun = false; }
     }
   }
-  const idx = invertPlayer ? (newServes % 2) : 1 - (newServes % 2);
+  // completedRuns is the 0-based index of the current/next serve run
+  const idx = invertPlayer ? (completedRuns % 2) : 1 - (completedRuns % 2);
   return team.playerIds[idx];
 };
 

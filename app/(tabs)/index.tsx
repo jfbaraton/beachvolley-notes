@@ -172,14 +172,15 @@ export default function GameScreen() {
       rallies: [],
       invertSideSwap,
       invertServingTeam: false,
-      invertServingPlayer,
+      invertServingPlayer: false,
     });
 
-    const newIdx = setupServe(refs, game, newPointIdx, FC, invertServingPlayer);
+    const newIdx = setupServe(refs, game, newPointIdx, FC, false);
     setCurrentIdx(newIdx);
     setScore(newScore);
     setIsEdit(true);
     setInvertServingTeam(false);
+    setInvertServingPlayer(false);
     setGameLocal({ ...game });
     addLog(`${scoringTeamId} scores! ${newScore.scoreTeam[0]}-${newScore.scoreTeam[1]}`);
   };

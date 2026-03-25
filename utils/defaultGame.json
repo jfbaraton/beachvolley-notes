@@ -129,7 +129,7 @@
       "wonByTeamId": "Team1",
       "invertSideSwap": true,
       "invertServingTeam": true,
-      "invertServingPlayer": true
+      "invertServingPlayer": false
     },
     {
       "set": 0,
@@ -604,7 +604,7 @@
       "wonByTeamId": "Team1",
       "invertSideSwap": true,
       "invertServingTeam": true,
-      "invertServingPlayer": true
+      "invertServingPlayer": false
     },
     {
       "set": 0,
@@ -990,7 +990,7 @@
       "wonByTeamId": "Team2",
       "invertSideSwap": true,
       "invertServingTeam": true,
-      "invertServingPlayer": true
+      "invertServingPlayer": false
     },
     {
       "set": 0,
@@ -1244,7 +1244,7 @@
       ],
       "wonByTeamId": "Team1",
       "invertSideSwap": true,
-      "invertServingPlayer": true
+      "invertServingPlayer": false
     },
     {
       "set": 0,
@@ -1462,7 +1462,7 @@
       ],
       "wonByTeamId": "Team2",
       "invertSideSwap": true,
-      "invertServingPlayer": true
+      "invertServingPlayer": false
     },
     {
       "set": 0,
@@ -1658,13 +1658,122 @@
                 }
               ],
               "startingSide": 1,
-              "isPlayerOnRightArm": true
+              "isPlayerOnRightArm": true,
+              "endingSide": 1,
+              "isFail": false,
+              "toAcross": true,
+              "fromAcross": true,
+              "isScoring": true
+            }
+          ]
+        },
+        {
+          "teamId": "Team2",
+          "touches": [
+            {
+              "playerId": "male",
+              "ballX": 291.76171875,
+              "ballY": 271.78125,
+              "type": "pass",
+              "explicitPositions": [],
+              "calculatedPositions": [
+                {
+                  "id": "Jeff",
+                  "x": 414,
+                  "y": 259.503125
+                },
+                {
+                  "id": "Domna",
+                  "x": 581.1428571428571,
+                  "y": 63.05312500000002
+                },
+                {
+                  "id": "male",
+                  "x": 255.76171875,
+                  "y": 271.78125
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 234,
+                  "y": 197.78125
+                }
+              ],
+              "startingSide": 1,
+              "isPlayerOnRightArm": true,
+              "ballSourceDirection": 1,
+              "isFail": true
             }
           ]
         }
       ],
       "invertSideSwap": true,
-      "invertServingPlayer": true
+      "invertServingPlayer": false,
+      "lineCall": "IN",
+      "wonByTeamId": "Team1"
+    },
+    {
+      "set": 0,
+      "rallies": [
+        {
+          "teamId": "Team1",
+          "touches": [
+            {
+              "playerId": "Jeff",
+              "ballX": 576,
+              "ballY": 243,
+              "type": "serve",
+              "explicitPositions": [
+                {
+                  "id": "male",
+                  "x": 100.5,
+                  "y": 209
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 83.5,
+                  "y": 66
+                },
+                {
+                  "id": "Domna",
+                  "x": 417.5,
+                  "y": 95
+                },
+                {
+                  "id": "Jeff",
+                  "x": 648,
+                  "y": 243
+                }
+              ],
+              "calculatedPositions": [
+                {
+                  "id": "Jeff",
+                  "x": 648,
+                  "y": 243
+                },
+                {
+                  "id": "Domna",
+                  "x": 414,
+                  "y": 149
+                },
+                {
+                  "id": "male",
+                  "x": 66.85714285714286,
+                  "y": 56.5
+                },
+                {
+                  "id": "AnaPatricia",
+                  "x": 66.85714285714286,
+                  "y": 241.5
+                }
+              ],
+              "startingSide": 0
+            }
+          ]
+        }
+      ],
+      "invertSideSwap": true,
+      "invertServingTeam": false,
+      "invertServingPlayer": false
     }
   ]
 }
