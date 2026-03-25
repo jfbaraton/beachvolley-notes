@@ -17,6 +17,21 @@ const STROKE_W = 2;
 
 const TOUCH_TYPES = ['serve', 'pass', 'set', 'option', 'attack', 'block', 'ground'] as const;
 
+interface PosDir {
+  fromLeft: boolean;
+  fromRight: boolean;
+  toLeft: boolean;
+  toRight: boolean;
+  short: boolean;
+  long: boolean;
+}
+
+const defaultPosDir = (): PosDir => ({
+  fromLeft: true, fromRight: true,
+  toLeft: true, toRight: true,
+  short: true, long: true,
+});
+
 /** Build an arrow path from (x1,y1) → (x2,y2) */
 const arrowPath = (x1: number, y1: number, x2: number, y2: number) => {
   const path = Skia.Path.Make();
@@ -66,10 +81,47 @@ interface Arrow {
   color: string;
 }
 
+/**
+ * Check if an arrow passes the Position/Direction filter.
+ * Within each group, if both options are checked → pass all.
+ * If one is checked → only matching arrows pass.
+ * Touches with undefined properties always pass.
+ */
+const passPosDirFilter = (src: Touch, dst: Touch, pd: PosDir): boolean => {
+  // ── From direction (based on src.isPlayerOnRightArm) ──
+  if (pd.fromLeft !== pd.fromRight) {
+    // Only one is checked → filter
+    if (src.isPlayerOnRightArm !== undefined) {
+      const fromLeft = !src.isPlayerOnRightArm;
+      const fromRight = src.isPlayerOnRightArm;
+      if (!((pd.fromLeft && fromLeft) || (pd.fromRight && fromRight))) return false;
+    }
+  }
+
+  // ── To direction (requires src.toAcross, based on dst.isPlayerOnRightArm) ──
+  if (pd.toLeft !== pd.toRight) {
+    if (src.toAcross && dst.isPlayerOnRightArm !== undefined) {
+      const toLeft = !dst.isPlayerOnRightArm;
+      const toRight = dst.isPlayerOnRightArm;
+      if (!((pd.toLeft && toLeft) || (pd.toRight && toRight))) return false;
+    }
+  }
+
+  // ── Distance (based on dst.ballX distance from net) ──
+  if (pd.short !== pd.long) {
+    const distFromNet = Math.abs(dst.ballX - W / 2);
+    const isShort = distFromNet < W / 6;
+    const isLong = distFromNet > W / 3;
+    if (!((pd.short && isShort) || (pd.long && isLong))) return false;
+  }
+
+  return true;
+};
+
 const buildArrows = (
   game: Game, fromIdx: number, toIdx: number,
   playerFilter: Set<string>, typeFilter: Set<string>,
-  fixedSide: boolean,
+  fixedSide: boolean, posDir: PosDir,
 ): Arrow[] => {
   const arrows: Arrow[] = [];
   for (let pi = fromIdx; pi < toIdx; pi++) {
@@ -91,6 +143,8 @@ const buildArrows = (
       if (src.playerId && !playerFilter.has(src.playerId)) continue;
       // Filter: source touch type must be in the type filter
       if (!typeFilter.has(src.type)) continue;
+      // Filter: Position/Direction
+      if (!passPosDirFilter(src, dst, posDir)) continue;
 
       let x1 = src.ballX, y1 = src.ballY;
       let x2 = dst.ballX, y2 = dst.ballY;
@@ -116,9 +170,11 @@ export default function AnalysisScreen() {
   const [rangeOpen, setRangeOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [typesOpen, setTypesOpen] = useState(false);
+  const [posDirOpen, setPosDirOpen] = useState(false);
   const [fixedSide, setFixedSide] = useState(false);
   const [fromPoint, setFromPoint] = useState('1');
   const [toPoint, setToPoint] = useState('');
+  const [posDir, setPosDir] = useState<PosDir>(defaultPosDir);
 
   const teams: TeamDef[] = game?.teams || [];
   const allPlayerIds: string[] = teams.flatMap(t => t.playerIds);
@@ -174,7 +230,7 @@ export default function AnalysisScreen() {
 
   const playerFilter = new Set(allPlayerIds.filter(id => selectedPlayers[id]));
   const typeFilter = new Set(TOUCH_TYPES.filter(t => selectedTypes[t]));
-  const arrows = buildArrows(game, fromIdx, toIdx, playerFilter, typeFilter, fixedSide);
+  const arrows = buildArrows(game, fromIdx, toIdx, playerFilter, typeFilter, fixedSide, posDir);
 
   // Pre-build Skia paths grouped by color for fewer draw calls
   const byColor: Record<string, typeof arrows> = {};
@@ -246,6 +302,42 @@ export default function AnalysisScreen() {
               onPress={() => setSelectedTypes(p => ({ ...p, [t]: !p[t] }))}
               containerStyle={st.cb} textStyle={st.cbTxt} />
           ))}
+        </View>
+      )}
+
+      {/* ─── Position / Direction filter (foldable) ─── */}
+      <TouchableOpacity onPress={() => setPosDirOpen(v => !v)} style={st.foldHeader}>
+        <Text style={st.filterTitle}>{posDirOpen ? '▼' : '▶'} Position / Direction</Text>
+      </TouchableOpacity>
+      {posDirOpen && (
+        <View style={st.posDirContainer}>
+          <Text style={st.posDirGroupLabel}>From</Text>
+          <View style={st.filterRow}>
+            <CheckBox title="From left" checked={posDir.fromLeft}
+              onPress={() => setPosDir(p => ({ ...p, fromLeft: !p.fromLeft }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+            <CheckBox title="From right" checked={posDir.fromRight}
+              onPress={() => setPosDir(p => ({ ...p, fromRight: !p.fromRight }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+          </View>
+          <Text style={st.posDirGroupLabel}>To</Text>
+          <View style={st.filterRow}>
+            <CheckBox title="To left" checked={posDir.toLeft}
+              onPress={() => setPosDir(p => ({ ...p, toLeft: !p.toLeft }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+            <CheckBox title="To right" checked={posDir.toRight}
+              onPress={() => setPosDir(p => ({ ...p, toRight: !p.toRight }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+          </View>
+          <Text style={st.posDirGroupLabel}>Distance</Text>
+          <View style={st.filterRow}>
+            <CheckBox title="Short" checked={posDir.short}
+              onPress={() => setPosDir(p => ({ ...p, short: !p.short }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+            <CheckBox title="Long" checked={posDir.long}
+              onPress={() => setPosDir(p => ({ ...p, long: !p.long }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+          </View>
         </View>
       )}
 
@@ -333,5 +425,7 @@ const st = StyleSheet.create({
   footer: { alignItems: 'center', marginTop: 8 },
   legend: { fontSize: 14 },
   info: { marginTop: 4, fontSize: 13, opacity: 0.5 },
+  posDirContainer: { alignSelf: 'stretch', marginBottom: 4 },
+  posDirGroupLabel: { fontSize: 13, fontWeight: '600', opacity: 0.6, marginTop: 4, marginLeft: 4 },
 });
 
