@@ -156,6 +156,7 @@ const buildArrows = (
   playerFilter: Set<string>, dstPlayerFilter: Set<string>, toFilterOr: boolean,
   typeFilter: Set<string>,
   fixedSide: boolean, posDir: PosDir,
+  centeredPlayer: string | null, centeredPerf: 'direct_faults' | 'missed' | 'scoring',
 ): Arrow[] => {
   const arrows: Arrow[] = [];
   for (let pi = fromIdx; pi < toIdx; pi++) {
@@ -190,6 +191,14 @@ const buildArrows = (
       if (!typeFilter.has(src.type)) continue;
       // Filter: Position/Direction
       if (!passPosDirFilter(src, dst, posDir)) continue;
+
+      // ── Player Centered filter ──
+      if (centeredPlayer) {
+        if (src.playerId !== centeredPlayer) continue;
+        if (centeredPerf === 'direct_faults' && !src.isFail) continue;
+        if (centeredPerf === 'missed' && !(src.isFail || (src.type === 'attack' && !src.isScoring))) continue;
+        if (centeredPerf === 'scoring' && !src.isScoring) continue;
+      }
 
       let x1 = src.ballX, y1 = src.ballY;
       let x2 = dst.ballX, y2 = dst.ballY;
@@ -250,6 +259,9 @@ export default function AnalysisScreen() {
   const [toFilterOr, setToFilterOr] = useState(false);
   const [typesOpen, setTypesOpen] = useState(false);
   const [posDirOpen, setPosDirOpen] = useState(false);
+  const [playerCenteredOpen, setPlayerCenteredOpen] = useState(false);
+  const [centeredPlayer, setCenteredPlayer] = useState<string | null>(null);
+  const [centeredPerf, setCenteredPerf] = useState<'direct_faults' | 'missed' | 'scoring'>('direct_faults');
   const [fixedSide, setFixedSide] = useState(false);
   const [fromPoint, setFromPoint] = useState('1');
   const [toPoint, setToPoint] = useState('');
@@ -337,7 +349,7 @@ export default function AnalysisScreen() {
   const playerFilter = new Set(allPlayerIds.filter(id => selectedPlayers[id]));
   const dstPlayerFilter = new Set(allPlayerIds.filter(id => selectedToPlayers[id]));
   const typeFilter = new Set(TOUCH_TYPES.filter(t => selectedTypes[t]));
-  const arrows = buildArrows(game, fromIdx, toIdx, playerFilter, dstPlayerFilter, toFilterOr, typeFilter, fixedSide, posDir);
+  const arrows = buildArrows(game, fromIdx, toIdx, playerFilter, dstPlayerFilter, toFilterOr, typeFilter, fixedSide, posDir, centeredPlayer, centeredPerf);
 
   // Pre-build Skia paths grouped by color for fewer draw calls
   const byColor: Record<string, Arrow[]> = {};
@@ -494,6 +506,48 @@ export default function AnalysisScreen() {
               containerStyle={st.cb} textStyle={st.cbTxt} />
             <CheckBox title="Long" checked={posDir.long}
               onPress={() => setPosDir(p => ({ ...p, long: !p.long }))}
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+          </View>
+        </View>
+      )}
+
+      {/* ─── Player Centered filter (foldable) ─── */}
+      <TouchableOpacity onPress={() => setPlayerCenteredOpen(v => !v)} style={st.foldHeader}>
+        <Text style={st.filterTitle}>{playerCenteredOpen ? '▼' : '▶'} Player Centered</Text>
+      </TouchableOpacity>
+      {playerCenteredOpen && (
+        <View style={st.posDirContainer}>
+          <Text style={st.posDirGroupLabel}>Player</Text>
+          <View style={st.filterRow}>
+            <CheckBox title="None"
+              checked={centeredPlayer === null}
+              onPress={() => setCenteredPlayer(null)}
+              checkedIcon="dot-circle-o" uncheckedIcon="circle-o"
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+            {allPlayerIds.map(id => (
+              <CheckBox key={'cp-' + id} title={id}
+                checked={centeredPlayer === id}
+                onPress={() => setCenteredPlayer(id)}
+                checkedIcon="dot-circle-o" uncheckedIcon="circle-o"
+                containerStyle={st.cb} textStyle={st.cbTxt} />
+            ))}
+          </View>
+          <Text style={st.posDirGroupLabel}>Perf</Text>
+          <View style={st.filterRow}>
+            <CheckBox title="Direct faults"
+              checked={centeredPerf === 'direct_faults'}
+              onPress={() => setCenteredPerf('direct_faults')}
+              checkedIcon="dot-circle-o" uncheckedIcon="circle-o"
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+            <CheckBox title="Missed"
+              checked={centeredPerf === 'missed'}
+              onPress={() => setCenteredPerf('missed')}
+              checkedIcon="dot-circle-o" uncheckedIcon="circle-o"
+              containerStyle={st.cb} textStyle={st.cbTxt} />
+            <CheckBox title="Scoring"
+              checked={centeredPerf === 'scoring'}
+              onPress={() => setCenteredPerf('scoring')}
+              checkedIcon="dot-circle-o" uncheckedIcon="circle-o"
               containerStyle={st.cb} textStyle={st.cbTxt} />
           </View>
         </View>
